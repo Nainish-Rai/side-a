@@ -8,15 +8,7 @@ import { api } from "@/lib/api";
 import { Album, Track } from "@/lib/api/types";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import AppLayout from "@/components/layout/AppLayout";
-import {
-  Play,
-  Pause,
-  ArrowLeft,
-  Clock,
-  Calendar,
-  Disc3,
-  Music2,
-} from "lucide-react";
+import { Play, Pause, ArrowLeft, Clock, Disc3, Music2 } from "lucide-react";
 
 export default function AlbumPage() {
   const params = useParams();
@@ -153,121 +145,237 @@ export default function AlbumPage() {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 lg:px-6 py-8">
-        {/* Album Header - Bento Grid Style */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          {/* Album Cover - Large Block */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="lg:col-span-1"
-          >
-            <div
-              className="relative bg-white dark:bg-[#1a1a1a] border-2 border-carbon dark:border-bone
-                          shadow-[8px_8px_0px_0px_rgba(16,16,16,1)] dark:shadow-[8px_8px_0px_0px_rgba(242,239,233,1)]
+        {/* Cassette Tape Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="mb-8"
+        >
+          {/* Cassette Shell */}
+          <div
+            className="relative bg-white dark:bg-[#1a1a1a] border-4 border-carbon dark:border-bone rounded-lg
+                          shadow-[12px_12px_0px_0px_rgba(16,16,16,1)] dark:shadow-[12px_12px_0px_0px_rgba(242,239,233,1)]
                           overflow-hidden"
-            >
-              {/* Cover Image */}
-              <div className="relative w-full aspect-square">
-                <Image
-                  src={coverUrl}
-                  alt={album.title}
-                  fill
-                  priority
-                  sizes="(max-width: 1024px) 100vw, 33vw"
-                  className="object-cover"
-                />
-              </div>
-
-              {/* Label Strip */}
-              <div className="border-t-2 border-carbon dark:border-bone p-3 bg-walkman-orange">
-                <div className="text-[9px] tracking-widest uppercase font-mono text-carbon">
-                  Hi-Fi Lossless
-                </div>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Album Info - Information Panel */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="lg:col-span-2"
           >
-            <div
-              className="bg-white dark:bg-[#1a1a1a] border-2 border-carbon dark:border-bone
-                          shadow-[8px_8px_0px_0px_rgba(16,16,16,1)] dark:shadow-[8px_8px_0px_0px_rgba(242,239,233,1)]
-                          p-6 h-full flex flex-col"
-            >
-              {/* Label */}
-              <div className="text-[9px] tracking-widest uppercase text-gray-500 dark:text-gray-400 font-mono mb-3">
-                ALBUM
-              </div>
-
-              {/* Album Title */}
-              <h1 className="text-3xl lg:text-4xl font-mono font-bold text-carbon dark:text-bone mb-4 leading-tight">
-                {album.title}
-              </h1>
-
-              {/* Artist */}
-              <p className="text-xl font-mono text-gray-700 dark:text-gray-300 mb-6">
-                {artistName}
-              </p>
-
-              {/* Stats Grid - Swiss Style */}
-              <div className="grid grid-cols-3 gap-4 mb-6 pb-6 border-b-2 border-gray-200 dark:border-gray-800">
-                {year && (
-                  <div className="text-center">
-                    <Calendar className="w-5 h-5 mx-auto mb-2 text-walkman-orange" />
-                    <div className="text-[9px] tracking-widest uppercase text-gray-400 dark:text-gray-600 font-mono mb-1">
-                      YEAR
-                    </div>
-                    <div className="text-lg font-mono font-bold text-carbon dark:text-bone">
-                      {year}
-                    </div>
+            {/* Cassette Top Section - Orange Header */}
+            <div className="bg-walkman-orange border-b-4 border-carbon dark:border-bone p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  {/* Cassette Reel Circles */}
+                  <div className="flex gap-2">
+                    <motion.div
+                      animate={{ rotate: isPlaying ? 360 : 0 }}
+                      transition={{
+                        duration: 2,
+                        repeat: isPlaying ? Infinity : 0,
+                        ease: "linear",
+                      }}
+                      className="w-8 h-8 rounded-full border-4 border-carbon bg-white flex items-center justify-center"
+                    >
+                      <div className="w-3 h-3 rounded-full bg-carbon" />
+                    </motion.div>
+                    <motion.div
+                      animate={{ rotate: isPlaying ? 360 : 0 }}
+                      transition={{
+                        duration: 2,
+                        repeat: isPlaying ? Infinity : 0,
+                        ease: "linear",
+                      }}
+                      className="w-8 h-8 rounded-full border-4 border-carbon bg-white flex items-center justify-center"
+                    >
+                      <div className="w-3 h-3 rounded-full bg-carbon" />
+                    </motion.div>
                   </div>
-                )}
-                <div className="text-center">
-                  <Music2 className="w-5 h-5 mx-auto mb-2 text-walkman-orange" />
-                  <div className="text-[9px] tracking-widest uppercase text-gray-400 dark:text-gray-600 font-mono mb-1">
-                    TRACKS
-                  </div>
-                  <div className="text-lg font-mono font-bold text-carbon dark:text-bone">
-                    {tracks.length}
+                  <div className="font-mono text-[10px] tracking-widest uppercase text-carbon font-bold">
+                    SIDE A • Hi-Fi
                   </div>
                 </div>
-                <div className="text-center">
-                  <Clock className="w-5 h-5 mx-auto mb-2 text-walkman-orange" />
-                  <div className="text-[9px] tracking-widest uppercase text-gray-400 dark:text-gray-600 font-mono mb-1">
-                    DURATION
-                  </div>
-                  <div className="text-lg font-mono font-bold text-carbon dark:text-bone">
-                    {totalMinutes} MIN
-                  </div>
+                <div className="font-mono text-[10px] text-carbon/70">
+                  {totalMinutes}&apos; {tracks.length} TRACKS
                 </div>
               </div>
-
-              {/* Play Button - Tactile Control */}
-              <button
-                onClick={handlePlayAlbum}
-                disabled={tracks.length === 0}
-                className="mt-auto w-full py-4 bg-walkman-orange border-2 border-carbon dark:border-bone
-                         font-mono font-bold text-lg text-carbon
-                         shadow-[4px_4px_0px_0px_rgba(16,16,16,1)] dark:shadow-[4px_4px_0px_0px_rgba(16,16,16,1)]
-                         hover:shadow-[6px_6px_0px_0px_rgba(16,16,16,1)] dark:hover:shadow-[6px_6px_0px_0px_rgba(16,16,16,1)]
-                         hover:translate-x-[-2px] hover:translate-y-[-2px]
-                         active:shadow-[2px_2px_0px_0px_rgba(16,16,16,1)]
-                         active:translate-x-[2px] active:translate-y-[2px]
-                         disabled:opacity-50 disabled:cursor-not-allowed
-                         transition-all duration-150 flex items-center justify-center gap-3"
-              >
-                <Play className="w-5 h-5 fill-current" />
-                <span>PLAY ALBUM</span>
-              </button>
             </div>
-          </motion.div>
-        </div>
+
+            {/* Main Cassette Body */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-0">
+              {/* Left: Album Cover Window */}
+              <div
+                className="lg:col-span-1 p-6 border-r-0 lg:border-r-4 border-b-4 lg:border-b-0 border-carbon dark:border-bone
+                              bg-gradient-to-br from-gray-50 to-gray-100 dark:from-[#151515] dark:to-[#0a0a0a]"
+              >
+                <div className="relative">
+                  {/* Cassette Window Frame */}
+                  <div
+                    className="absolute inset-0 border-2 border-carbon dark:border-bone -m-2 pointer-events-none z-10"
+                    style={{ boxShadow: "inset 0 0 20px rgba(0,0,0,0.1)" }}
+                  />
+
+                  {/* Cover Image */}
+                  <div className="relative w-full aspect-square border-2 border-carbon dark:border-bone overflow-hidden">
+                    <Image
+                      src={coverUrl}
+                      alt={album.title}
+                      fill
+                      priority
+                      sizes="(max-width: 1024px) 100vw, 33vw"
+                      className="object-cover"
+                    />
+                  </div>
+
+                  {/* Magnetic Tape Visual */}
+                  <div className="mt-3 flex gap-1 justify-center">
+                    {[...Array(12)].map((_, i) => (
+                      <div
+                        key={i}
+                        className="w-1 h-2 bg-carbon/20 dark:bg-bone/20"
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Right: Handwritten Label Insert */}
+              <div
+                className="lg:col-span-2 p-8 bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50
+                              dark:from-[#1a1510] dark:via-[#1a1612] dark:to-[#1a1410]
+                              relative overflow-hidden"
+              >
+                {/* Paper Texture Overlay */}
+                <div
+                  className="absolute inset-0 opacity-30 dark:opacity-20"
+                  style={{
+                    backgroundImage: `repeating-linear-gradient(
+                         0deg,
+                         transparent,
+                         transparent 2px,
+                         rgba(0,0,0,0.03) 2px,
+                         rgba(0,0,0,0.03) 4px
+                       )`,
+                  }}
+                />
+
+                {/* Handwritten Style Content */}
+                <div className="relative z-10">
+                  {/* Small Label Text */}
+                  <div className="mb-4 pb-2 border-b border-dashed border-carbon/30 dark:border-bone/30">
+                    <div className="font-mono text-[9px] tracking-widest text-carbon/60 dark:text-bone/60 uppercase">
+                      Album Details
+                    </div>
+                  </div>
+
+                  {/* Album Title - Handwritten Style */}
+                  <div className="mb-6">
+                    <h1
+                      className="text-3xl lg:text-4xl font-bold text-carbon dark:text-bone mb-2 leading-tight
+                                   tracking-tight"
+                      style={{
+                        fontFamily:
+                          'ui-serif, Georgia, Cambria, "Times New Roman", Times, serif',
+                        textShadow: "1px 1px 0px rgba(0,0,0,0.1)",
+                      }}
+                    >
+                      {album.title}
+                    </h1>
+                    <div className="h-px bg-carbon/20 dark:bg-bone/20 w-24" />
+                  </div>
+
+                  {/* Artist Name - Handwritten */}
+                  <div className="mb-8">
+                    <div className="text-[10px] tracking-widest uppercase text-carbon/50 dark:text-bone/50 font-mono mb-1">
+                      Artist
+                    </div>
+                    <p
+                      className="text-xl lg:text-2xl text-carbon dark:text-bone"
+                      style={{
+                        fontFamily:
+                          'ui-serif, Georgia, Cambria, "Times New Roman", Times, serif',
+                      }}
+                    >
+                      {artistName}
+                    </p>
+                  </div>
+
+                  {/* Info Grid - Handwritten Notes Style */}
+                  <div className="grid grid-cols-3 gap-6 mb-8">
+                    {year && (
+                      <div>
+                        <div className="text-[9px] tracking-widest uppercase text-carbon/50 dark:text-bone/50 font-mono mb-1.5">
+                          Year
+                        </div>
+                        <div
+                          className="text-2xl font-bold text-carbon dark:text-bone"
+                          style={{ fontFamily: "ui-serif, Georgia, Cambria" }}
+                        >
+                          {year}
+                        </div>
+                        <div className="h-px bg-carbon/20 dark:bg-bone/20 w-12 mt-1" />
+                      </div>
+                    )}
+                    <div>
+                      <div className="text-[9px] tracking-widest uppercase text-carbon/50 dark:text-bone/50 font-mono mb-1.5">
+                        Tracks
+                      </div>
+                      <div
+                        className="text-2xl font-bold text-carbon dark:text-bone"
+                        style={{ fontFamily: "ui-serif, Georgia, Cambria" }}
+                      >
+                        {tracks.length}
+                      </div>
+                      <div className="h-px bg-carbon/20 dark:bg-bone/20 w-12 mt-1" />
+                    </div>
+                    <div>
+                      <div className="text-[9px] tracking-widest uppercase text-carbon/50 dark:text-bone/50 font-mono mb-1.5">
+                        Duration
+                      </div>
+                      <div
+                        className="text-2xl font-bold text-carbon dark:text-bone"
+                        style={{ fontFamily: "ui-serif, Georgia, Cambria" }}
+                      >
+                        {totalMinutes}&apos;
+                      </div>
+                      <div className="h-px bg-carbon/20 dark:bg-bone/20 w-12 mt-1" />
+                    </div>
+                  </div>
+
+                  {/* Play Button - Cassette Player Style */}
+                  <button
+                    onClick={handlePlayAlbum}
+                    disabled={tracks.length === 0}
+                    className="w-full py-4 bg-walkman-orange border-3 border-carbon
+                             font-mono font-bold text-base text-carbon uppercase tracking-wider
+                             shadow-[4px_4px_0px_0px_rgba(16,16,16,1)]
+                             hover:shadow-[6px_6px_0px_0px_rgba(16,16,16,1)]
+                             hover:translate-x-[-2px] hover:translate-y-[-2px]
+                             active:shadow-[2px_2px_0px_0px_rgba(16,16,16,1)]
+                             active:translate-x-[2px] active:translate-y-[2px]
+                             disabled:opacity-50 disabled:cursor-not-allowed
+                             transition-all duration-150 flex items-center justify-center gap-3
+                             rounded-sm"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="w-0 h-0 border-t-[6px] border-t-transparent border-l-[10px] border-l-carbon border-b-[6px] border-b-transparent" />
+                      <span>Play Album</span>
+                    </div>
+                  </button>
+
+                  {/* Bottom Corner Note */}
+                  <div className="mt-6 pt-4 border-t border-dashed border-carbon/20 dark:border-bone/20">
+                    <div className="text-[10px] text-carbon/40 dark:text-bone/40 font-mono italic">
+                      Recorded {year || "N/A"} • {tracks.length} selections
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Cassette Bottom Screws */}
+            <div className="absolute bottom-4 left-4 w-3 h-3 rounded-full border-2 border-carbon/30 dark:border-bone/30 bg-gray-300 dark:bg-gray-700" />
+            <div className="absolute bottom-4 right-4 w-3 h-3 rounded-full border-2 border-carbon/30 dark:border-bone/30 bg-gray-300 dark:bg-gray-700" />
+            <div className="absolute top-20 left-4 w-3 h-3 rounded-full border-2 border-carbon/30 dark:border-bone/30 bg-gray-300 dark:bg-gray-700" />
+            <div className="absolute top-20 right-4 w-3 h-3 rounded-full border-2 border-carbon/30 dark:border-bone/30 bg-gray-300 dark:bg-gray-700" />
+          </div>
+        </motion.div>
 
         {/* Track List - Control Panel Style */}
         <motion.div
