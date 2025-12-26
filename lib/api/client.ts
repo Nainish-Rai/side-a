@@ -306,6 +306,37 @@ export class LosslessAPI {
     }
   }
 
+  async searchAlbums(
+    query: string,
+    options: { signal?: AbortSignal } = {}
+  ): Promise<SearchResponse<Album>> {
+    const cached = (await this.cache.get(
+      "search_albums",
+      query
+    )) as SearchResponse<Album> | null;
+    if (cached) return cached;
+
+    try {
+      const response = await this.fetchWithRetry(
+        `/search/?al=${encodeURIComponent(query)}`,
+        options
+      );
+      const data = await response.json();
+      const normalized = this.normalizeSearchResponse<Album>(data, "albums");
+      const result: SearchResponse<Album> = {
+        ...normalized,
+        items: normalized.items.map((album) => this.prepareAlbum(album)),
+      };
+
+      await this.cache.set("search_albums", query, result);
+      return result;
+    } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") throw error;
+      console.error("Album search failed:", error);
+      return { items: [], limit: 0, offset: 0, totalNumberOfItems: 0 };
+    }
+  }
+
   async searchArtists(
     query: string,
     options: { signal?: AbortSignal } = {}

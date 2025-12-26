@@ -6,12 +6,17 @@ import { SearchResults } from "@/components/search/SearchResults";
 import { AudioPlayer } from "@/components/player/AudioPlayer";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { api } from "@/lib/api";
-import { Track } from "@/lib/api/types";
+import { Track, Album } from "@/lib/api/types";
 import { Music2, Search, TrendingUp } from "lucide-react";
+
+type SearchContentType = "tracks" | "albums" | "artists" | "playlists";
 
 export default function Home() {
   const [tracks, setTracks] = useState<Track[]>([]);
+  const [albums, setAlbums] = useState<Album[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [currentTab, setCurrentTab] = useState<SearchContentType>("tracks");
+  const [lastQuery, setLastQuery] = useState<string>("");
   const [searchMetadata, setSearchMetadata] = useState<{
     totalNumberOfItems: number;
     offset: number;
@@ -19,8 +24,10 @@ export default function Home() {
   } | null>(null);
 
   const handleSearch = useCallback(async (query: string) => {
+    setLastQuery(query);
     setIsLoading(true);
     try {
+      // Always fetch tracks first
       const response = await api.searchTracks(query);
       setTracks(response.items);
       setSearchMetadata({
@@ -28,14 +35,52 @@ export default function Home() {
         offset: response.offset,
         limit: response.limit,
       });
+      // Reset to tracks tab on new search
+      setCurrentTab("tracks");
+      // Clear albums (will be fetched when user switches to albums tab)
+      setAlbums([]);
     } catch (error) {
       console.error("Search failed:", error);
       setTracks([]);
+      setAlbums([]);
       setSearchMetadata(null);
     } finally {
       setIsLoading(false);
     }
   }, []);
+
+  const handleTabChange = useCallback(
+    async (tab: SearchContentType) => {
+      setCurrentTab(tab);
+
+      // If switching to albums and albums haven't been fetched yet
+      if (tab === "albums" && albums.length === 0 && lastQuery) {
+        setIsLoading(true);
+        try {
+          const response = await api.searchAlbums(lastQuery);
+          setAlbums(response.items);
+          setSearchMetadata({
+            totalNumberOfItems: response.totalNumberOfItems,
+            offset: response.offset,
+            limit: response.limit,
+          });
+        } catch (error) {
+          console.error("Album search failed:", error);
+          setAlbums([]);
+        } finally {
+          setIsLoading(false);
+        }
+      } else if (tab === "tracks" && tracks.length > 0) {
+        // Update metadata when switching back to tracks
+        setSearchMetadata({
+          totalNumberOfItems: tracks.length,
+          offset: 0,
+          limit: tracks.length,
+        });
+      }
+    },
+    [albums.length, lastQuery, tracks.length]
+  );
 
   return (
     <div className="min-h-screen bg-bone dark:bg-carbon transition-colors duration-300">
@@ -120,13 +165,16 @@ export default function Home() {
         {/* Content Area - Scrollable */}
         <div className="p-4 lg:p-6">
           <div className="max-w-7xl mx-auto">
-            {tracks.length > 0 || isLoading ? (
+            {tracks.length > 0 || albums.length > 0 || isLoading ? (
               <SearchResults
                 tracks={tracks}
+                albums={albums}
+                contentType={currentTab}
                 isLoading={isLoading}
                 totalNumberOfItems={searchMetadata?.totalNumberOfItems}
                 offset={searchMetadata?.offset}
                 limit={searchMetadata?.limit}
+                onTabChange={handleTabChange}
               />
             ) : (
               <div className="flex items-center justify-center h-64">
