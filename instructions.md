@@ -1,0 +1,1 @@
+This is a minimal app that uses hifi api to stream music. The ui is inspired by walkman, neuromorphic design. black and white and orange. The app is built with Next.js, React, and Tailwind CSS. The app also uses motion for animations and tw-animate-css for additional styling.
