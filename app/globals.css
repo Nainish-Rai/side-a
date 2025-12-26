@@ -45,7 +45,9 @@
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
 
-  --color-walkman-dark: #1a1a1a;
+  /* Industrial Minimalism Design System */
+  --color-bone: #f2efe9;
+  --color-carbon: #101010;
   --color-walkman-orange: #ff6b35;
   --color-walkman-yellow: #ffd23f;
 }

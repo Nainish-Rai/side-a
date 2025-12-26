@@ -9,9 +9,13 @@ export default {
   theme: {
     extend: {
       colors: {
-        "walkman-dark": "#1a1a1a",
+        bone: "#f2efe9",
+        carbon: "#101010",
         "walkman-orange": "#ff6b35",
         "walkman-yellow": "#ffd23f",
+      },
+      letterSpacing: {
+        widest: "0.15em",
       },
     },
   },
