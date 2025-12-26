@@ -17,6 +17,15 @@ export default {
       letterSpacing: {
         widest: "0.15em",
       },
+      animation: {
+        "slide-in": "slideIn 0.3s ease-out",
+      },
+      keyframes: {
+        slideIn: {
+          "0%": { transform: "translateX(100%)" },
+          "100%": { transform: "translateX(0)" },
+        },
+      },
     },
   },
   plugins: [],

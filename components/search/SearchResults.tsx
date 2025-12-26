@@ -17,20 +17,16 @@ export function SearchResults({
   tracks,
   isLoading = false,
 }: SearchResultsProps) {
-  const { playTrack, currentTrack, isPlaying } = useAudioPlayer();
+  const { setQueue, currentTrack, isPlaying } = useAudioPlayer();
   const [loadingTrackId, setLoadingTrackId] = useState<number | null>(null);
 
-  const handleTrackClick = async (track: Track) => {
+  const handleTrackClick = async (track: Track, index: number) => {
     if (loadingTrackId === track.id) return;
 
     setLoadingTrackId(track.id);
     try {
-      const streamUrl = await api.getStreamUrl(track.id);
-      if (streamUrl) {
-        playTrack(track, streamUrl);
-      } else {
-        console.error("Failed to get stream URL for track:", track.id);
-      }
+      // Set the entire search results as the queue, starting from the clicked track
+      await setQueue(tracks, index);
     } catch (error) {
       console.error("Error playing track:", error);
     } finally {
@@ -69,7 +65,7 @@ export function SearchResults({
     <div className="w-full">
       {/* Bento Grid Layout */}
       <div className="grid grid-cols-1 gap-3">
-        {tracks.map((track) => {
+        {tracks.map((track, index) => {
           // Check if album has a cover UUID, otherwise use album ID
           const coverId = track.album?.cover || track.album?.id;
           const coverUrl = coverId
@@ -81,13 +77,17 @@ export function SearchResults({
           return (
             <div
               key={track.id}
-              onClick={() => handleTrackClick(track)}
+              onClick={() => handleTrackClick(track, index)}
               className={`group relative p-4 bg-white border border-carbon
                          hover:bg-bone hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]
                          active:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]
                          active:translate-x-[1px] active:translate-y-[1px]
                          transition-all duration-150 cursor-pointer
-                         ${isCurrentTrack && isPlaying ? "border-walkman-orange border-2" : ""}
+                         ${
+                           isCurrentTrack && isPlaying
+                             ? "border-walkman-orange border-2"
+                             : ""
+                         }
                          ${loadingTrackId === track.id ? "opacity-50" : ""}`}
             >
               {loadingTrackId === track.id && (
@@ -95,11 +95,13 @@ export function SearchResults({
                   <div className="w-6 h-6 border-2 border-carbon border-t-transparent rounded-full animate-spin" />
                 </div>
               )}
-              
+
               <div className="flex items-center gap-4">
                 {/* Album Art */}
-                <div className="relative flex-shrink-0 w-14 h-14 bg-bone border border-carbon overflow-hidden
-                               shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)]">
+                <div
+                  className="relative flex-shrink-0 w-14 h-14 bg-bone border border-carbon overflow-hidden
+                               shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)]"
+                >
                   {coverUrl ? (
                     <Image
                       src={coverUrl}
@@ -113,12 +115,16 @@ export function SearchResults({
                       <Music className="w-6 h-6 text-carbon" />
                     </div>
                   )}
-                  
+
                   {/* Play indicator overlay */}
-                  <div className="absolute inset-0 bg-carbon/0 group-hover:bg-carbon/70 
-                                  transition-all duration-200 flex items-center justify-center">
-                    <Play className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 
-                                   transition-opacity duration-200 fill-white" />
+                  <div
+                    className="absolute inset-0 bg-carbon/0 group-hover:bg-carbon/70
+                                  transition-all duration-200 flex items-center justify-center"
+                  >
+                    <Play
+                      className="w-5 h-5 text-white opacity-0 group-hover:opacity-100
+                                   transition-opacity duration-200 fill-white"
+                    />
                   </div>
                 </div>
 
@@ -155,8 +161,14 @@ export function SearchResults({
                   <div className="absolute top-2 right-2">
                     <div className="flex items-center gap-0.5">
                       <div className="w-0.5 h-3 bg-walkman-orange animate-pulse"></div>
-                      <div className="w-0.5 h-2 bg-walkman-orange animate-pulse" style={{ animationDelay: "0.1s" }}></div>
-                      <div className="w-0.5 h-4 bg-walkman-orange animate-pulse" style={{ animationDelay: "0.2s" }}></div>
+                      <div
+                        className="w-0.5 h-2 bg-walkman-orange animate-pulse"
+                        style={{ animationDelay: "0.1s" }}
+                      ></div>
+                      <div
+                        className="w-0.5 h-4 bg-walkman-orange animate-pulse"
+                        style={{ animationDelay: "0.2s" }}
+                      ></div>
                     </div>
                   </div>
                 )}

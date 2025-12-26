@@ -2,8 +2,20 @@
 
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { formatTime, getTrackTitle, getTrackArtists } from "@/lib/api/utils";
-import { Play, Pause, Volume2, VolumeX } from "lucide-react";
+import {
+  Play,
+  Pause,
+  Volume2,
+  VolumeX,
+  SkipBack,
+  SkipForward,
+  Shuffle,
+  Repeat,
+  Repeat1,
+  ListMusic,
+} from "lucide-react";
 import { useRef, useEffect, useState } from "react";
+import { Queue } from "./Queue";
 
 export function AudioPlayer() {
   const {
@@ -13,14 +25,22 @@ export function AudioPlayer() {
     duration,
     volume,
     isMuted,
+    shuffleActive,
+    repeatMode,
+    queue,
     togglePlayPause,
+    playNext,
+    playPrev,
     seek,
     setVolume,
     toggleMute,
+    toggleShuffle,
+    toggleRepeat,
   } = useAudioPlayer();
 
   const progressBarRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isQueueOpen, setIsQueueOpen] = useState(false);
 
   const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0;
 
@@ -92,26 +112,8 @@ export function AudioPlayer() {
       {/* Single Row Layout */}
       <div className="max-w-7xl mx-auto px-6 py-4">
         <div className="flex items-center justify-between gap-6">
-          
           {/* Left: Track Info */}
           <div className="flex items-center gap-4 flex-1 min-w-0">
-            {/* Play/Pause Button */}
-            <button
-              onClick={togglePlayPause}
-              className="flex-shrink-0 w-10 h-10 rounded-full bg-carbon hover:bg-walkman-orange
-                         transition-colors duration-200 flex items-center justify-center
-                         shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)]
-                         hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,0.2)]
-                         active:shadow-none active:translate-x-[1px] active:translate-y-[1px]"
-              aria-label={isPlaying ? "Pause" : "Play"}
-            >
-              {isPlaying ? (
-                <Pause className="w-5 h-5 text-white" fill="white" />
-              ) : (
-                <Play className="w-5 h-5 ml-0.5 text-white" fill="white" />
-              )}
-            </button>
-
             {/* Track Details */}
             <div className="flex-1 min-w-0">
               <div className="font-medium text-sm truncate text-carbon font-mono">
@@ -123,19 +125,117 @@ export function AudioPlayer() {
             </div>
           </div>
 
-          {/* Center: Time Display */}
-          <div className="flex items-center gap-3 flex-shrink-0">
-            <div className="text-xs font-mono tabular-nums text-carbon">
-              {formatTime(currentTime)}
+          {/* Center: Playback Controls */}
+          <div className="flex flex-col items-center gap-2 flex-shrink-0">
+            {/* Control Buttons */}
+            <div className="flex items-center gap-3">
+              {/* Shuffle Button */}
+              <button
+                onClick={toggleShuffle}
+                className={`w-7 h-7 flex items-center justify-center hover:bg-white
+                           rounded transition-colors duration-150 ${
+                             shuffleActive
+                               ? "text-walkman-orange"
+                               : "text-carbon"
+                           }`}
+                aria-label="Shuffle"
+                title={shuffleActive ? "Shuffle on" : "Shuffle off"}
+              >
+                <Shuffle className="w-4 h-4" />
+              </button>
+
+              {/* Previous Button */}
+              <button
+                onClick={playPrev}
+                className="w-7 h-7 flex items-center justify-center hover:bg-white
+                           rounded transition-colors duration-150 text-carbon"
+                aria-label="Previous"
+              >
+                <SkipBack className="w-4 h-4" />
+              </button>
+
+              {/* Play/Pause Button */}
+              <button
+                onClick={togglePlayPause}
+                className="flex-shrink-0 w-10 h-10 rounded-full bg-carbon hover:bg-walkman-orange
+                           transition-colors duration-200 flex items-center justify-center
+                           shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)]
+                           hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,0.2)]
+                           active:shadow-none active:translate-x-[1px] active:translate-y-[1px]"
+                aria-label={isPlaying ? "Pause" : "Play"}
+              >
+                {isPlaying ? (
+                  <Pause className="w-5 h-5 text-white" fill="white" />
+                ) : (
+                  <Play className="w-5 h-5 ml-0.5 text-white" fill="white" />
+                )}
+              </button>
+
+              {/* Next Button */}
+              <button
+                onClick={playNext}
+                className="w-7 h-7 flex items-center justify-center hover:bg-white
+                           rounded transition-colors duration-150 text-carbon"
+                aria-label="Next"
+              >
+                <SkipForward className="w-4 h-4" />
+              </button>
+
+              {/* Repeat Button */}
+              <button
+                onClick={toggleRepeat}
+                className={`w-7 h-7 flex items-center justify-center hover:bg-white
+                           rounded transition-colors duration-150 ${
+                             repeatMode !== "off"
+                               ? "text-walkman-orange"
+                               : "text-carbon"
+                           }`}
+                aria-label="Repeat"
+                title={
+                  repeatMode === "off"
+                    ? "Repeat off"
+                    : repeatMode === "all"
+                    ? "Repeat all"
+                    : "Repeat one"
+                }
+              >
+                {repeatMode === "one" ? (
+                  <Repeat1 className="w-4 h-4" />
+                ) : (
+                  <Repeat className="w-4 h-4" />
+                )}
+              </button>
             </div>
-            <div className="text-xs text-gray-400">/</div>
-            <div className="text-xs font-mono tabular-nums text-gray-500">
-              {formatTime(duration)}
+
+            {/* Time Display */}
+            <div className="flex items-center gap-2 text-xs font-mono tabular-nums">
+              <span className="text-carbon">{formatTime(currentTime)}</span>
+              <span className="text-gray-400">/</span>
+              <span className="text-gray-500">{formatTime(duration)}</span>
             </div>
           </div>
 
           {/* Right: Volume Controls */}
-          <div className="flex items-center gap-3 flex-shrink-0">
+          <div className="flex items-center gap-3 flex-shrink-0 flex-1 justify-end">
+            {/* Queue Button */}
+            <button
+              onClick={() => setIsQueueOpen(true)}
+              className="relative w-8 h-8 flex items-center justify-center hover:bg-white
+                         rounded transition-colors duration-150"
+              aria-label="View Queue"
+              title="View Queue"
+            >
+              <ListMusic className="w-4 h-4 text-carbon" />
+              {queue.length > 0 && (
+                <span
+                  className="absolute -top-1 -right-1 w-4 h-4 bg-walkman-orange text-white
+                                 text-[9px] font-mono font-bold rounded-full flex items-center justify-center"
+                >
+                  {queue.length > 9 ? "9+" : queue.length}
+                </span>
+              )}
+            </button>
+
             {/* Mute Button */}
             <button
               onClick={toggleMute}
@@ -177,15 +277,19 @@ export function AudioPlayer() {
                            [&::-webkit-slider-runnable-track]:bg-carbon
                            [&::-webkit-slider-runnable-track]:h-1"
                 style={{
-                  background: `linear-gradient(to right, #101010 0%, #101010 ${isMuted ? 0 : volume * 100}%, #d1d5db ${isMuted ? 0 : volume * 100}%, #d1d5db 100%)`
+                  background: `linear-gradient(to right, #101010 0%, #101010 ${
+                    isMuted ? 0 : volume * 100
+                  }%, #d1d5db ${isMuted ? 0 : volume * 100}%, #d1d5db 100%)`,
                 }}
                 aria-label="Volume"
               />
             </div>
           </div>
-
         </div>
       </div>
+
+      {/* Queue Panel */}
+      <Queue isOpen={isQueueOpen} onClose={() => setIsQueueOpen(false)} />
     </div>
   );
 }
