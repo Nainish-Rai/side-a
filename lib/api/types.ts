@@ -27,10 +27,12 @@ export interface Track {
   title: string;
   duration: number;
   trackNumber?: number;
+  volumeNumber?: number;
   version?: string;
   explicit?: boolean;
   explicitLyrics?: boolean;
   audioQuality?: string;
+  audioModes?: string[];
   popularity?: number;
   streamStartDate?: string;
   artist?: Artist;
@@ -38,6 +40,29 @@ export interface Track {
   album?: Album;
   mediaMetadata?: {
     tags?: string[];
+  };
+  // Additional metadata from TIDAL API
+  replayGain?: number;
+  peak?: number;
+  allowStreaming?: boolean;
+  streamReady?: boolean;
+  payToStream?: boolean;
+  adSupportedStreamReady?: boolean;
+  djReady?: boolean;
+  stemReady?: boolean;
+  premiumStreamingOnly?: boolean;
+  copyright?: string;
+  bpm?: number;
+  key?: string;
+  keyScale?: string;
+  url?: string;
+  isrc?: string;
+  editable?: boolean;
+  upload?: boolean;
+  accessType?: string | null;
+  spotlighted?: boolean;
+  mixes?: {
+    TRACK_MIX?: string;
   };
 }
 
