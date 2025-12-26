@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import { SearchBar } from "@/components/search/SearchBar";
 import { SearchResults } from "@/components/search/SearchResults";
+import { AudioPlayer } from "@/components/player/AudioPlayer";
 import { api } from "@/lib/api";
 import { Track } from "@/lib/api/types";
 
@@ -24,7 +25,7 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#ebe8e0] flex flex-col p-4 sm:p-8">
+    <div className="min-h-screen bg-[#ebe8e0] flex flex-col p-4 sm:p-8 pb-32">
       <div className="w-full max-w-5xl mx-auto">
         {/* Header */}
         <div className="flex items-start justify-between mb-12">
@@ -73,6 +74,8 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      <AudioPlayer />
     </div>
   );
 }

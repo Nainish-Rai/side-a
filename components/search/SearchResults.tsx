@@ -4,7 +4,9 @@ import { Track } from "@/lib/api/types";
 import { getTrackTitle, getTrackArtists, formatTime } from "@/lib/api/utils";
 import { Music } from "lucide-react";
 import { api } from "@/lib/api";
+import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import Image from "next/image";
+import { useState } from "react";
 
 interface SearchResultsProps {
   tracks: Track[];
@@ -15,6 +17,27 @@ export function SearchResults({
   tracks,
   isLoading = false,
 }: SearchResultsProps) {
+  const { playTrack } = useAudioPlayer();
+  const [loadingTrackId, setLoadingTrackId] = useState<number | null>(null);
+
+  const handleTrackClick = async (track: Track) => {
+    if (loadingTrackId === track.id) return;
+
+    setLoadingTrackId(track.id);
+    try {
+      const streamUrl = await api.getStreamUrl(track.id);
+      if (streamUrl) {
+        playTrack(track, streamUrl);
+      } else {
+        console.error("Failed to get stream URL for track:", track.id);
+      }
+    } catch (error) {
+      console.error("Error playing track:", error);
+    } finally {
+      setLoadingTrackId(null);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="w-full mt-6">
@@ -50,10 +73,17 @@ export function SearchResults({
           return (
             <div
               key={track.id}
+              onClick={() => handleTrackClick(track)}
               className="group p-4 bg-white border-2 border-black
                          hover:bg-gray-50
-                         transition-all duration-200 cursor-pointer"
+                         transition-all duration-200 cursor-pointer
+                         relative"
             >
+              {loadingTrackId === track.id && (
+                <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
+                  <div className="w-6 h-6 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                </div>
+              )}
               <div className="flex items-start gap-4">
                 <div className="flex-shrink-0 w-12 h-12 bg-gray-100 border border-black overflow-hidden">
                   {coverUrl ? (

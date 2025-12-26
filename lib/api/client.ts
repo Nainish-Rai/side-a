@@ -337,6 +337,49 @@ export class LosslessAPI {
     }
   }
 
+  async getStreamUrl(
+    trackId: number,
+    quality: string = "LOSSLESS"
+  ): Promise<string | null> {
+    const cacheKey = `stream_${trackId}_${quality}`;
+    const cached = this.streamCache.get(cacheKey);
+    if (cached) return cached;
+
+    try {
+      const response = await this.fetchWithRetry(
+        `/track/?id=${trackId}&quality=${quality}`
+      );
+      const data = await response.json();
+
+      let manifest: string | null = null;
+
+      if (data?.data?.manifest) {
+        manifest = data.data.manifest;
+      } else if (data?.manifest) {
+        manifest = data.manifest;
+      } else {
+        const lookup = this.parseTrackLookup(data);
+        manifest = lookup.info.manifest;
+      }
+
+      if (!manifest) {
+        console.error("No manifest found in response");
+        return null;
+      }
+
+      const streamUrl = this.extractStreamUrlFromManifest(manifest);
+
+      if (streamUrl) {
+        this.streamCache.set(cacheKey, streamUrl);
+      }
+
+      return streamUrl;
+    } catch (error) {
+      console.error("Failed to get stream URL:", error);
+      return null;
+    }
+  }
+
   getCoverUrl(id: string | number, size: string = "1280"): string {
     if (!id) {
       return `https://picsum.photos/seed/${Math.random()}/${size}`;
