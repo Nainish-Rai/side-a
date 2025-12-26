@@ -368,6 +368,82 @@ export class LosslessAPI {
     }
   }
 
+  async getAlbum(
+    albumId: number,
+    options: { signal?: AbortSignal } = {}
+  ): Promise<{ album: Album; tracks: Track[] }> {
+    const cacheKey = `album_${albumId}`;
+    const cached = (await this.cache.get("album", cacheKey)) as {
+      album: Album;
+      tracks: Track[];
+    } | null;
+    if (cached) return cached;
+
+    try {
+      const response = await this.fetchWithRetry(
+        `/album/?id=${albumId}`,
+        options
+      );
+      const data = await response.json();
+
+      console.log("Album API Response:", JSON.stringify(data, null, 2));
+
+      // Parse album and tracks from response
+      let album: Album | undefined;
+      let tracks: Track[] = [];
+
+      // Check for nested data structure (v2.0 API response)
+      const responseData = data.data || data;
+
+      // Extract album info - try multiple possible locations
+      if (data.album) {
+        album = this.prepareAlbum(data.album);
+      } else if (
+        responseData.items &&
+        Array.isArray(responseData.items) &&
+        responseData.items.length > 0
+      ) {
+        // Try to get album info from first track
+        const firstItem = responseData.items[0];
+        const firstTrack = firstItem.item || firstItem;
+        if (firstTrack.album) {
+          album = this.prepareAlbum(firstTrack.album);
+        }
+      }
+
+      // Extract tracks from various possible structures
+      if (Array.isArray(data.tracks)) {
+        tracks = data.tracks.map((t: Track) => this.prepareTrack(t));
+      } else if (Array.isArray(responseData.items)) {
+        // Handle nested structure: items[].item or items[].track
+        tracks = responseData.items
+          .map((item: { item?: Track; track?: Track } | Track) => {
+            // Extract the actual track object
+            if ("item" in item) return item.item;
+            if ("track" in item) return item.track;
+            return item;
+          })
+          .filter(
+            (track: Track | undefined): track is Track =>
+              track !== undefined && "id" in track
+          ) // Filter out invalid entries
+          .map((track: Track) => this.prepareTrack(track));
+      }
+
+      if (!album) {
+        throw new Error("Album not found in response");
+      }
+
+      const result = { album, tracks };
+      await this.cache.set("album", cacheKey, result);
+      return result;
+    } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") throw error;
+      console.error("Failed to fetch album:", error);
+      throw error;
+    }
+  }
+
   async getStreamUrl(
     trackId: number,
     quality: string = "LOSSLESS"

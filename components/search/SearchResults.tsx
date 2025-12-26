@@ -100,11 +100,6 @@ export function SearchResults({
     }
   };
 
-  const handleAlbumClick = (album: Album) => {
-    console.log("Album clicked:", album);
-    // TODO: Navigate to album page or load album tracks
-  };
-
   const handleArtistClick = (artist: Artist) => {
     console.log("Artist clicked:", artist);
     // TODO: Navigate to artist page
@@ -255,13 +250,7 @@ export function SearchResults({
           })}
 
         {contentType === "albums" &&
-          albums?.map((album) => (
-            <AlbumCard
-              key={album.id}
-              album={album}
-              onClick={handleAlbumClick}
-            />
-          ))}
+          albums?.map((album) => <AlbumCard key={album.id} album={album} />)}
 
         {contentType === "artists" &&
           artists?.map((artist) => (

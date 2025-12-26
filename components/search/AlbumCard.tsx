@@ -2,14 +2,14 @@
 
 import React from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Album } from "@/lib/api/types";
 
 interface AlbumCardProps {
   album: Album;
-  onClick?: (album: Album) => void;
 }
 
-export default function AlbumCard({ album, onClick }: AlbumCardProps) {
+export default function AlbumCard({ album }: AlbumCardProps) {
   const coverUrl = album.cover
     ? `https://resources.tidal.com/images/${album.cover.replace(
         /-/g,
@@ -24,10 +24,7 @@ export default function AlbumCard({ album, onClick }: AlbumCardProps) {
     : null;
 
   return (
-    <div
-      onClick={() => onClick?.(album)}
-      className="group relative cursor-pointer"
-    >
+    <Link href={`/album/${album.id}`} className="group relative block">
       {/* Album Card - Swiss Design Style */}
       <div
         className="relative bg-white dark:bg-[#1a1a1a] border-2 border-carbon dark:border-bone
@@ -99,6 +96,6 @@ export default function AlbumCard({ album, onClick }: AlbumCardProps) {
         {/* Inner border for depth effect */}
         <div className="absolute inset-0 border border-white/20 dark:border-white/5 pointer-events-none" />
       </div>
-    </div>
+    </Link>
   );
 }

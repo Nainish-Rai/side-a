@@ -180,9 +180,7 @@ export default function Home() {
         {/* Header - Sticky */}
         <motion.header
           animate={{
-            padding: isCompact
-              ? "0.5rem 0.75rem"
-              : "1rem 1.5rem",
+            padding: isCompact ? "0.5rem 0.75rem" : "1rem 1.5rem",
           }}
           transition={{
             duration: 0.3,
