@@ -343,8 +343,8 @@ export class LosslessAPI {
     }
 
     const formattedId = String(id).replace(/-/g, "/");
-    // Use Next.js API route to proxy images and avoid CORS
-    return `/api/cover/${formattedId}/${size}x${size}.jpg`;
+    // Direct TIDAL CDN URL (no proxy)
+    return `https://resources.tidal.com/images/${formattedId}/${size}x${size}.jpg`;
   }
 
   async clearCache(): Promise<void> {
