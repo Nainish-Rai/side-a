@@ -1,28 +1,25 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { SearchBar } from "@/components/search/SearchBar";
 import { SearchResults } from "@/components/search/SearchResults";
 import { AudioPlayer } from "@/components/player/AudioPlayer";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { api } from "@/lib/api";
-import { Track, Album } from "@/lib/api/types";
+import { useSearch } from "@/hooks/useSearch";
 import { Music2, Search, TrendingUp } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
-type SearchContentType = "tracks" | "albums" | "artists" | "playlists";
-
 export default function Home() {
-  const [tracks, setTracks] = useState<Track[]>([]);
-  const [albums, setAlbums] = useState<Album[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [currentTab, setCurrentTab] = useState<SearchContentType>("tracks");
-  const [lastQuery, setLastQuery] = useState<string>("");
-  const [searchMetadata, setSearchMetadata] = useState<{
-    totalNumberOfItems: number;
-    offset: number;
-    limit: number;
-  } | null>(null);
+  const {
+    tracks,
+    albums,
+    searchMetadata,
+    isLoading,
+    currentTab,
+    handleSearch,
+    handleTabChange,
+  } = useSearch();
+
   const [isCompact, setIsCompact] = useState(false);
   const [lastScrollY, setLastScrollY] = useState(0);
 
@@ -66,65 +63,6 @@ export default function Home() {
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, [lastScrollY]);
-
-  const handleSearch = useCallback(async (query: string) => {
-    setLastQuery(query);
-    setIsLoading(true);
-    try {
-      // Always fetch tracks first
-      const response = await api.searchTracks(query);
-      setTracks(response.items);
-      setSearchMetadata({
-        totalNumberOfItems: response.totalNumberOfItems,
-        offset: response.offset,
-        limit: response.limit,
-      });
-      // Reset to tracks tab on new search
-      setCurrentTab("tracks");
-      // Clear albums (will be fetched when user switches to albums tab)
-      setAlbums([]);
-    } catch (error) {
-      console.error("Search failed:", error);
-      setTracks([]);
-      setAlbums([]);
-      setSearchMetadata(null);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  const handleTabChange = useCallback(
-    async (tab: SearchContentType) => {
-      setCurrentTab(tab);
-
-      // If switching to albums and albums haven't been fetched yet
-      if (tab === "albums" && albums.length === 0 && lastQuery) {
-        setIsLoading(true);
-        try {
-          const response = await api.searchAlbums(lastQuery);
-          setAlbums(response.items);
-          setSearchMetadata({
-            totalNumberOfItems: response.totalNumberOfItems,
-            offset: response.offset,
-            limit: response.limit,
-          });
-        } catch (error) {
-          console.error("Album search failed:", error);
-          setAlbums([]);
-        } finally {
-          setIsLoading(false);
-        }
-      } else if (tab === "tracks" && tracks.length > 0) {
-        // Update metadata when switching back to tracks
-        setSearchMetadata({
-          totalNumberOfItems: tracks.length,
-          offset: 0,
-          limit: tracks.length,
-        });
-      }
-    },
-    [albums.length, lastQuery, tracks.length]
-  );
 
   return (
     <div className="min-h-screen bg-bone dark:bg-carbon transition-colors duration-300">

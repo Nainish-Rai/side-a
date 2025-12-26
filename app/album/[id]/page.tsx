@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion, AnimatePresence } from "motion/react";
-import { api } from "@/lib/api";
-import { Album, Track } from "@/lib/api/types";
+import { useAlbum } from "@/hooks/useAlbum";
+import { Track } from "@/lib/api/types";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import AppLayout from "@/components/layout/AppLayout";
 import { Play, Pause, ArrowLeft, Clock, Disc3, Music2 } from "lucide-react";
@@ -16,35 +15,10 @@ export default function AlbumPage() {
   const albumId = parseInt(params.id as string);
   const { setQueue, currentTrack, isPlaying } = useAudioPlayer();
 
-  const [album, setAlbum] = useState<Album | null>(null);
-  const [tracks, setTracks] = useState<Track[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data, isLoading, error } = useAlbum(albumId);
 
-  useEffect(() => {
-    const fetchAlbumData = async () => {
-      if (!albumId || isNaN(albumId)) {
-        setError("Invalid album ID");
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        setIsLoading(true);
-        const data = await api.getAlbum(albumId);
-        setAlbum(data.album);
-        setTracks(data.tracks);
-        setError(null);
-      } catch (err) {
-        console.error("Failed to fetch album:", err);
-        setError("Failed to load album details");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchAlbumData();
-  }, [albumId]);
+  const album = data?.album || null;
+  const tracks = data?.tracks || [];
 
   const handlePlayAlbum = () => {
     if (tracks.length > 0) {
@@ -106,7 +80,11 @@ export default function AlbumPage() {
           <div className="text-center">
             <Music2 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h2 className="text-xl font-mono font-bold text-carbon dark:text-bone mb-2">
-              {error || "Album not found"}
+              {error
+                ? error instanceof Error
+                  ? error.message
+                  : String(error)
+                : "Album not found"}
             </h2>
             <button
               onClick={() => router.back()}
