@@ -13,9 +13,11 @@ import {
   Repeat,
   Repeat1,
   ListMusic,
+  Info,
 } from "lucide-react";
 import { useRef, useEffect, useState } from "react";
 import { Queue } from "./Queue";
+import { StatsForNerds } from "./StatsForNerds";
 
 export function AudioPlayer() {
   const {
@@ -28,6 +30,7 @@ export function AudioPlayer() {
     shuffleActive,
     repeatMode,
     queue,
+    currentQuality,
     togglePlayPause,
     playNext,
     playPrev,
@@ -41,8 +44,21 @@ export function AudioPlayer() {
   const progressBarRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isQueueOpen, setIsQueueOpen] = useState(false);
+  const [isStatsOpen, setIsStatsOpen] = useState(false);
 
   const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0;
+
+  // Format quality/bitrate for display
+  const getQualityDisplay = () => {
+    if (currentQuality === "LOSSLESS" || currentQuality === "HI_RES") {
+      return "FLAC";
+    } else if (currentQuality === "HIGH") {
+      return "320";
+    } else if (currentQuality === "LOW") {
+      return "96";
+    }
+    return "AAC";
+  };
 
   const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!progressBarRef.current || duration === 0) return;
@@ -87,6 +103,22 @@ export function AudioPlayer() {
       document.removeEventListener("mouseup", handleGlobalMouseUp);
     };
   }, [isDragging]);
+
+  // Keyboard shortcut for stats (i key)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only trigger if not typing in an input
+      if (
+        e.key === "i" &&
+        !["INPUT", "TEXTAREA"].includes((e.target as HTMLElement).tagName)
+      ) {
+        setIsStatsOpen((prev) => !prev);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   if (!currentTrack) return null;
 
@@ -212,11 +244,26 @@ export function AudioPlayer() {
               <span className="text-carbon">{formatTime(currentTime)}</span>
               <span className="text-gray-400">/</span>
               <span className="text-gray-500">{formatTime(duration)}</span>
+              <span className="text-gray-400">•</span>
+              <span className="text-walkman-orange font-semibold">
+                {getQualityDisplay()}
+              </span>
             </div>
           </div>
 
           {/* Right: Volume Controls */}
           <div className="flex items-center gap-3 flex-shrink-0 flex-1 justify-end">
+            {/* Stats Button */}
+            <button
+              onClick={() => setIsStatsOpen(true)}
+              className="w-8 h-8 flex items-center justify-center hover:bg-white
+                         rounded transition-colors duration-150"
+              aria-label="Stats for Nerds"
+              title="Stats for Nerds (i)"
+            >
+              <Info className="w-4 h-4 text-carbon" />
+            </button>
+
             {/* Queue Button */}
             <button
               onClick={() => setIsQueueOpen(true)}
@@ -290,6 +337,12 @@ export function AudioPlayer() {
 
       {/* Queue Panel */}
       <Queue isOpen={isQueueOpen} onClose={() => setIsQueueOpen(false)} />
+
+      {/* Stats for Nerds */}
+      <StatsForNerds
+        isOpen={isStatsOpen}
+        onClose={() => setIsStatsOpen(false)}
+      />
     </div>
   );
 }

@@ -25,6 +25,8 @@ interface AudioPlayerState {
   currentQueueIndex: number;
   shuffleActive: boolean;
   repeatMode: RepeatMode;
+  currentQuality: string;
+  streamUrl: string | null;
 }
 
 interface AudioPlayerContextValue extends AudioPlayerState {
@@ -43,6 +45,7 @@ interface AudioPlayerContextValue extends AudioPlayerState {
   toggleRepeat: () => void;
   removeFromQueue: (index: number) => void;
   clearQueue: () => void;
+  getAudioElement: () => HTMLAudioElement | null;
 }
 
 const AudioPlayerContext = createContext<AudioPlayerContextValue | null>(null);
@@ -60,6 +63,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     currentQueueIndex: -1,
     shuffleActive: false,
     repeatMode: "off",
+    currentQuality: "LOSSLESS",
+    streamUrl: null,
   });
 
   const preloadCache = useRef<Map<number, string>>(new Map());
@@ -132,11 +137,16 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       console.error("Playback failed:", error);
     });
 
+    // Determine quality from track metadata
+    const quality = track.audioQuality || "HIGH";
+
     setState((prev) => ({
       ...prev,
       currentTrack: track,
       isPlaying: true,
       currentTime: 0,
+      currentQuality: quality,
+      streamUrl: streamUrl,
     }));
 
     // Update Media Session metadata
@@ -222,11 +232,15 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
             console.error("Playback failed:", error);
           });
 
+          const quality = track.audioQuality || "HIGH";
+
           setState((prev) => ({
             ...prev,
             currentTrack: track,
             isPlaying: true,
             currentTime: 0,
+            currentQuality: quality,
+            streamUrl: streamUrl,
           }));
         }
       }
@@ -258,12 +272,17 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     if (streamUrl && audioRef.current) {
       audioRef.current.src = streamUrl;
       await audioRef.current.play();
+
+      const quality = track.audioQuality || "HIGH";
+
       setState((prev) => ({
         ...prev,
         currentTrack: track,
         currentQueueIndex: nextIndex,
         isPlaying: true,
         currentTime: 0,
+        currentQuality: quality,
+        streamUrl: streamUrl,
       }));
 
       // Update Media Session metadata
@@ -324,12 +343,17 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     if (streamUrl && audioRef.current) {
       audioRef.current.src = streamUrl;
       await audioRef.current.play();
+
+      const quality = track.audioQuality || "HIGH";
+
       setState((prev) => ({
         ...prev,
         currentTrack: track,
         currentQueueIndex: prevIndex,
         isPlaying: true,
         currentTime: 0,
+        currentQuality: quality,
+        streamUrl: streamUrl,
       }));
     }
   }, [
@@ -443,6 +467,10 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     };
   }, [play, pause, playPrev, playNext, seek]);
 
+  const getAudioElement = useCallback(() => {
+    return audioRef.current;
+  }, []);
+
   const value: AudioPlayerContextValue = {
     ...state,
     playTrack,
@@ -460,6 +488,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     toggleRepeat,
     removeFromQueue,
     clearQueue,
+    getAudioElement,
   };
 
   return (
