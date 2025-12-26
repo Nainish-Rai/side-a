@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { SearchBar } from "@/components/search/SearchBar";
 import { SearchResults } from "@/components/search/SearchResults";
 import { AudioPlayer } from "@/components/player/AudioPlayer";
@@ -8,6 +8,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { api } from "@/lib/api";
 import { Track, Album } from "@/lib/api/types";
 import { Music2, Search, TrendingUp } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
 
 type SearchContentType = "tracks" | "albums" | "artists" | "playlists";
 
@@ -22,6 +23,49 @@ export default function Home() {
     offset: number;
     limit: number;
   } | null>(null);
+  const [isCompact, setIsCompact] = useState(false);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  useEffect(() => {
+    let ticking = false;
+    const SCROLL_THRESHOLD = 80; // Threshold to trigger compact mode
+    const SCROLL_DELTA = 10; // Minimum scroll amount to register direction change
+
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const currentScrollY = window.scrollY;
+          const scrollDelta = Math.abs(currentScrollY - lastScrollY);
+
+          // Only update if scrolled enough to avoid jitter
+          if (scrollDelta > SCROLL_DELTA) {
+            // Compact when scrolling down past threshold
+            if (
+              currentScrollY > SCROLL_THRESHOLD &&
+              currentScrollY > lastScrollY
+            ) {
+              setIsCompact(true);
+            }
+            // Expand when scrolling up significantly or near top
+            else if (
+              currentScrollY < lastScrollY &&
+              currentScrollY < SCROLL_THRESHOLD - 20
+            ) {
+              setIsCompact(false);
+            }
+
+            setLastScrollY(currentScrollY);
+          }
+
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [lastScrollY]);
 
   const handleSearch = useCallback(async (query: string) => {
     setLastQuery(query);
@@ -134,33 +178,61 @@ export default function Home() {
       {/* Main Content - with left margin to account for fixed sidebar */}
       <main className="min-h-screen lg:ml-64 pb-24">
         {/* Header - Sticky */}
-        <header className="sticky top-0 bg-white dark:bg-[#1a1a1a] border-b border-carbon dark:border-bone p-4 lg:p-6 transition-colors duration-300 z-30">
+        <motion.header
+          animate={{
+            padding: isCompact
+              ? "0.5rem 0.75rem"
+              : "1rem 1.5rem",
+          }}
+          transition={{
+            duration: 0.3,
+            ease: [0.4, 0, 0.2, 1],
+          }}
+          className="sticky top-0 bg-white dark:bg-[#1a1a1a] border-b border-carbon dark:border-bone z-30"
+        >
           <div className="max-w-7xl mx-auto">
-            <div className="flex items-center justify-between mb-4">
-              <div className="lg:hidden">
-                <h1 className="text-2xl font-mono tracking-tight font-bold text-carbon dark:text-bone">
-                  SIDE A
-                </h1>
-              </div>
-              <div className="hidden lg:block">
-                <h2 className="text-2xl font-mono tracking-tight font-bold text-carbon dark:text-bone">
-                  Search
-                </h2>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="lg:hidden">
-                  <ThemeToggle />
-                </div>
-                <div className="text-right">
-                  <div className="bg-carbon dark:bg-bone text-white dark:text-carbon px-3 py-1 text-[9px] font-mono inline-block tracking-widest transition-colors duration-300">
-                    26 DEC 2025
+            <AnimatePresence>
+              {!isCompact && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0, marginBottom: 0 }}
+                  animate={{ height: "auto", opacity: 1, marginBottom: "1rem" }}
+                  exit={{ height: 0, opacity: 0, marginBottom: 0 }}
+                  transition={{
+                    duration: 0.3,
+                    ease: [0.4, 0, 0.2, 1],
+                  }}
+                  className="flex items-center justify-between overflow-hidden"
+                >
+                  <div className="lg:hidden">
+                    <h1 className="text-2xl font-mono tracking-tight font-bold text-carbon dark:text-bone">
+                      SIDE A
+                    </h1>
                   </div>
-                </div>
-              </div>
-            </div>
-            <SearchBar onSearch={handleSearch} isLoading={isLoading} />
+                  <div className="hidden lg:block">
+                    <h2 className="text-2xl font-mono tracking-tight font-bold text-carbon dark:text-bone">
+                      Search
+                    </h2>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="lg:hidden">
+                      <ThemeToggle />
+                    </div>
+                    <div className="text-right">
+                      <div className="bg-carbon dark:bg-bone text-white dark:text-carbon px-3 py-1 text-[9px] font-mono inline-block tracking-widest transition-colors duration-300">
+                        26 DEC 2025
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+            <SearchBar
+              onSearch={handleSearch}
+              isLoading={isLoading}
+              isCompact={isCompact}
+            />
           </div>
-        </header>
+        </motion.header>
 
         {/* Content Area - Scrollable */}
         <div className="p-4 lg:p-6">
