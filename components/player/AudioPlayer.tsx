@@ -18,6 +18,7 @@ import {
 import { useRef, useEffect, useState } from "react";
 import { Queue } from "./Queue";
 import { StatsForNerds } from "./StatsForNerds";
+import Image from "next/image";
 
 export function AudioPlayer() {
   const {
@@ -39,14 +40,103 @@ export function AudioPlayer() {
     toggleMute,
     toggleShuffle,
     toggleRepeat,
+    getAudioElement,
   } = useAudioPlayer();
 
   const progressBarRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isQueueOpen, setIsQueueOpen] = useState(false);
   const [isStatsOpen, setIsStatsOpen] = useState(false);
+  const [spectrumBars, setSpectrumBars] = useState([0, 0, 0, 0, 0]);
+  const animationFrameRef = useRef<number | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
 
   const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0;
+
+  // Get album cover URL
+  const getCoverUrl = () => {
+    const coverId = currentTrack?.album?.cover || currentTrack?.album?.id;
+    if (!coverId) return null;
+    const formattedId = String(coverId).replace(/-/g, "/");
+    return `https://resources.tidal.com/images/${formattedId}/80x80.jpg`;
+  };
+
+  // Initialize audio analyzer for spectrum
+  useEffect(() => {
+    const audioElement = getAudioElement();
+    if (!audioElement) return;
+
+    // Create audio context and analyzer
+    if (!audioContextRef.current) {
+      const AudioContext =
+        window.AudioContext ||
+        (
+          window as unknown as {
+            webkitAudioContext: typeof window.AudioContext;
+          }
+        ).webkitAudioContext;
+      audioContextRef.current = new AudioContext();
+      analyserRef.current = audioContextRef.current.createAnalyser();
+      analyserRef.current.fftSize = 128; // Increased for better frequency resolution
+      analyserRef.current.smoothingTimeConstant = 0.75; // Smooth but responsive
+      analyserRef.current.minDecibels = -85; // Lower threshold for more sensitivity
+      analyserRef.current.maxDecibels = -25; // Upper threshold
+
+      const source =
+        audioContextRef.current.createMediaElementSource(audioElement);
+      source.connect(analyserRef.current);
+      analyserRef.current.connect(audioContextRef.current.destination);
+    }
+
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [getAudioElement]);
+
+  // Animate spectrum bars
+  useEffect(() => {
+    if (!isPlaying || !analyserRef.current) {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+      // Reset bars via timeout to avoid setState in effect
+      const timeoutId = setTimeout(() => setSpectrumBars([0, 0, 0, 0, 0]), 0);
+      return () => clearTimeout(timeoutId);
+    }
+
+    const analyser = analyserRef.current;
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+
+    const updateSpectrum = () => {
+      analyser.getByteFrequencyData(dataArray);
+
+      // Sample 5 different frequency ranges for better visualization
+      // Spread across the frequency spectrum for more variety
+      const bars = [
+        Math.floor((dataArray[2] / 255) * 100), // Bass (low)
+        Math.floor((dataArray[5] / 255) * 100), // Low-mid
+        Math.floor((dataArray[8] / 255) * 100), // Mid
+        Math.floor((dataArray[12] / 255) * 100), // Mid-high
+        Math.floor((dataArray[18] / 255) * 100), // Treble (high)
+      ];
+
+      setSpectrumBars(bars);
+      animationFrameRef.current = requestAnimationFrame(updateSpectrum);
+    };
+
+    updateSpectrum();
+
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [isPlaying]);
 
   // Format quality/bitrate for display
   const getQualityDisplay = () => {
@@ -122,6 +212,8 @@ export function AudioPlayer() {
 
   if (!currentTrack) return null;
 
+  const coverUrl = getCoverUrl();
+
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-bone dark:bg-carbon border-t border-carbon dark:border-bone z-50 shadow-[0_-2px_8px_rgba(0,0,0,0.06)] dark:shadow-[0_-2px_8px_rgba(242,239,233,0.06)] transition-colors duration-300">
       {/* Progress Bar - Clean Spotify Style */}
@@ -141,11 +233,24 @@ export function AudioPlayer() {
         </div>
       </div>
 
-      {/* Single Row Layout */}
-      <div className="max-w-7xl mx-auto px-6 py-4">
-        <div className="flex items-center justify-between gap-6">
-          {/* Left: Track Info */}
-          <div className="flex items-center gap-4 flex-1 min-w-0">
+      {/* Single Row Compact Layout */}
+      <div className="max-w-7xl mx-auto px-4 py-2.5">
+        <div className="flex items-center justify-between gap-4">
+          {/* Left: Album Art + Track Info + Spectrum */}
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            {/* Album Art */}
+            {coverUrl && (
+              <div className="relative w-12 h-12 flex-shrink-0 rounded overflow-hidden shadow-sm">
+                <Image
+                  src={coverUrl}
+                  alt={getTrackTitle(currentTrack)}
+                  fill
+                  className="object-cover"
+                  unoptimized
+                />
+              </div>
+            )}
+
             {/* Track Details */}
             <div className="flex-1 min-w-0">
               <div className="font-medium text-sm truncate text-carbon dark:text-bone font-mono">
@@ -155,16 +260,47 @@ export function AudioPlayer() {
                 {getTrackArtists(currentTrack)}
               </div>
             </div>
+
+            {/* Spectrum Visualizer - 5 light bars that respond to audio */}
+            <div className="flex items-end gap-1 h-8 flex-shrink-0 px-2">
+              {spectrumBars.map((intensity, i) => {
+                // Calculate if this bar should be "lit" based on intensity
+                const isActive = intensity > 15;
+                const heightPercent = Math.max(
+                  12,
+                  Math.min(100, intensity * 0.32)
+                );
+
+                return (
+                  <div
+                    key={i}
+                    className="relative w-1.5 rounded-sm transition-all duration-100 ease-out"
+                    style={{
+                      height: `${heightPercent}%`,
+                      backgroundColor: isActive
+                        ? "#ff6b35" // walkman-orange when active
+                        : "#d1d5db", // gray when inactive
+                      opacity: isActive ? 1 : 0.4,
+                      boxShadow: isActive
+                        ? `0 0 4px rgba(255, 107, 53, ${
+                            intensity / 100
+                          }), 0 0 8px rgba(255, 107, 53, ${intensity / 200})`
+                        : "none",
+                    }}
+                  />
+                );
+              })}
+            </div>
           </div>
 
           {/* Center: Playback Controls */}
-          <div className="flex flex-col items-center gap-2 flex-shrink-0">
+          <div className="flex flex-col items-center gap-1.5 flex-shrink-0">
             {/* Control Buttons */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               {/* Shuffle Button */}
               <button
                 onClick={toggleShuffle}
-                className={`w-7 h-7 flex items-center justify-center hover:bg-white dark:hover:bg-[#1a1a1a]
+                className={`w-6 h-6 flex items-center justify-center hover:bg-white dark:hover:bg-[#1a1a1a]
                            rounded transition-colors duration-150 ${
                              shuffleActive
                                ? "text-walkman-orange"
@@ -173,23 +309,23 @@ export function AudioPlayer() {
                 aria-label="Shuffle"
                 title={shuffleActive ? "Shuffle on" : "Shuffle off"}
               >
-                <Shuffle className="w-4 h-4" />
+                <Shuffle className="w-3.5 h-3.5" />
               </button>
 
               {/* Previous Button */}
               <button
                 onClick={playPrev}
-                className="w-7 h-7 flex items-center justify-center hover:bg-white dark:hover:bg-[#1a1a1a]
+                className="w-6 h-6 flex items-center justify-center hover:bg-white dark:hover:bg-[#1a1a1a]
                            rounded transition-colors duration-150 text-carbon dark:text-bone"
                 aria-label="Previous"
               >
-                <SkipBack className="w-4 h-4" />
+                <SkipBack className="w-3.5 h-3.5" />
               </button>
 
               {/* Play/Pause Button */}
               <button
                 onClick={togglePlayPause}
-                className="flex-shrink-0 w-10 h-10 rounded-full bg-carbon dark:bg-bone hover:bg-walkman-orange dark:hover:bg-walkman-orange
+                className="flex-shrink-0 w-8 h-8 rounded-full bg-carbon dark:bg-bone hover:bg-walkman-orange dark:hover:bg-walkman-orange
                            transition-colors duration-200 flex items-center justify-center
                            shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)] dark:shadow-[2px_2px_0px_0px_rgba(242,239,233,0.2)]
                            hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,0.2)] dark:hover:shadow-[1px_1px_0px_0px_rgba(242,239,233,0.2)]
@@ -198,12 +334,12 @@ export function AudioPlayer() {
               >
                 {isPlaying ? (
                   <Pause
-                    className="w-5 h-5 text-white dark:text-carbon"
+                    className="w-4 h-4 text-white dark:text-carbon"
                     fill="white"
                   />
                 ) : (
                   <Play
-                    className="w-5 h-5 ml-0.5 text-white dark:text-carbon"
+                    className="w-4 h-4 ml-0.5 text-white dark:text-carbon"
                     fill="white"
                   />
                 )}
@@ -212,17 +348,17 @@ export function AudioPlayer() {
               {/* Next Button */}
               <button
                 onClick={playNext}
-                className="w-7 h-7 flex items-center justify-center hover:bg-white dark:hover:bg-[#1a1a1a]
+                className="w-6 h-6 flex items-center justify-center hover:bg-white dark:hover:bg-[#1a1a1a]
                            rounded transition-colors duration-150 text-carbon dark:text-bone"
                 aria-label="Next"
               >
-                <SkipForward className="w-4 h-4" />
+                <SkipForward className="w-3.5 h-3.5" />
               </button>
 
               {/* Repeat Button */}
               <button
                 onClick={toggleRepeat}
-                className={`w-7 h-7 flex items-center justify-center hover:bg-white dark:hover:bg-[#1a1a1a]
+                className={`w-6 h-6 flex items-center justify-center hover:bg-white dark:hover:bg-[#1a1a1a]
                            rounded transition-colors duration-150 ${
                              repeatMode !== "off"
                                ? "text-walkman-orange"
@@ -238,15 +374,15 @@ export function AudioPlayer() {
                 }
               >
                 {repeatMode === "one" ? (
-                  <Repeat1 className="w-4 h-4" />
+                  <Repeat1 className="w-3.5 h-3.5" />
                 ) : (
-                  <Repeat className="w-4 h-4" />
+                  <Repeat className="w-3.5 h-3.5" />
                 )}
               </button>
             </div>
 
             {/* Time Display */}
-            <div className="flex items-center gap-2 text-xs font-mono tabular-nums">
+            <div className="flex items-center gap-1.5 text-[10px] font-mono tabular-nums">
               <span className="text-carbon dark:text-bone">
                 {formatTime(currentTime)}
               </span>
@@ -262,27 +398,27 @@ export function AudioPlayer() {
           </div>
 
           {/* Right: Volume Controls */}
-          <div className="flex items-center gap-3 flex-shrink-0 flex-1 justify-end">
+          <div className="flex items-center gap-2 flex-shrink-0 flex-1 justify-end">
             {/* Stats Button */}
             <button
               onClick={() => setIsStatsOpen(true)}
-              className="w-8 h-8 flex items-center justify-center hover:bg-white dark:hover:bg-[#1a1a1a]
+              className="w-7 h-7 flex items-center justify-center hover:bg-white dark:hover:bg-[#1a1a1a]
                          rounded transition-colors duration-150"
               aria-label="Stats for Nerds"
               title="Stats for Nerds (i)"
             >
-              <Info className="w-4 h-4 text-carbon dark:text-bone" />
+              <Info className="w-3.5 h-3.5 text-carbon dark:text-bone" />
             </button>
 
             {/* Queue Button */}
             <button
               onClick={() => setIsQueueOpen(true)}
-              className="relative w-8 h-8 flex items-center justify-center hover:bg-white dark:hover:bg-[#1a1a1a]
+              className="relative w-7 h-7 flex items-center justify-center hover:bg-white dark:hover:bg-[#1a1a1a]
                          rounded transition-colors duration-150"
               aria-label="View Queue"
               title="View Queue"
             >
-              <ListMusic className="w-4 h-4 text-carbon dark:text-bone" />
+              <ListMusic className="w-3.5 h-3.5 text-carbon dark:text-bone" />
               {queue.length > 0 && (
                 <span
                   className="absolute -top-1 -right-1 w-4 h-4 bg-walkman-orange text-white
@@ -296,19 +432,19 @@ export function AudioPlayer() {
             {/* Mute Button */}
             <button
               onClick={toggleMute}
-              className="w-8 h-8 flex items-center justify-center hover:bg-white dark:hover:bg-[#1a1a1a]
+              className="w-7 h-7 flex items-center justify-center hover:bg-white dark:hover:bg-[#1a1a1a]
                          rounded transition-colors duration-150"
               aria-label={isMuted ? "Unmute" : "Mute"}
             >
               {isMuted ? (
-                <VolumeX className="w-4 h-4 text-carbon dark:text-bone" />
+                <VolumeX className="w-3.5 h-3.5 text-carbon dark:text-bone" />
               ) : (
-                <Volume2 className="w-4 h-4 text-carbon dark:text-bone" />
+                <Volume2 className="w-3.5 h-3.5 text-carbon dark:text-bone" />
               )}
             </button>
 
             {/* Volume Slider */}
-            <div className="w-24 group">
+            <div className="w-20 group">
               <input
                 type="range"
                 min="0"
@@ -317,8 +453,8 @@ export function AudioPlayer() {
                 onChange={(e) => setVolume(Number(e.target.value) / 100)}
                 className="w-full h-1 bg-gray-300 dark:bg-gray-700 appearance-none cursor-pointer
                            [&::-webkit-slider-thumb]:appearance-none
-                           [&::-webkit-slider-thumb]:w-3
-                           [&::-webkit-slider-thumb]:h-3
+                           [&::-webkit-slider-thumb]:w-2.5
+                           [&::-webkit-slider-thumb]:h-2.5
                            [&::-webkit-slider-thumb]:bg-carbon
                            dark:[&::-webkit-slider-thumb]:bg-bone
                            [&::-webkit-slider-thumb]:rounded-full
@@ -326,8 +462,8 @@ export function AudioPlayer() {
                            [&::-webkit-slider-thumb]:opacity-0
                            [&::-webkit-slider-thumb]:group-hover:opacity-100
                            [&::-webkit-slider-thumb]:transition-opacity
-                           [&::-moz-range-thumb]:w-3
-                           [&::-moz-range-thumb]:h-3
+                           [&::-moz-range-thumb]:w-2.5
+                           [&::-moz-range-thumb]:h-2.5
                            [&::-moz-range-thumb]:bg-carbon
                            dark:[&::-moz-range-thumb]:bg-bone
                            [&::-moz-range-thumb]:rounded-full
