@@ -26,7 +26,7 @@ export function SearchBar({ onSearch, isLoading = false }: SearchBarProps) {
   }, []);
 
   return (
-    <form onSubmit={handleSubmit} className="w-full max-w-2xl">
+    <form onSubmit={handleSubmit} className="w-full">
       <div className="relative">
         <input
           type="text"
@@ -34,22 +34,22 @@ export function SearchBar({ onSearch, isLoading = false }: SearchBarProps) {
           onChange={handleChange}
           placeholder="Search for songs..."
           disabled={isLoading}
-          className="w-full px-6 py-4 text-lg bg-walkman-dark/80 border-2 border-walkman-orange rounded-lg
-                             text-walkman-yellow placeholder-walkman-yellow/50
-                             focus:outline-none focus:border-walkman-yellow focus:bg-walkman-dark
-                             disabled:opacity-50 disabled:cursor-not-allowed
-                             transition-all duration-200"
+          className="w-full px-4 py-3 text-base bg-white border-2 border-black
+                     text-black placeholder-gray-400
+                     focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2
+                     disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-50
+                     transition-all duration-200 font-mono"
         />
         <button
           type="submit"
           disabled={isLoading || !query.trim()}
           className="absolute right-2 top-1/2 -translate-y-1/2
-                             p-3 bg-walkman-orange hover:bg-walkman-yellow
-                             text-walkman-dark rounded-md
-                             disabled:opacity-50 disabled:cursor-not-allowed
-                             transition-all duration-200"
+                     px-4 py-2 bg-black hover:bg-gray-800
+                     text-white text-xs font-mono uppercase tracking-wider
+                     disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-black
+                     transition-all duration-200"
         >
-          <Search className="w-5 h-5" />
+          {isLoading ? <span>...</span> : <Search className="w-4 h-4" />}
         </button>
       </div>
     </form>

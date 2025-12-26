@@ -4,6 +4,7 @@ import { Track } from "@/lib/api/types";
 import { getTrackTitle, getTrackArtists, formatTime } from "@/lib/api/utils";
 import { Music } from "lucide-react";
 import { api } from "@/lib/api";
+import Image from "next/image";
 
 interface SearchResultsProps {
   tracks: Track[];
@@ -16,15 +17,15 @@ export function SearchResults({
 }: SearchResultsProps) {
   if (isLoading) {
     return (
-      <div className="w-full max-w-2xl mt-8">
+      <div className="w-full mt-6">
         <div className="space-y-2">
           {[...Array(5)].map((_, i) => (
             <div
               key={i}
-              className="p-4 bg-walkman-dark/80 border-2 border-walkman-orange/30 rounded-lg animate-pulse"
+              className="p-4 bg-gray-100 border-2 border-gray-200 animate-pulse"
             >
-              <div className="h-5 bg-walkman-orange/20 rounded w-3/4 mb-2"></div>
-              <div className="h-4 bg-walkman-orange/20 rounded w-1/2"></div>
+              <div className="h-5 bg-gray-200 w-3/4 mb-2"></div>
+              <div className="h-4 bg-gray-200 w-1/2"></div>
             </div>
           ))}
         </div>
@@ -37,12 +38,8 @@ export function SearchResults({
   }
 
   return (
-    <div className="w-full max-w-2xl mt-8">
-      <div className="mb-4 text-walkman-yellow font-mono text-sm">
-        {tracks.length} {tracks.length === 1 ? "track" : "tracks"} found
-      </div>
-
-      <div className="space-y-2">
+    <div className="w-full mt-6">
+      <div className="space-y-3">
         {tracks.map((track) => {
           // Check if album has a cover UUID, otherwise use album ID
           const coverId = track.album?.cover || track.album?.id;
@@ -53,40 +50,42 @@ export function SearchResults({
           return (
             <div
               key={track.id}
-              className="group p-4 bg-walkman-dark/80 border-2 border-walkman-orange
-                                 hover:bg-walkman-dark hover:border-walkman-yellow
-                                 rounded-lg transition-all duration-200 cursor-pointer"
+              className="group p-4 bg-white border-2 border-black
+                         hover:bg-gray-50
+                         transition-all duration-200 cursor-pointer"
             >
               <div className="flex items-start gap-4">
-                <div className="flex-shrink-0 w-12 h-12 bg-walkman-orange/20 rounded overflow-hidden">
+                <div className="flex-shrink-0 w-12 h-12 bg-gray-100 border border-black overflow-hidden">
                   {coverUrl ? (
-                    <img
+                    <Image
                       src={coverUrl}
                       alt={track.album?.title || "Album cover"}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-200"
+                      width={48}
+                      height={48}
+                      className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center group-hover:bg-walkman-yellow/20 transition-colors">
-                      <Music className="w-6 h-6 text-walkman-orange group-hover:text-walkman-yellow transition-colors" />
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Music className="w-6 h-6 text-black" />
                     </div>
                   )}
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-walkman-yellow font-medium truncate mb-1">
+                  <h3 className="text-black font-medium truncate mb-1">
                     {getTrackTitle(track)}
                   </h3>
-                  <p className="text-walkman-yellow/70 text-sm truncate">
+                  <p className="text-gray-600 text-sm truncate">
                     {getTrackArtists(track)}
                   </p>
                   {track.album?.title && (
-                    <p className="text-walkman-yellow/50 text-xs truncate mt-1">
+                    <p className="text-gray-400 text-xs truncate mt-1">
                       {track.album.title}
                     </p>
                   )}
                 </div>
 
-                <div className="flex-shrink-0 text-walkman-yellow/70 text-sm font-mono">
+                <div className="flex-shrink-0 text-gray-600 text-sm font-mono tabular-nums">
                   {formatTime(track.duration)}
                 </div>
               </div>
