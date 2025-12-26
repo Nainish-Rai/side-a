@@ -14,10 +14,13 @@ import {
   Repeat1,
   ListMusic,
   Info,
+  Music2,
 } from "lucide-react";
 import { useRef, useEffect, useState } from "react";
 import { Queue } from "./Queue";
 import { StatsForNerds } from "./StatsForNerds";
+import { FullscreenLyrics } from "./FullscreenLyrics";
+import { useLyrics } from "@/hooks/useLyrics";
 import Image from "next/image";
 
 export function AudioPlayer() {
@@ -47,10 +50,20 @@ export function AudioPlayer() {
   const [isDragging, setIsDragging] = useState(false);
   const [isQueueOpen, setIsQueueOpen] = useState(false);
   const [isStatsOpen, setIsStatsOpen] = useState(false);
+  const [isLyricsOpen, setIsLyricsOpen] = useState(false);
   const [spectrumBars, setSpectrumBars] = useState([0, 0, 0, 0, 0]);
   const animationFrameRef = useRef<number | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
+
+  // Use lyrics hook
+  const {
+    lyrics,
+    currentLineIndex,
+    isLoading: lyricsLoading,
+    error: lyricsError,
+    hasLyrics,
+  } = useLyrics(currentTrack, currentTime, isPlaying);
 
   const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0;
 
@@ -399,6 +412,22 @@ export function AudioPlayer() {
 
           {/* Right: Volume Controls */}
           <div className="flex items-center gap-2 flex-shrink-0 flex-1 justify-end">
+            {/* Lyrics Button */}
+            {hasLyrics && (
+              <button
+                onClick={() => setIsLyricsOpen(true)}
+                className="relative w-7 h-7 flex items-center justify-center hover:bg-white dark:hover:bg-[#1a1a1a]
+                           rounded transition-colors duration-150"
+                aria-label="View Lyrics"
+                title="View Lyrics"
+              >
+                <Music2 className="w-3.5 h-3.5 text-carbon dark:text-bone" />
+                {lyrics && (
+                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-walkman-orange rounded-full" />
+                )}
+              </button>
+            )}
+
             {/* Stats Button */}
             <button
               onClick={() => setIsStatsOpen(true)}
@@ -492,6 +521,20 @@ export function AudioPlayer() {
         isOpen={isStatsOpen}
         onClose={() => setIsStatsOpen(false)}
       />
+
+      {/* Fullscreen Lyrics */}
+      {currentTrack && (
+        <FullscreenLyrics
+          isOpen={isLyricsOpen}
+          onClose={() => setIsLyricsOpen(false)}
+          track={currentTrack}
+          lyrics={lyrics}
+          currentLineIndex={currentLineIndex}
+          isLoading={lyricsLoading}
+          error={lyricsError}
+          onSeek={seek}
+        />
+      )}
     </div>
   );
 }

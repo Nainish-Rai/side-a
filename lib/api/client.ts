@@ -9,6 +9,9 @@ import type {
   Playlist,
   TrackLookup,
   CacheStats,
+  LyricsData,
+  LyricsPlusResponse,
+  LyricLine,
 } from "./types";
 
 export const DASH_MANIFEST_UNAVAILABLE_CODE = "DASH_MANIFEST_UNAVAILABLE";
@@ -17,6 +20,7 @@ export class LosslessAPI {
   private settings: APISettings;
   private cache: APICache;
   private streamCache: Map<string, string>;
+  private lyricsCache: Map<number, LyricsData>;
 
   constructor(settings: APISettings) {
     this.settings = settings;
@@ -25,10 +29,12 @@ export class LosslessAPI {
       ttl: 1000 * 60 * 30,
     });
     this.streamCache = new Map();
+    this.lyricsCache = new Map();
 
     setInterval(() => {
       this.cache.clearExpired();
       this.pruneStreamCache();
+      this.pruneLyricsCache();
     }, 1000 * 60 * 5);
   }
 
@@ -37,6 +43,14 @@ export class LosslessAPI {
       const entries = Array.from(this.streamCache.entries());
       const toDelete = entries.slice(0, entries.length - 50);
       toDelete.forEach(([key]) => this.streamCache.delete(key));
+    }
+  }
+
+  private pruneLyricsCache(): void {
+    if (this.lyricsCache.size > 100) {
+      const entries = Array.from(this.lyricsCache.entries());
+      const toDelete = entries.slice(0, entries.length - 100);
+      toDelete.forEach(([key]) => this.lyricsCache.delete(key));
     }
   }
 
@@ -497,9 +511,84 @@ export class LosslessAPI {
     return `https://resources.tidal.com/images/${formattedId}/${size}x${size}.jpg`;
   }
 
+  async fetchLyrics(track: Track): Promise<LyricsData | null> {
+    // Check cache first
+    if (this.lyricsCache.has(track.id)) {
+      return this.lyricsCache.get(track.id)!;
+    }
+
+    try {
+      // Build query parameters for LyricsPlus API
+      const title = encodeURIComponent(track.title);
+      const artist = encodeURIComponent(
+        track.artist?.name || track.artists?.[0]?.name || ""
+      );
+      const album = encodeURIComponent(track.album?.title || "");
+      const duration = Math.floor(track.duration);
+      const source = "apple,lyricsplus,musixmatch,spotify";
+
+      const lyricsUrl = `https://lyricsplus.prjktla.workers.dev/v2/lyrics/get?title=${title}&artist=${artist}&album=${album}&duration=${duration}&source=${source}`;
+
+      const response = await fetch(lyricsUrl);
+
+      if (!response.ok) {
+        console.warn(`Lyrics API returned ${response.status}`);
+        return null;
+      }
+
+      const data: LyricsPlusResponse = await response.json();
+
+      if (data && data.lyrics && data.lyrics.length > 0) {
+        const lyricsData: LyricsData = {
+          lyricsPlus: data,
+          // Convert to legacy format for compatibility
+          parsed: this.convertLyricsPlusToSynced(data.lyrics),
+        };
+
+        this.lyricsCache.set(track.id, lyricsData);
+        return lyricsData;
+      }
+    } catch (error) {
+      console.error("Failed to fetch lyrics:", error);
+    }
+    return null;
+  }
+
+  private convertLyricsPlusToSynced(lyrics: LyricLine[]): LyricsData["parsed"] {
+    if (!lyrics || lyrics.length === 0) return [];
+
+    return lyrics.map((line) => ({
+      time: line.time / 1000, // Convert milliseconds to seconds
+      text: line.text,
+    }));
+  }
+
+  private parseSyncedLyrics(subtitles: string): LyricsData["parsed"] {
+    if (!subtitles) return [];
+
+    const lines = subtitles.split("\n").filter((line) => line.trim());
+    return lines
+      .map((line) => {
+        // Regex looks for [minutes:seconds.centiseconds]
+        const match = line.match(/\[(\d+):(\d+)\.(\d+)\]\s*(.+)/);
+        if (match) {
+          const [, minutes, seconds, centiseconds, text] = match;
+          // Convert everything to total seconds for easy comparison with audioPlayer.currentTime
+          const timeInSeconds =
+            parseInt(minutes) * 60 +
+            parseInt(seconds) +
+            parseInt(centiseconds) / 100;
+          return { time: timeInSeconds, text: text.trim() };
+        }
+        return null;
+      })
+      .filter((item): item is { time: number; text: string } => item !== null);
+  }
+
   async clearCache(): Promise<void> {
     await this.cache.clear();
     this.streamCache.clear();
+    this.lyricsCache.clear();
   }
 
   getCacheStats(): CacheStats {

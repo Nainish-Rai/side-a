@@ -123,3 +123,61 @@ export interface CacheStats {
 export interface APISettings {
   getInstances: () => Promise<string[]>;
 }
+
+// New LyricsPlus API types
+export interface WordSyllabus {
+  time: number; // milliseconds
+  duration: number;
+  text: string;
+  isBackground?: boolean;
+}
+
+export interface LyricLine {
+  time: number; // milliseconds
+  duration: number;
+  text: string;
+  syllabus: WordSyllabus[];
+  element: {
+    key: string;
+    songPart: string;
+    singer: string;
+  };
+}
+
+export interface LyricsMetadata {
+  source: string;
+  songWriters?: string[];
+  title?: string;
+  language?: string;
+  totalDuration?: string;
+}
+
+export interface LyricsPlusResponse {
+  type: string; // "Word"
+  metadata: LyricsMetadata;
+  lyrics: LyricLine[];
+  cached?: string;
+  processingTime?: {
+    timeElapsed: number;
+    lastProcessed: number;
+  };
+}
+
+// Legacy types for backward compatibility
+export interface SyncedLyric {
+  time: number; // Time in seconds
+  text: string;
+}
+
+export interface LyricsData {
+  lyrics?: string; // Static/plain text lyrics
+  subtitles?: string; // LRC format synchronized lyrics
+  parsed?: SyncedLyric[]; // Parsed synced lyrics (converted to seconds)
+  // New format support
+  lyricsPlus?: LyricsPlusResponse;
+}
+
+export interface LyricsResponse {
+  lyrics?: string;
+  subtitles?: string;
+}
