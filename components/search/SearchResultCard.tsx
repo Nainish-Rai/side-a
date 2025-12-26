@@ -39,9 +39,9 @@ export function SearchResultCard({
   return (
     <div
       onClick={onClick}
-      className={`group relative p-4 bg-white border border-carbon
-                 hover:bg-bone hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]
-                 active:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]
+      className={`group relative p-4 bg-white dark:bg-[#1a1a1a] border border-carbon dark:border-bone
+                 hover:bg-bone dark:hover:bg-[#2a2a2a] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] dark:hover:shadow-[3px_3px_0px_0px_rgba(242,239,233,1)]
+                 active:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] dark:active:shadow-[1px_1px_0px_0px_rgba(242,239,233,1)]
                  active:translate-x-[1px] active:translate-y-[1px]
                  transition-all duration-150 cursor-pointer
                  ${
@@ -52,16 +52,16 @@ export function SearchResultCard({
                  ${isLoading ? "opacity-50" : ""}`}
     >
       {isLoading && (
-        <div className="absolute inset-0 bg-white/90 flex items-center justify-center z-10">
-          <div className="w-6 h-6 border-2 border-carbon border-t-transparent rounded-full animate-spin" />
+        <div className="absolute inset-0 bg-white/90 dark:bg-carbon/90 flex items-center justify-center z-10">
+          <div className="w-6 h-6 border-2 border-carbon dark:border-bone border-t-transparent rounded-full animate-spin" />
         </div>
       )}
 
       <div className="flex items-start gap-4">
         {/* Album Art */}
         <div
-          className="relative flex-shrink-0 w-16 h-16 bg-bone border border-carbon overflow-hidden
-                       shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)]"
+          className="relative flex-shrink-0 w-16 h-16 bg-bone dark:bg-[#2a2a2a] border border-carbon dark:border-bone overflow-hidden
+                       shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)] dark:shadow-[inset_0_2px_4px_rgba(255,255,255,0.1)]"
         >
           {coverUrl ? (
             <Image
@@ -73,24 +73,24 @@ export function SearchResultCard({
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
-              <Music className="w-6 h-6 text-carbon" />
+              <Music className="w-6 h-6 text-carbon dark:text-bone" />
             </div>
           )}
 
           {/* Play indicator overlay */}
           <div
-            className="absolute inset-0 bg-carbon/0 group-hover:bg-carbon/70
+            className="absolute inset-0 bg-carbon/0 group-hover:bg-carbon/70 dark:group-hover:bg-bone/70
                           transition-all duration-200 flex items-center justify-center"
           >
             <Play
-              className="w-6 h-6 text-white opacity-0 group-hover:opacity-100
-                           transition-opacity duration-200 fill-white"
+              className="w-6 h-6 text-white dark:text-carbon opacity-0 group-hover:opacity-100
+                           transition-opacity duration-200 fill-white dark:fill-carbon"
             />
           </div>
 
           {/* Track Number Badge */}
           {track.trackNumber && (
-            <div className="absolute bottom-0 left-0 bg-carbon text-white text-[9px] font-mono px-1 py-0.5">
+            <div className="absolute bottom-0 left-0 bg-carbon dark:bg-bone text-white dark:text-carbon text-[9px] font-mono px-1 py-0.5">
               {track.trackNumber}
             </div>
           )}
@@ -100,18 +100,18 @@ export function SearchResultCard({
         <div className="flex-1 min-w-0">
           {/* Title and Explicit Badge */}
           <div className="flex items-center gap-2 mb-1">
-            <h3 className="text-carbon font-medium text-base truncate font-mono">
+            <h3 className="text-carbon dark:text-bone font-medium text-base truncate font-mono">
               {getTrackTitle(track)}
             </h3>
             {track.explicit && (
-              <span className="flex-shrink-0 text-[9px] font-mono font-bold px-1.5 py-0.5 bg-carbon text-white border border-carbon">
+              <span className="flex-shrink-0 text-[9px] font-mono font-bold px-1.5 py-0.5 bg-carbon dark:bg-bone text-white dark:text-carbon border border-carbon dark:border-bone">
                 E
               </span>
             )}
           </div>
 
           {/* Artists */}
-          <div className="text-gray-600 text-sm font-mono mb-1">
+          <div className="text-gray-600 dark:text-gray-400 text-sm font-mono mb-1">
             {mainArtists.map((artist, i) => (
               <span key={artist.id}>
                 {i > 0 && ", "}
@@ -119,7 +119,7 @@ export function SearchResultCard({
               </span>
             ))}
             {featuredArtists.length > 0 && (
-              <span className="text-gray-400">
+              <span className="text-gray-400 dark:text-gray-500">
                 {" "}
                 ft. {featuredArtists.map((a) => a.name).join(", ")}
               </span>
@@ -128,7 +128,7 @@ export function SearchResultCard({
 
           {/* Album */}
           {track.album?.title && (
-            <div className="flex items-center gap-1 text-gray-400 text-xs font-mono mb-2">
+            <div className="flex items-center gap-1 text-gray-400 dark:text-gray-500 text-xs font-mono mb-2">
               <Disc className="w-3 h-3" />
               <span className="truncate">{track.album.title}</span>
             </div>
@@ -138,24 +138,24 @@ export function SearchResultCard({
           <div className="flex items-center gap-2 flex-wrap">
             {/* Audio Quality Badges */}
             {hasDolbyAtmos && (
-              <span className="text-[9px] font-mono font-bold px-2 py-1 bg-walkman-orange text-white border border-carbon shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+              <span className="text-[9px] font-mono font-bold px-2 py-1 bg-walkman-orange text-white border border-carbon dark:border-bone shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] dark:shadow-[1px_1px_0px_0px_rgba(242,239,233,1)]">
                 DOLBY ATMOS
               </span>
             )}
             {hasHiRes && (
-              <span className="text-[9px] font-mono font-bold px-2 py-1 bg-walkman-yellow text-carbon border border-carbon shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+              <span className="text-[9px] font-mono font-bold px-2 py-1 bg-walkman-yellow text-carbon border border-carbon dark:border-bone shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] dark:shadow-[1px_1px_0px_0px_rgba(242,239,233,1)]">
                 HI-RES
               </span>
             )}
             {hasLossless && !hasHiRes && (
-              <span className="text-[9px] font-mono font-bold px-2 py-1 bg-bone text-carbon border border-carbon shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+              <span className="text-[9px] font-mono font-bold px-2 py-1 bg-bone dark:bg-[#2a2a2a] text-carbon dark:text-bone border border-carbon dark:border-bone shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] dark:shadow-[1px_1px_0px_0px_rgba(242,239,233,1)]">
                 LOSSLESS
               </span>
             )}
 
             {/* Popularity */}
             {track.popularity !== undefined && (
-              <span className="flex items-center gap-1 text-[9px] font-mono px-2 py-1 bg-white border border-carbon">
+              <span className="flex items-center gap-1 text-[9px] font-mono px-2 py-1 bg-white dark:bg-[#1a1a1a] border border-carbon dark:border-bone">
                 <TrendingUp className="w-3 h-3" />
                 {track.popularity}
               </span>
@@ -163,7 +163,7 @@ export function SearchResultCard({
 
             {/* BPM */}
             {track.bpm && (
-              <span className="flex items-center gap-1 text-[9px] font-mono px-2 py-1 bg-white border border-carbon">
+              <span className="flex items-center gap-1 text-[9px] font-mono px-2 py-1 bg-white dark:bg-[#1a1a1a] border border-carbon dark:border-bone">
                 <Clock className="w-3 h-3" />
                 {track.bpm} BPM
               </span>
@@ -171,14 +171,14 @@ export function SearchResultCard({
 
             {/* Key */}
             {track.key && track.keyScale && (
-              <span className="text-[9px] font-mono px-2 py-1 bg-white border border-carbon">
+              <span className="text-[9px] font-mono px-2 py-1 bg-white dark:bg-[#1a1a1a] border border-carbon dark:border-bone">
                 {track.key} {track.keyScale}
               </span>
             )}
 
             {/* Audio Modes */}
             {track.audioModes && track.audioModes.length > 0 && (
-              <span className="flex items-center gap-1 text-[9px] font-mono px-2 py-1 bg-white border border-carbon">
+              <span className="flex items-center gap-1 text-[9px] font-mono px-2 py-1 bg-white dark:bg-[#1a1a1a] border border-carbon dark:border-bone">
                 <Volume2 className="w-3 h-3" />
                 {track.audioModes[0]}
               </span>
@@ -188,10 +188,10 @@ export function SearchResultCard({
 
         {/* Duration and Now Playing */}
         <div className="flex-shrink-0 text-right">
-          <div className="text-[9px] font-mono tracking-widest mb-1 uppercase text-gray-500">
+          <div className="text-[9px] font-mono tracking-widest mb-1 uppercase text-gray-500 dark:text-gray-400">
             DURATION
           </div>
-          <div className="text-carbon text-sm font-mono tabular-nums font-bold">
+          <div className="text-carbon dark:text-bone text-sm font-mono tabular-nums font-bold">
             {formatTime(track.duration)}
           </div>
 
@@ -213,8 +213,8 @@ export function SearchResultCard({
       </div>
 
       {/* Additional Info on Hover */}
-      <div className="mt-3 pt-3 border-t border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-[9px] font-mono text-gray-500">
+      <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-[9px] font-mono text-gray-500 dark:text-gray-400">
           {track.streamStartDate && (
             <div>
               <span className="uppercase tracking-wider">Released:</span>{" "}

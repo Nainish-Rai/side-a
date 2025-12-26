@@ -123,21 +123,21 @@ export function AudioPlayer() {
   if (!currentTrack) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-bone border-t border-carbon z-50 shadow-[0_-2px_8px_rgba(0,0,0,0.06)]">
+    <div className="fixed bottom-0 left-0 right-0 bg-bone dark:bg-carbon border-t border-carbon dark:border-bone z-50 shadow-[0_-2px_8px_rgba(0,0,0,0.06)] dark:shadow-[0_-2px_8px_rgba(242,239,233,0.06)] transition-colors duration-300">
       {/* Progress Bar - Clean Spotify Style */}
       <div
         ref={progressBarRef}
-        className="h-1 bg-gray-300 cursor-pointer relative group"
+        className="h-1 bg-gray-300 dark:bg-gray-700 cursor-pointer relative group"
         onClick={handleProgressClick}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
       >
         <div
-          className="h-full bg-carbon transition-none relative"
+          className="h-full bg-carbon dark:bg-bone transition-none relative"
           style={{ width: `${progressPercentage}%` }}
         >
-          <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-carbon rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+          <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-carbon dark:bg-bone rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
         </div>
       </div>
 
@@ -148,10 +148,10 @@ export function AudioPlayer() {
           <div className="flex items-center gap-4 flex-1 min-w-0">
             {/* Track Details */}
             <div className="flex-1 min-w-0">
-              <div className="font-medium text-sm truncate text-carbon font-mono">
+              <div className="font-medium text-sm truncate text-carbon dark:text-bone font-mono">
                 {getTrackTitle(currentTrack)}
               </div>
-              <div className="text-xs text-gray-600 truncate font-mono">
+              <div className="text-xs text-gray-600 dark:text-gray-400 truncate font-mono">
                 {getTrackArtists(currentTrack)}
               </div>
             </div>
@@ -164,11 +164,11 @@ export function AudioPlayer() {
               {/* Shuffle Button */}
               <button
                 onClick={toggleShuffle}
-                className={`w-7 h-7 flex items-center justify-center hover:bg-white
+                className={`w-7 h-7 flex items-center justify-center hover:bg-white dark:hover:bg-[#1a1a1a]
                            rounded transition-colors duration-150 ${
                              shuffleActive
                                ? "text-walkman-orange"
-                               : "text-carbon"
+                               : "text-carbon dark:text-bone"
                            }`}
                 aria-label="Shuffle"
                 title={shuffleActive ? "Shuffle on" : "Shuffle off"}
@@ -179,8 +179,8 @@ export function AudioPlayer() {
               {/* Previous Button */}
               <button
                 onClick={playPrev}
-                className="w-7 h-7 flex items-center justify-center hover:bg-white
-                           rounded transition-colors duration-150 text-carbon"
+                className="w-7 h-7 flex items-center justify-center hover:bg-white dark:hover:bg-[#1a1a1a]
+                           rounded transition-colors duration-150 text-carbon dark:text-bone"
                 aria-label="Previous"
               >
                 <SkipBack className="w-4 h-4" />
@@ -189,25 +189,31 @@ export function AudioPlayer() {
               {/* Play/Pause Button */}
               <button
                 onClick={togglePlayPause}
-                className="flex-shrink-0 w-10 h-10 rounded-full bg-carbon hover:bg-walkman-orange
+                className="flex-shrink-0 w-10 h-10 rounded-full bg-carbon dark:bg-bone hover:bg-walkman-orange dark:hover:bg-walkman-orange
                            transition-colors duration-200 flex items-center justify-center
-                           shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)]
-                           hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,0.2)]
+                           shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)] dark:shadow-[2px_2px_0px_0px_rgba(242,239,233,0.2)]
+                           hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,0.2)] dark:hover:shadow-[1px_1px_0px_0px_rgba(242,239,233,0.2)]
                            active:shadow-none active:translate-x-[1px] active:translate-y-[1px]"
                 aria-label={isPlaying ? "Pause" : "Play"}
               >
                 {isPlaying ? (
-                  <Pause className="w-5 h-5 text-white" fill="white" />
+                  <Pause
+                    className="w-5 h-5 text-white dark:text-carbon"
+                    fill="white"
+                  />
                 ) : (
-                  <Play className="w-5 h-5 ml-0.5 text-white" fill="white" />
+                  <Play
+                    className="w-5 h-5 ml-0.5 text-white dark:text-carbon"
+                    fill="white"
+                  />
                 )}
               </button>
 
               {/* Next Button */}
               <button
                 onClick={playNext}
-                className="w-7 h-7 flex items-center justify-center hover:bg-white
-                           rounded transition-colors duration-150 text-carbon"
+                className="w-7 h-7 flex items-center justify-center hover:bg-white dark:hover:bg-[#1a1a1a]
+                           rounded transition-colors duration-150 text-carbon dark:text-bone"
                 aria-label="Next"
               >
                 <SkipForward className="w-4 h-4" />
@@ -216,11 +222,11 @@ export function AudioPlayer() {
               {/* Repeat Button */}
               <button
                 onClick={toggleRepeat}
-                className={`w-7 h-7 flex items-center justify-center hover:bg-white
+                className={`w-7 h-7 flex items-center justify-center hover:bg-white dark:hover:bg-[#1a1a1a]
                            rounded transition-colors duration-150 ${
                              repeatMode !== "off"
                                ? "text-walkman-orange"
-                               : "text-carbon"
+                               : "text-carbon dark:text-bone"
                            }`}
                 aria-label="Repeat"
                 title={
@@ -241,10 +247,14 @@ export function AudioPlayer() {
 
             {/* Time Display */}
             <div className="flex items-center gap-2 text-xs font-mono tabular-nums">
-              <span className="text-carbon">{formatTime(currentTime)}</span>
-              <span className="text-gray-400">/</span>
-              <span className="text-gray-500">{formatTime(duration)}</span>
-              <span className="text-gray-400">•</span>
+              <span className="text-carbon dark:text-bone">
+                {formatTime(currentTime)}
+              </span>
+              <span className="text-gray-400 dark:text-gray-500">/</span>
+              <span className="text-gray-500 dark:text-gray-400">
+                {formatTime(duration)}
+              </span>
+              <span className="text-gray-400 dark:text-gray-500">•</span>
               <span className="text-walkman-orange font-semibold">
                 {getQualityDisplay()}
               </span>
@@ -256,23 +266,23 @@ export function AudioPlayer() {
             {/* Stats Button */}
             <button
               onClick={() => setIsStatsOpen(true)}
-              className="w-8 h-8 flex items-center justify-center hover:bg-white
+              className="w-8 h-8 flex items-center justify-center hover:bg-white dark:hover:bg-[#1a1a1a]
                          rounded transition-colors duration-150"
               aria-label="Stats for Nerds"
               title="Stats for Nerds (i)"
             >
-              <Info className="w-4 h-4 text-carbon" />
+              <Info className="w-4 h-4 text-carbon dark:text-bone" />
             </button>
 
             {/* Queue Button */}
             <button
               onClick={() => setIsQueueOpen(true)}
-              className="relative w-8 h-8 flex items-center justify-center hover:bg-white
+              className="relative w-8 h-8 flex items-center justify-center hover:bg-white dark:hover:bg-[#1a1a1a]
                          rounded transition-colors duration-150"
               aria-label="View Queue"
               title="View Queue"
             >
-              <ListMusic className="w-4 h-4 text-carbon" />
+              <ListMusic className="w-4 h-4 text-carbon dark:text-bone" />
               {queue.length > 0 && (
                 <span
                   className="absolute -top-1 -right-1 w-4 h-4 bg-walkman-orange text-white
@@ -286,14 +296,14 @@ export function AudioPlayer() {
             {/* Mute Button */}
             <button
               onClick={toggleMute}
-              className="w-8 h-8 flex items-center justify-center hover:bg-white
+              className="w-8 h-8 flex items-center justify-center hover:bg-white dark:hover:bg-[#1a1a1a]
                          rounded transition-colors duration-150"
               aria-label={isMuted ? "Unmute" : "Mute"}
             >
               {isMuted ? (
-                <VolumeX className="w-4 h-4 text-carbon" />
+                <VolumeX className="w-4 h-4 text-carbon dark:text-bone" />
               ) : (
-                <Volume2 className="w-4 h-4 text-carbon" />
+                <Volume2 className="w-4 h-4 text-carbon dark:text-bone" />
               )}
             </button>
 
@@ -305,11 +315,12 @@ export function AudioPlayer() {
                 max="100"
                 value={isMuted ? 0 : volume * 100}
                 onChange={(e) => setVolume(Number(e.target.value) / 100)}
-                className="w-full h-1 bg-gray-300 appearance-none cursor-pointer
+                className="w-full h-1 bg-gray-300 dark:bg-gray-700 appearance-none cursor-pointer
                            [&::-webkit-slider-thumb]:appearance-none
                            [&::-webkit-slider-thumb]:w-3
                            [&::-webkit-slider-thumb]:h-3
                            [&::-webkit-slider-thumb]:bg-carbon
+                           dark:[&::-webkit-slider-thumb]:bg-bone
                            [&::-webkit-slider-thumb]:rounded-full
                            [&::-webkit-slider-thumb]:cursor-pointer
                            [&::-webkit-slider-thumb]:opacity-0
@@ -318,13 +329,15 @@ export function AudioPlayer() {
                            [&::-moz-range-thumb]:w-3
                            [&::-moz-range-thumb]:h-3
                            [&::-moz-range-thumb]:bg-carbon
+                           dark:[&::-moz-range-thumb]:bg-bone
                            [&::-moz-range-thumb]:rounded-full
                            [&::-moz-range-thumb]:border-0
                            [&::-moz-range-thumb]:cursor-pointer
                            [&::-webkit-slider-runnable-track]:bg-carbon
+                           dark:[&::-webkit-slider-runnable-track]:bg-bone
                            [&::-webkit-slider-runnable-track]:h-1"
                 style={{
-                  background: `linear-gradient(to right, #101010 0%, #101010 ${
+                  background: `linear-gradient(to right, var(--color-primary) 0%, var(--color-primary) ${
                     isMuted ? 0 : volume * 100
                   }%, #d1d5db ${isMuted ? 0 : volume * 100}%, #d1d5db 100%)`,
                 }}

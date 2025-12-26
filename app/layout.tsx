@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AudioPlayerProvider } from "@/contexts/AudioPlayerContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -24,11 +25,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <AudioPlayerProvider>{children}</AudioPlayerProvider>
+        <ThemeProvider>
+          <AudioPlayerProvider>{children}</AudioPlayerProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

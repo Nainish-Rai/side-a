@@ -23,7 +23,7 @@ export function SearchResults({
 }: SearchResultsProps) {
   const { setQueue, currentTrack, isPlaying } = useAudioPlayer();
   const [loadingTrackId, setLoadingTrackId] = useState<number | null>(null);
-  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+  const [viewMode, setViewMode] = useState<"list" | "grid">("grid");
 
   const handleTrackClick = async (track: Track, index: number) => {
     if (loadingTrackId === track.id) return;
@@ -46,13 +46,13 @@ export function SearchResults({
           {[...Array(5)].map((_, i) => (
             <div
               key={i}
-              className="p-4 bg-bone border border-gray-300 animate-pulse"
+              className="p-4 bg-bone dark:bg-[#1a1a1a] border border-gray-300 dark:border-gray-700 animate-pulse transition-colors duration-300"
             >
               <div className="flex items-center gap-3">
-                <div className="w-16 h-16 bg-gray-200"></div>
+                <div className="w-16 h-16 bg-gray-200 dark:bg-gray-800"></div>
                 <div className="flex-1">
-                  <div className="h-4 bg-gray-200 w-3/4 mb-2"></div>
-                  <div className="h-3 bg-gray-200 w-1/2"></div>
+                  <div className="h-4 bg-gray-200 dark:bg-gray-800 w-3/4 mb-2"></div>
+                  <div className="h-3 bg-gray-200 dark:bg-gray-800 w-1/2"></div>
                 </div>
               </div>
             </div>
@@ -69,12 +69,12 @@ export function SearchResults({
   return (
     <div className="w-full">
       {/* Header with Results Count and View Toggle */}
-      <div className="mb-4 flex items-center justify-between bg-white border border-carbon p-3">
+      <div className="mb-4 flex items-center justify-between bg-white dark:bg-[#1a1a1a] border border-carbon dark:border-bone p-3 transition-colors duration-300">
         <div className="font-mono">
-          <span className="text-[9px] tracking-widest uppercase text-gray-500">
+          <span className="text-[9px] tracking-widest uppercase text-gray-500 dark:text-gray-400">
             SEARCH RESULTS
           </span>
-          <div className="text-sm font-bold text-carbon mt-0.5">
+          <div className="text-sm font-bold text-carbon dark:text-bone mt-0.5">
             {totalNumberOfItems !== undefined ? (
               <>
                 Showing {offset + 1}-
@@ -88,14 +88,14 @@ export function SearchResults({
         </div>
 
         {/* View Mode Toggle */}
-        <div className="flex items-center gap-1 border border-carbon">
+        <div className="flex items-center gap-1 border border-carbon dark:border-bone">
           <button
             onClick={() => setViewMode("list")}
             className={`p-2 font-mono text-xs transition-colors
                        ${
                          viewMode === "list"
-                           ? "bg-carbon text-white"
-                           : "bg-white text-carbon hover:bg-bone"
+                           ? "bg-carbon dark:bg-bone text-white dark:text-carbon"
+                           : "bg-white dark:bg-[#1a1a1a] text-carbon dark:text-bone hover:bg-bone dark:hover:bg-[#2a2a2a]"
                        }`}
             title="List View"
           >
@@ -106,8 +106,8 @@ export function SearchResults({
             className={`p-2 font-mono text-xs transition-colors
                        ${
                          viewMode === "grid"
-                           ? "bg-carbon text-white"
-                           : "bg-white text-carbon hover:bg-bone"
+                           ? "bg-carbon dark:bg-bone text-white dark:text-carbon"
+                           : "bg-white dark:bg-[#1a1a1a] text-carbon dark:text-bone hover:bg-bone dark:hover:bg-[#2a2a2a]"
                        }`}
             title="Grid View"
           >
