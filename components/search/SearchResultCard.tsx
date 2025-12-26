@@ -33,8 +33,8 @@ export function SearchResultCard({
 
   // Get all artists (including featured)
   const allArtists = track.artists || (track.artist ? [track.artist] : []);
-  const mainArtists = allArtists.filter(a => a.type === "MAIN");
-  const featuredArtists = allArtists.filter(a => a.type === "FEATURED");
+  const mainArtists = allArtists.filter((a) => a.type === "MAIN");
+  const featuredArtists = allArtists.filter((a) => a.type === "FEATURED");
 
   return (
     <div
@@ -120,7 +120,8 @@ export function SearchResultCard({
             ))}
             {featuredArtists.length > 0 && (
               <span className="text-gray-400">
-                {" "}ft. {featuredArtists.map(a => a.name).join(", ")}
+                {" "}
+                ft. {featuredArtists.map((a) => a.name).join(", ")}
               </span>
             )}
           </div>
@@ -222,17 +223,20 @@ export function SearchResultCard({
           )}
           {track.isrc && (
             <div>
-              <span className="uppercase tracking-wider">ISRC:</span> {track.isrc}
+              <span className="uppercase tracking-wider">ISRC:</span>{" "}
+              {track.isrc}
             </div>
           )}
           {track.replayGain !== undefined && (
             <div>
-              <span className="uppercase tracking-wider">Gain:</span> {track.replayGain.toFixed(2)} dB
+              <span className="uppercase tracking-wider">Gain:</span>{" "}
+              {track.replayGain.toFixed(2)} dB
             </div>
           )}
           {track.copyright && (
             <div className="col-span-2 md:col-span-4 truncate">
-              <span className="uppercase tracking-wider">©</span> {track.copyright}
+              <span className="uppercase tracking-wider">©</span>{" "}
+              {track.copyright}
             </div>
           )}
         </div>

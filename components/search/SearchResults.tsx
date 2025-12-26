@@ -77,7 +77,8 @@ export function SearchResults({
           <div className="text-sm font-bold text-carbon mt-0.5">
             {totalNumberOfItems !== undefined ? (
               <>
-                Showing {offset + 1}-{Math.min(offset + limit, totalNumberOfItems)} of{" "}
+                Showing {offset + 1}-
+                {Math.min(offset + limit, totalNumberOfItems)} of{" "}
                 {totalNumberOfItems.toLocaleString()} tracks
               </>
             ) : (
