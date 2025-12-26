@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, ReactNode, useEffect, useRef } from "react";
 
 type SearchContentType = "tracks" | "albums" | "artists" | "playlists";
 
@@ -13,9 +13,60 @@ interface SearchContextValue {
 
 const SearchContext = createContext<SearchContextValue | undefined>(undefined);
 
+const STORAGE_KEY = "search-state";
+
+// Helper function to load initial state from localStorage
+function getInitialState() {
+  if (typeof window === "undefined") {
+    return { query: "", currentTab: "tracks" as SearchContentType };
+  }
+
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const { query, currentTab } = JSON.parse(stored);
+      return {
+        query: query || "",
+        currentTab: currentTab || "tracks",
+      };
+    }
+  } catch (error) {
+    console.error("Failed to load search state from localStorage:", error);
+  }
+
+  return { query: "", currentTab: "tracks" as SearchContentType };
+}
+
 export function SearchProvider({ children }: { children: ReactNode }) {
-  const [query, setQuery] = useState("");
-  const [currentTab, setCurrentTab] = useState<SearchContentType>("tracks");
+  const initialState = getInitialState();
+  const [query, setQueryState] = useState(initialState.query);
+  const [currentTab, setCurrentTabState] = useState<SearchContentType>(initialState.currentTab);
+  const isFirstRender = useRef(true);
+
+  // Persist state to localStorage whenever it changes (skip first render)
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+
+    try {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ query, currentTab })
+      );
+    } catch (error) {
+      console.error("Failed to save search state to localStorage:", error);
+    }
+  }, [query, currentTab]);
+
+  const setQuery = (newQuery: string) => {
+    setQueryState(newQuery);
+  };
+
+  const setCurrentTab = (tab: SearchContentType) => {
+    setCurrentTabState(tab);
+  };
 
   return (
     <SearchContext.Provider

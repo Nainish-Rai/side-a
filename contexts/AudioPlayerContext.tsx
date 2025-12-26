@@ -50,19 +50,53 @@ interface AudioPlayerContextValue extends AudioPlayerState {
 
 const AudioPlayerContext = createContext<AudioPlayerContextValue | null>(null);
 
+const STORAGE_KEY = "audio-player-state";
+
+// Interface for what we persist to localStorage
+interface PersistedState {
+  volume: number;
+  isMuted: boolean;
+  shuffleActive: boolean;
+  repeatMode: RepeatMode;
+  queue: Track[];
+  currentQueueIndex: number;
+  currentTrack: Track | null;
+  currentTime: number;
+}
+
+// Helper function to load persisted state from localStorage
+function getPersistedState(): Partial<PersistedState> {
+  if (typeof window === "undefined") {
+    return {};
+  }
+
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      return JSON.parse(stored);
+    }
+  } catch (error) {
+    console.error("Failed to load audio player state from localStorage:", error);
+  }
+
+  return {};
+}
+
 export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const persistedState = getPersistedState();
+  
   const [state, setState] = useState<AudioPlayerState>({
-    currentTrack: null,
-    isPlaying: false,
-    currentTime: 0,
+    currentTrack: persistedState.currentTrack || null,
+    isPlaying: false, // Never auto-play on reload
+    currentTime: persistedState.currentTime || 0,
     duration: 0,
-    volume: 1,
-    isMuted: false,
-    queue: [],
-    currentQueueIndex: -1,
-    shuffleActive: false,
-    repeatMode: "off",
+    volume: persistedState.volume ?? 1,
+    isMuted: persistedState.isMuted ?? false,
+    queue: persistedState.queue || [],
+    currentQueueIndex: persistedState.currentQueueIndex ?? -1,
+    shuffleActive: persistedState.shuffleActive ?? false,
+    repeatMode: persistedState.repeatMode || "off",
     currentQuality: "LOSSLESS",
     streamUrl: null,
   });
@@ -71,6 +105,71 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const originalQueueBeforeShuffle = useRef<Track[]>([]);
   const shuffledQueue = useRef<Track[]>([]);
   const playNextRef = useRef<(() => Promise<void>) | null>(null);
+  const isFirstRender = useRef(true);
+
+  // Persist state to localStorage whenever it changes
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+
+    try {
+      const stateToPersist: PersistedState = {
+        volume: state.volume,
+        isMuted: state.isMuted,
+        shuffleActive: state.shuffleActive,
+        repeatMode: state.repeatMode,
+        queue: state.queue,
+        currentQueueIndex: state.currentQueueIndex,
+        currentTrack: state.currentTrack,
+        currentTime: state.currentTime,
+      };
+
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToPersist));
+    } catch (error) {
+      console.error("Failed to save audio player state to localStorage:", error);
+    }
+  }, [
+    state.volume,
+    state.isMuted,
+    state.shuffleActive,
+    state.repeatMode,
+    state.queue,
+    state.currentQueueIndex,
+    state.currentTrack,
+    state.currentTime,
+  ]);
+
+  // Restore the audio element state from persisted data
+  useEffect(() => {
+    const restoreAudioState = async () => {
+      if (!audioRef.current || !persistedState.currentTrack) return;
+
+      try {
+        // Get stream URL for the persisted track
+        const streamUrl = await api.getStreamUrl(persistedState.currentTrack.id);
+        if (streamUrl) {
+          audioRef.current.src = streamUrl;
+          audioRef.current.currentTime = persistedState.currentTime || 0;
+          audioRef.current.volume = persistedState.volume ?? 1;
+          audioRef.current.muted = persistedState.isMuted ?? false;
+          
+          setState((prev) => ({
+            ...prev,
+            streamUrl: streamUrl,
+            duration: audioRef.current?.duration || 0,
+          }));
+        }
+      } catch (error) {
+        console.error("Failed to restore audio state:", error);
+      }
+    };
+
+    restoreAudioState();
+    // Only run once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const audio = new Audio();
