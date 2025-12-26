@@ -1,6 +1,13 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode, useEffect, useRef } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  ReactNode,
+  useEffect,
+  useRef,
+} from "react";
 
 type SearchContentType = "tracks" | "albums" | "artists" | "playlists";
 
@@ -40,7 +47,9 @@ function getInitialState() {
 export function SearchProvider({ children }: { children: ReactNode }) {
   const initialState = getInitialState();
   const [query, setQueryState] = useState(initialState.query);
-  const [currentTab, setCurrentTabState] = useState<SearchContentType>(initialState.currentTab);
+  const [currentTab, setCurrentTabState] = useState<SearchContentType>(
+    initialState.currentTab
+  );
   const isFirstRender = useRef(true);
 
   // Persist state to localStorage whenever it changes (skip first render)
@@ -51,10 +60,7 @@ export function SearchProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({ query, currentTab })
-      );
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ query, currentTab }));
     } catch (error) {
       console.error("Failed to save search state to localStorage:", error);
     }

@@ -76,7 +76,10 @@ function getPersistedState(): Partial<PersistedState> {
       return JSON.parse(stored);
     }
   } catch (error) {
-    console.error("Failed to load audio player state from localStorage:", error);
+    console.error(
+      "Failed to load audio player state from localStorage:",
+      error
+    );
   }
 
   return {};
@@ -85,7 +88,7 @@ function getPersistedState(): Partial<PersistedState> {
 export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const persistedState = getPersistedState();
-  
+
   const [state, setState] = useState<AudioPlayerState>({
     currentTrack: persistedState.currentTrack || null,
     isPlaying: false, // Never auto-play on reload
@@ -128,7 +131,10 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
       localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToPersist));
     } catch (error) {
-      console.error("Failed to save audio player state to localStorage:", error);
+      console.error(
+        "Failed to save audio player state to localStorage:",
+        error
+      );
     }
   }, [
     state.volume,
@@ -148,13 +154,15 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
       try {
         // Get stream URL for the persisted track
-        const streamUrl = await api.getStreamUrl(persistedState.currentTrack.id);
+        const streamUrl = await api.getStreamUrl(
+          persistedState.currentTrack.id
+        );
         if (streamUrl) {
           audioRef.current.src = streamUrl;
           audioRef.current.currentTime = persistedState.currentTime || 0;
           audioRef.current.volume = persistedState.volume ?? 1;
           audioRef.current.muted = persistedState.isMuted ?? false;
-          
+
           setState((prev) => ({
             ...prev,
             streamUrl: streamUrl,
