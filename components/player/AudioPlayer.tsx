@@ -15,11 +15,13 @@ import {
   ListMusic,
   Info,
   Music2,
+  Maximize2,
 } from "lucide-react";
 import { useRef, useEffect, useState } from "react";
 import { Queue } from "./Queue";
 import { StatsForNerds } from "./StatsForNerds";
 import { FullscreenLyrics } from "./FullscreenLyrics";
+import { FullscreenPlayer } from "./FullscreenPlayer";
 import { useLyrics } from "@/hooks/useLyrics";
 import Image from "next/image";
 
@@ -51,6 +53,7 @@ export function AudioPlayer() {
   const [isQueueOpen, setIsQueueOpen] = useState(false);
   const [isStatsOpen, setIsStatsOpen] = useState(false);
   const [isLyricsOpen, setIsLyricsOpen] = useState(false);
+  const [isFullscreenOpen, setIsFullscreenOpen] = useState(false);
   const [spectrumBars, setSpectrumBars] = useState([0, 0, 0, 0, 0]);
   const animationFrameRef = useRef<number | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
@@ -412,6 +415,17 @@ export function AudioPlayer() {
 
           {/* Right: Volume Controls */}
           <div className="flex items-center gap-2 flex-shrink-0 flex-1 justify-end">
+            {/* Fullscreen Player Button */}
+            <button
+              onClick={() => setIsFullscreenOpen(true)}
+              className="w-7 h-7 flex items-center justify-center hover:bg-white dark:hover:bg-[#1a1a1a]
+                         rounded transition-colors duration-150"
+              aria-label="Fullscreen Player"
+              title="Fullscreen Player"
+            >
+              <Maximize2 className="w-3.5 h-3.5 text-carbon dark:text-bone" />
+            </button>
+
             {/* Lyrics Button */}
             {hasLyrics && (
               <button
@@ -535,6 +549,12 @@ export function AudioPlayer() {
           onSeek={seek}
         />
       )}
+
+      {/* Fullscreen Player */}
+      <FullscreenPlayer
+        isOpen={isFullscreenOpen}
+        onClose={() => setIsFullscreenOpen(false)}
+      />
     </div>
   );
 }
