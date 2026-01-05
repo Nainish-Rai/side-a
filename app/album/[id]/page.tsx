@@ -2,18 +2,28 @@
 
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import { useAlbum } from "@/hooks/useAlbum";
 import { Track } from "@/lib/api/types";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import AppLayout from "@/components/layout/AppLayout";
-import { Play, Pause, ArrowLeft, Clock, Disc3, Music2 } from "lucide-react";
+import {
+  Play,
+  Pause,
+  ArrowLeft,
+  Clock,
+  Disc3,
+  Music2,
+  Calendar,
+  MoreHorizontal
+} from "lucide-react";
+import { getTrackTitle, getTrackArtists, formatTime } from "@/lib/api/utils";
 
 export default function AlbumPage() {
   const params = useParams();
   const router = useRouter();
   const albumId = parseInt(params.id as string);
-  const { setQueue, currentTrack, isPlaying } = useAudioPlayer();
+  const { setQueue, currentTrack, isPlaying, togglePlayPause } = useAudioPlayer();
 
   const { data, isLoading, error } = useAlbum(albumId);
 
@@ -27,27 +37,31 @@ export default function AlbumPage() {
   };
 
   const handlePlayTrack = (track: Track, index: number) => {
-    setQueue(tracks, index);
-  };
-
-  const formatDuration = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, "0")}`;
+    if (currentTrack?.id === track.id) {
+      togglePlayPause();
+    } else {
+      setQueue(tracks, index);
+    }
   };
 
   const totalDuration = tracks.reduce((acc, track) => acc + track.duration, 0);
-  const totalMinutes = Math.floor(totalDuration / 60);
+  const formatTotalDuration = (seconds: number) => {
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    if (hrs > 0) return `${hrs} hr ${mins} min`;
+    return `${mins} min`;
+  };
 
   const coverUrl = album?.cover
     ? `https://resources.tidal.com/images/${album.cover.replace(
         /-/g,
         "/"
       )}/1280x1280.jpg`
-    : "/placeholder-album.png";
+    : null;
 
   const artistName =
     album?.artist?.name || album?.artists?.[0]?.name || "Unknown Artist";
+
   const year = album?.releaseDate
     ? new Date(album.releaseDate).getFullYear()
     : null;
@@ -56,16 +70,16 @@ export default function AlbumPage() {
     return (
       <AppLayout>
         <div className="min-h-screen flex items-center justify-center">
-          <div className="text-center">
+          <div className="text-center space-y-4">
             <motion.div
               animate={{ rotate: 360 }}
               transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
               className="inline-block"
             >
-              <Disc3 className="w-12 h-12 text-carbon dark:text-bone" />
+              <Disc3 className="w-12 h-12 text-gray-400" />
             </motion.div>
-            <p className="mt-4 font-mono text-sm text-carbon dark:text-bone">
-              LOADING ALBUM...
+            <p className="font-medium text-sm text-gray-400 tracking-widest uppercase">
+              Loading Album...
             </p>
           </div>
         </div>
@@ -77,22 +91,23 @@ export default function AlbumPage() {
     return (
       <AppLayout>
         <div className="min-h-screen flex items-center justify-center">
-          <div className="text-center">
-            <Music2 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h2 className="text-xl font-mono font-bold text-carbon dark:text-bone mb-2">
-              {error
-                ? error instanceof Error
-                  ? error.message
-                  : String(error)
-                : "Album not found"}
-            </h2>
+          <div className="text-center space-y-6">
+            <div className="w-20 h-20 bg-gray-100 dark:bg-white/5 rounded-full flex items-center justify-center mx-auto">
+               <Music2 className="w-10 h-10 text-gray-400" />
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                {error ? "Error Loading Album" : "Album Not Found"}
+              </h2>
+              <p className="text-gray-500 max-w-md mx-auto">
+                {error instanceof Error ? error.message : "The album you requested could not be found."}
+              </p>
+            </div>
             <button
               onClick={() => router.back()}
-              className="mt-4 px-6 py-2 border-2 border-carbon dark:border-bone font-mono text-sm
-                       hover:bg-carbon hover:text-bone dark:hover:bg-bone dark:hover:text-carbon
-                       transition-colors duration-200"
+              className="px-6 py-2.5 bg-black dark:bg-white text-white dark:text-black font-medium rounded-full hover:scale-105 transition-transform active:scale-95"
             >
-              GO BACK
+              Go Back
             </button>
           </div>
         </div>
@@ -100,383 +115,210 @@ export default function AlbumPage() {
     );
   }
 
+  const isAlbumPlaying = currentTrack && tracks.some(t => t.id === currentTrack.id);
+
   return (
     <AppLayout>
-      {/* Header with Back Button */}
-      <header className="sticky top-0 bg-white dark:bg-[#1a1a1a] border-b-2 border-carbon dark:border-bone z-30 transition-colors duration-300">
-        <div className="max-w-7xl mx-auto px-4 lg:px-6 py-4 flex items-center justify-between">
-          <button
-            onClick={() => router.back()}
-            className="flex items-center gap-2 px-4 py-2 border-2 border-carbon dark:border-bone
-                     font-mono text-sm hover:bg-carbon hover:text-bone dark:hover:bg-bone dark:hover:text-carbon
-                     transition-colors duration-200 shadow-[2px_2px_0px_0px_rgba(16,16,16,1)]
-                     dark:shadow-[2px_2px_0px_0px_rgba(242,239,233,1)]"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>BACK</span>
-          </button>
-
-          <div className="text-[9px] tracking-widest uppercase font-mono text-gray-500 dark:text-gray-400">
-            Album Details
-          </div>
-        </div>
-      </header>
-
-      <div className="max-w-7xl mx-auto px-4 lg:px-6 py-8">
-        {/* Cassette Tape Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="mb-8"
-        >
-          {/* Cassette Shell */}
-          <div
-            className="relative bg-white dark:bg-[#1a1a1a] border-4 border-carbon dark:border-bone rounded-lg
-                          shadow-[12px_12px_0px_0px_rgba(16,16,16,1)] dark:shadow-[12px_12px_0px_0px_rgba(242,239,233,1)]
-                          overflow-hidden"
-          >
-            {/* Cassette Top Section - Orange Header */}
-            <div className="bg-walkman-orange border-b-4 border-carbon dark:border-bone p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  {/* Cassette Reel Circles */}
-                  <div className="flex gap-2">
-                    <motion.div
-                      animate={{ rotate: isPlaying ? 360 : 0 }}
-                      transition={{
-                        duration: 2,
-                        repeat: isPlaying ? Infinity : 0,
-                        ease: "linear",
-                      }}
-                      className="w-8 h-8 rounded-full border-4 border-carbon bg-white flex items-center justify-center"
-                    >
-                      <div className="w-3 h-3 rounded-full bg-carbon" />
-                    </motion.div>
-                    <motion.div
-                      animate={{ rotate: isPlaying ? 360 : 0 }}
-                      transition={{
-                        duration: 2,
-                        repeat: isPlaying ? Infinity : 0,
-                        ease: "linear",
-                      }}
-                      className="w-8 h-8 rounded-full border-4 border-carbon bg-white flex items-center justify-center"
-                    >
-                      <div className="w-3 h-3 rounded-full bg-carbon" />
-                    </motion.div>
-                  </div>
-                  <div className="font-mono text-[10px] tracking-widest uppercase text-carbon font-bold">
-                    SIDE A • Hi-Fi
-                  </div>
-                </div>
-                <div className="font-mono text-[10px] text-carbon/70">
-                  {totalMinutes}&apos; {tracks.length} TRACKS
-                </div>
-              </div>
+      <div className="relative min-h-screen w-full overflow-hidden">
+        {/* Background Layer - Blurry Album Art */}
+        {/* Using fixed positioning to cover the screen, but z-0 to stay behind content.
+            Sidebar in AppLayout has z-40 so it will stay on top. */}
+        <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+          {coverUrl && (
+            <div className="absolute inset-0">
+              <Image
+                src={coverUrl}
+                alt=""
+                fill
+                className="object-cover opacity-30 blur-[100px] scale-125"
+                unoptimized
+                priority
+              />
+              <div className="absolute inset-0 bg-white/30 dark:bg-black/40" /> {/* Adaptable overlay */}
+              <div className="absolute inset-0 bg-linear-to-b from-white/40 via-white/80 to-white dark:from-black/20 dark:via-black/60 dark:to-black" />
             </div>
+          )}
+          {/* Fallback gradient if no cover */}
+          {!coverUrl && (
+             <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-900 dark:to-black" />
+          )}
+        </div>
 
-            {/* Main Cassette Body */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-0">
-              {/* Left: Album Cover Window */}
-              <div
-                className="lg:col-span-1 p-6 border-r-0 lg:border-r-4 border-b-4 lg:border-b-0 border-carbon dark:border-bone
-                              bg-gradient-to-br from-gray-50 to-gray-100 dark:from-[#151515] dark:to-[#0a0a0a]"
-              >
-                <div className="relative">
-                  {/* Cassette Window Frame */}
-                  <div
-                    className="absolute inset-0 border-2 border-carbon dark:border-bone -m-2 pointer-events-none z-10"
-                    style={{ boxShadow: "inset 0 0 20px rgba(0,0,0,0.1)" }}
+        {/* Content Container */}
+        <div className="relative z-10 px-6 py-8 md:px-8 lg:px-12 text-gray-900 dark:text-white">
+          {/* Header Navigation */}
+          <header className="flex items-center justify-between mb-8">
+            <button
+              onClick={() => router.back()}
+              className="group flex items-center gap-2 px-4 py-2 rounded-full bg-white/50 dark:bg-white/10 hover:bg-white/80 dark:hover:bg-white/20 backdrop-blur-md transition-all shadow-sm"
+            >
+              <ArrowLeft className="w-5 h-5 text-gray-900 dark:text-white/90" />
+              <span className="text-sm font-medium text-gray-900 dark:text-white/90">Back</span>
+            </button>
+          </header>
+
+          {/* Album Header Section */}
+          <div className="flex flex-col md:flex-row gap-8 md:gap-12 lg:gap-16 mb-12 items-start md:items-end">
+            {/* Album Art */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className="relative shrink-0 w-[240px] md:w-[280px] lg:w-[320px] aspect-square rounded-xl overflow-hidden shadow-[0_24px_60px_-12px_rgba(0,0,0,0.3)] dark:shadow-[0_24px_60px_-12px_rgba(0,0,0,0.8)]"
+            >
+               {coverUrl ? (
+                  <Image
+                    src={coverUrl}
+                    alt={album.title}
+                    fill
+                    className="object-cover"
+                    priority
+                    sizes="(max-width: 768px) 100vw, 320px"
                   />
-
-                  {/* Cover Image */}
-                  <div className="relative w-full aspect-square border-2 border-carbon dark:border-bone overflow-hidden">
-                    <Image
-                      src={coverUrl}
-                      alt={album.title}
-                      fill
-                      priority
-                      sizes="(max-width: 1024px) 100vw, 33vw"
-                      className="object-cover"
-                    />
+                ) : (
+                  <div className="w-full h-full bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center">
+                    <Music2 className="w-20 h-20 text-gray-400 dark:text-white/20" />
                   </div>
+                )}
+            </motion.div>
 
-                  {/* Magnetic Tape Visual */}
-                  <div className="mt-3 flex gap-1 justify-center">
-                    {[...Array(12)].map((_, i) => (
-                      <div
-                        key={i}
-                        className="w-1 h-2 bg-carbon/20 dark:bg-bone/20"
-                      />
-                    ))}
+            {/* Album Info */}
+            <div className="flex-1 min-w-0 space-y-6">
+               <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: 0.1 }}
+               >
+                  <h4 className="text-xs font-bold tracking-widest uppercase text-gray-500 dark:text-white/60 mb-2">Album</h4>
+                  <h1 className="text-4xl md:text-5xl lg:text-7xl font-bold text-gray-900 dark:text-white tracking-tight leading-tight mb-4 drop-shadow-sm">
+                    {album.title}
+                  </h1>
+
+                  <div className="flex items-center gap-2 text-lg md:text-xl text-gray-800 dark:text-white/90 font-medium">
+                     <span className="hover:underline cursor-pointer">{artistName}</span>
+                     <span className="text-gray-400 dark:text-white/40">•</span>
+                     <span className="text-gray-600 dark:text-white/60">{year}</span>
+                     <span className="text-gray-400 dark:text-white/40">•</span>
+                     <span className="text-gray-600 dark:text-white/60 text-base">{tracks.length} tracks, {formatTotalDuration(totalDuration)}</span>
                   </div>
-                </div>
-              </div>
+               </motion.div>
 
-              {/* Right: Handwritten Label Insert */}
-              <div
-                className="lg:col-span-2 p-8 bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50
-                              dark:from-[#1a1510] dark:via-[#1a1612] dark:to-[#1a1410]
-                              relative overflow-hidden"
-              >
-                {/* Paper Texture Overlay */}
-                <div
-                  className="absolute inset-0 opacity-30 dark:opacity-20"
-                  style={{
-                    backgroundImage: `repeating-linear-gradient(
-                         0deg,
-                         transparent,
-                         transparent 2px,
-                         rgba(0,0,0,0.03) 2px,
-                         rgba(0,0,0,0.03) 4px
-                       )`,
-                  }}
-                />
-
-                {/* Handwritten Style Content */}
-                <div className="relative z-10">
-                  {/* Small Label Text */}
-                  <div className="mb-4 pb-2 border-b border-dashed border-carbon/30 dark:border-bone/30">
-                    <div className="font-mono text-[9px] tracking-widest text-carbon/60 dark:text-bone/60 uppercase">
-                      Album Details
-                    </div>
-                  </div>
-
-                  {/* Album Title - Handwritten Style */}
-                  <div className="mb-6">
-                    <h1
-                      className="text-3xl lg:text-4xl font-bold text-carbon dark:text-bone mb-2 leading-tight
-                                   tracking-tight"
-                      style={{
-                        fontFamily:
-                          'ui-serif, Georgia, Cambria, "Times New Roman", Times, serif',
-                        textShadow: "1px 1px 0px rgba(0,0,0,0.1)",
-                      }}
-                    >
-                      {album.title}
-                    </h1>
-                    <div className="h-px bg-carbon/20 dark:bg-bone/20 w-24" />
-                  </div>
-
-                  {/* Artist Name - Handwritten */}
-                  <div className="mb-8">
-                    <div className="text-[10px] tracking-widest uppercase text-carbon/50 dark:text-bone/50 font-mono mb-1">
-                      Artist
-                    </div>
-                    <p
-                      className="text-xl lg:text-2xl text-carbon dark:text-bone"
-                      style={{
-                        fontFamily:
-                          'ui-serif, Georgia, Cambria, "Times New Roman", Times, serif',
-                      }}
-                    >
-                      {artistName}
-                    </p>
-                  </div>
-
-                  {/* Info Grid - Handwritten Notes Style */}
-                  <div className="grid grid-cols-3 gap-6 mb-8">
-                    {year && (
-                      <div>
-                        <div className="text-[9px] tracking-widest uppercase text-carbon/50 dark:text-bone/50 font-mono mb-1.5">
-                          Year
-                        </div>
-                        <div
-                          className="text-2xl font-bold text-carbon dark:text-bone"
-                          style={{ fontFamily: "ui-serif, Georgia, Cambria" }}
-                        >
-                          {year}
-                        </div>
-                        <div className="h-px bg-carbon/20 dark:bg-bone/20 w-12 mt-1" />
-                      </div>
-                    )}
-                    <div>
-                      <div className="text-[9px] tracking-widest uppercase text-carbon/50 dark:text-bone/50 font-mono mb-1.5">
-                        Tracks
-                      </div>
-                      <div
-                        className="text-2xl font-bold text-carbon dark:text-bone"
-                        style={{ fontFamily: "ui-serif, Georgia, Cambria" }}
-                      >
-                        {tracks.length}
-                      </div>
-                      <div className="h-px bg-carbon/20 dark:bg-bone/20 w-12 mt-1" />
-                    </div>
-                    <div>
-                      <div className="text-[9px] tracking-widest uppercase text-carbon/50 dark:text-bone/50 font-mono mb-1.5">
-                        Duration
-                      </div>
-                      <div
-                        className="text-2xl font-bold text-carbon dark:text-bone"
-                        style={{ fontFamily: "ui-serif, Georgia, Cambria" }}
-                      >
-                        {totalMinutes}&apos;
-                      </div>
-                      <div className="h-px bg-carbon/20 dark:bg-bone/20 w-12 mt-1" />
-                    </div>
-                  </div>
-
-                  {/* Play Button - Cassette Player Style */}
+               {/* Actions */}
+               <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: 0.2 }}
+                  className="flex items-center gap-4 pt-2"
+                >
                   <button
                     onClick={handlePlayAlbum}
-                    disabled={tracks.length === 0}
-                    className="w-full py-4 bg-walkman-orange border-3 border-carbon
-                             font-mono font-bold text-base text-carbon uppercase tracking-wider
-                             shadow-[4px_4px_0px_0px_rgba(16,16,16,1)]
-                             hover:shadow-[6px_6px_0px_0px_rgba(16,16,16,1)]
-                             hover:translate-x-[-2px] hover:translate-y-[-2px]
-                             active:shadow-[2px_2px_0px_0px_rgba(16,16,16,1)]
-                             active:translate-x-[2px] active:translate-y-[2px]
-                             disabled:opacity-50 disabled:cursor-not-allowed
-                             transition-all duration-150 flex items-center justify-center gap-3
-                             rounded-sm"
+                    className="h-14 px-8 rounded-full bg-walkman-orange text-white font-bold text-lg hover:scale-105 active:scale-95 transition-all shadow-lg shadow-walkman-orange/30 flex items-center gap-2"
                   >
-                    <div className="flex items-center gap-2">
-                      <div className="w-0 h-0 border-t-[6px] border-t-transparent border-l-[10px] border-l-carbon border-b-[6px] border-b-transparent" />
-                      <span>Play Album</span>
-                    </div>
+                    {isAlbumPlaying && isPlaying ? (
+                      <>
+                         <Pause className="w-5 h-5 fill-current" />
+                         <span>Pause</span>
+                      </>
+                    ) : (
+                      <>
+                         <Play className="w-5 h-5 fill-current" />
+                         <span>Play</span>
+                      </>
+                    )}
                   </button>
 
-                  {/* Bottom Corner Note */}
-                  <div className="mt-6 pt-4 border-t border-dashed border-carbon/20 dark:border-bone/20">
-                    <div className="text-[10px] text-carbon/40 dark:text-bone/40 font-mono italic">
-                      Recorded {year || "N/A"} • {tracks.length} selections
-                    </div>
-                  </div>
-                </div>
-              </div>
+                  {/* <button className="w-12 h-12 rounded-full border border-gray-300 dark:border-white/20 flex items-center justify-center text-gray-600 dark:text-white/60 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-all">
+                     <MoreHorizontal className="w-6 h-6" />
+                  </button> */}
+               </motion.div>
             </div>
-
-            {/* Cassette Bottom Screws */}
-            <div className="absolute bottom-4 left-4 w-3 h-3 rounded-full border-2 border-carbon/30 dark:border-bone/30 bg-gray-300 dark:bg-gray-700" />
-            <div className="absolute bottom-4 right-4 w-3 h-3 rounded-full border-2 border-carbon/30 dark:border-bone/30 bg-gray-300 dark:bg-gray-700" />
-            <div className="absolute top-20 left-4 w-3 h-3 rounded-full border-2 border-carbon/30 dark:border-bone/30 bg-gray-300 dark:bg-gray-700" />
-            <div className="absolute top-20 right-4 w-3 h-3 rounded-full border-2 border-carbon/30 dark:border-bone/30 bg-gray-300 dark:bg-gray-700" />
           </div>
-        </motion.div>
 
-        {/* Track List - Control Panel Style */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
-          <div
-            className="bg-white dark:bg-[#1a1a1a] border-2 border-carbon dark:border-bone
-                        shadow-[8px_8px_0px_0px_rgba(16,16,16,1)] dark:shadow-[8px_8px_0px_0px_rgba(242,239,233,1)]"
+          {/* Track List */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="rounded-2xl overflow-hidden"
           >
-            {/* Header */}
-            <div className="border-b-2 border-carbon dark:border-bone p-4 bg-gray-50 dark:bg-[#0f0f0f]">
-              <div className="text-[9px] tracking-widest uppercase text-gray-500 dark:text-gray-400 font-mono">
-                TRACK LISTING
-              </div>
+            {/* Table Header */}
+            <div className="grid grid-cols-[auto_1fr_auto] md:grid-cols-[auto_1fr_auto_auto] gap-4 px-6 py-3 border-b border-gray-200/50 dark:border-white/5 text-xs font-semibold text-gray-500 dark:text-white/40 uppercase tracking-wider sticky top-0 bg-white/30 dark:bg-black/20 backdrop-blur-md z-10">
+              <div className="w-8 text-center">#</div>
+              <div>Title</div>
+              <div className="hidden md:block text-right">Plays</div>
+              <div className="text-right w-16"><Clock className="w-4 h-4 ml-auto" /></div>
             </div>
 
-            {/* Track Grid Header */}
-            <div className="border-b border-gray-200 dark:border-gray-800 p-4 hidden lg:grid grid-cols-12 gap-4 text-[9px] tracking-widest uppercase text-gray-500 dark:text-gray-400 font-mono">
-              <div className="col-span-1 text-center">#</div>
-              <div className="col-span-6">TITLE</div>
-              <div className="col-span-3">ARTIST</div>
-              <div className="col-span-2 text-right">
-                <Clock className="w-3 h-3 inline mr-1" />
-                TIME
-              </div>
-            </div>
+            <div className="divide-y divide-gray-200/50 dark:divide-white/5 bg-white/30 dark:bg-black/20 backdrop-blur-md">
+               {tracks.map((track, index) => {
+                 const isCurrent = currentTrack?.id === track.id;
 
-            {/* Tracks */}
-            <div className="divide-y divide-gray-200 dark:divide-gray-800">
-              <AnimatePresence>
-                {tracks.map((track, index) => {
-                  const isCurrentTrack = currentTrack?.id === track.id;
-                  const isTrackPlaying = isCurrentTrack && isPlaying;
-
-                  return (
-                    <motion.div
+                 return (
+                   <div
                       key={track.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.3, delay: index * 0.03 }}
-                      className={`group grid grid-cols-12 gap-4 p-4 hover:bg-gray-50 dark:hover:bg-[#0f0f0f]
-                                transition-colors duration-150 cursor-pointer
-                                ${
-                                  isCurrentTrack
-                                    ? "bg-walkman-orange/10 dark:bg-walkman-orange/5"
-                                    : ""
-                                }`}
                       onClick={() => handlePlayTrack(track, index)}
-                    >
-                      {/* Track Number / Play Button */}
-                      <div className="col-span-12 lg:col-span-1 flex items-center justify-center">
-                        <div className="relative w-8 h-8 flex items-center justify-center">
-                          <span
-                            className={`font-mono text-sm group-hover:opacity-0 transition-opacity
-                                        ${
-                                          isCurrentTrack
-                                            ? "text-walkman-orange font-bold"
-                                            : "text-gray-600 dark:text-gray-400"
-                                        }`}
-                          >
-                            {track.trackNumber || index + 1}
-                          </span>
-                          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                            {isTrackPlaying ? (
-                              <Pause className="w-4 h-4 text-walkman-orange fill-current" />
+                      className={`group grid grid-cols-[auto_1fr_auto] md:grid-cols-[auto_1fr_auto_auto] gap-4 px-6 py-3.5 hover:bg-white/40 dark:hover:bg-white/10 transition-colors cursor-pointer items-center ${
+                        isCurrent ? "bg-white/50 dark:bg-white/15 shadow-sm" : ""
+                      }`}
+                   >
+                      {/* Number / Play Icon */}
+                      <div className="w-8 text-center text-sm font-medium text-gray-500 dark:text-white/40 group-hover:text-gray-900 dark:group-hover:text-white relative flex justify-center">
+                         <span className={`group-hover:opacity-0 ${isCurrent ? 'opacity-0' : 'opacity-100'}`}>
+                           {index + 1}
+                         </span>
+                         <div className={`absolute inset-0 flex items-center justify-center ${isCurrent ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                            {isCurrent && isPlaying ? (
+                               <div className="w-4 h-4">
+                                  <div className="flex items-end justify-center gap-[2px] h-full w-full">
+                                      <div className="w-[3px] h-full bg-walkman-orange animate-[music-bar_0.5s_ease-in-out_infinite]" />
+                                      <div className="w-[3px] h-3/4 bg-walkman-orange animate-[music-bar_0.5s_ease-in-out_infinite_0.1s]" />
+                                      <div className="w-[3px] h-1/2 bg-walkman-orange animate-[music-bar_0.5s_ease-in-out_infinite_0.2s]" />
+                                  </div>
+                               </div>
                             ) : (
-                              <Play className="w-4 h-4 text-walkman-orange fill-current" />
+                               <Play className="w-4 h-4 text-gray-900 dark:text-white fill-current" />
                             )}
-                          </div>
-                        </div>
+                         </div>
                       </div>
 
-                      {/* Title */}
-                      <div className="col-span-12 lg:col-span-6 flex items-center">
-                        <div className="min-w-0">
-                          <p
-                            className={`font-mono font-medium text-sm truncate
-                                      ${
-                                        isCurrentTrack
-                                          ? "text-walkman-orange"
-                                          : "text-carbon dark:text-bone"
-                                      }`}
-                          >
-                            {track.title}
-                          </p>
-                          {track.version && (
-                            <p className="text-xs font-mono text-gray-500 dark:text-gray-400 truncate mt-0.5">
-                              {track.version}
-                            </p>
-                          )}
-                        </div>
-                        {track.explicit && (
-                          <span className="ml-2 px-1.5 py-0.5 text-[8px] font-mono border border-gray-400 dark:border-gray-600 rounded">
-                            E
-                          </span>
-                        )}
+                      {/* Title & Artist */}
+                      <div className="min-w-0">
+                         <div className={`font-medium text-base truncate ${isCurrent ? "text-walkman-orange" : "text-gray-900 dark:text-white group-hover:text-black dark:group-hover:text-white"}`}>
+                            {getTrackTitle(track)}
+                         </div>
+                         <div className={`text-sm truncate mt-0.5 ${isCurrent ? "text-walkman-orange/80" : "text-gray-500 dark:text-white/50 group-hover:text-gray-700 dark:group-hover:text-white/70"}`}>
+                            {getTrackArtists(track)}
+                         </div>
                       </div>
 
-                      {/* Artist */}
-                      <div className="col-span-8 lg:col-span-3 flex items-center">
-                        <p className="text-sm font-mono text-gray-600 dark:text-gray-400 truncate">
-                          {track.artist?.name ||
-                            track.artists?.[0]?.name ||
-                            artistName}
-                        </p>
+                      {/* Popularity (Hidden on mobile) */}
+                      <div className="hidden md:block text-right text-sm text-gray-500 dark:text-white/40 font-mono">
+                          {track.popularity ? <span className="opacity-50">{track.popularity}%</span> : "-"}
                       </div>
 
                       {/* Duration */}
-                      <div className="col-span-4 lg:col-span-2 flex items-center justify-end">
-                        <p className="text-sm font-mono text-gray-600 dark:text-gray-400 tabular-nums">
-                          {formatDuration(track.duration)}
-                        </p>
+                      <div className="text-right text-sm text-gray-500 dark:text-white/40 font-mono tabular-nums w-16">
+                         {formatTime(track.duration)}
                       </div>
-                    </motion.div>
-                  );
-                })}
-              </AnimatePresence>
+                   </div>
+                 );
+               })}
             </div>
+          </motion.div>
+
+          <div className="mt-8 text-xs text-gray-400 dark:text-white/30 text-center font-mono">
+             {year} • {tracks.length} tracks • {formatTotalDuration(totalDuration)}
           </div>
-        </motion.div>
+        </div>
       </div>
+
+      {/* Animation Styles */}
+      <style jsx global>{`
+        @keyframes music-bar {
+          0%, 100% { height: 40%; }
+          50% { height: 100%; }
+        }
+      `}</style>
     </AppLayout>
   );
 }

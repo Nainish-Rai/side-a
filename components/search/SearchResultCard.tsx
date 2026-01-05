@@ -2,7 +2,7 @@
 
 import { Track } from "@/lib/api/types";
 import { getTrackTitle, formatTime } from "@/lib/api/utils";
-import { Music, Play, Disc, Clock, TrendingUp, Volume2 } from "lucide-react";
+import { Play, Disc, TrendingUp, Clock } from "lucide-react";
 import { api } from "@/lib/api";
 import Image from "next/image";
 
@@ -21,224 +21,153 @@ export function SearchResultCard({
   isLoading,
   onClick,
 }: SearchResultCardProps) {
-  // Check if album has a cover UUID, otherwise use album ID
   const coverId = track.album?.cover || track.album?.id;
   const coverUrl = coverId ? api.getCoverUrl(coverId, "320") : undefined;
 
-  // Get audio quality tags
+  // Artists
+  const allArtists = track.artists || (track.artist ? [track.artist] : []);
+  const mainArtists = allArtists.filter((a) => a.type === "MAIN");
+  const displayArtist = mainArtists.length > 0 ? mainArtists.map(a => a.name).join(", ") : track.artist?.name || "Unknown Artist";
+
+  const isExplicit = track.explicit;
+
+  // Metadata Tags
   const qualityTags = track.mediaMetadata?.tags || [];
   const hasHiRes = qualityTags.includes("HIRES_LOSSLESS");
   const hasLossless = qualityTags.includes("LOSSLESS");
   const hasDolbyAtmos = qualityTags.includes("DOLBY_ATMOS");
 
-  // Get all artists (including featured)
-  const allArtists = track.artists || (track.artist ? [track.artist] : []);
-  const mainArtists = allArtists.filter((a) => a.type === "MAIN");
-  const featuredArtists = allArtists.filter((a) => a.type === "FEATURED");
-
   return (
     <div
       onClick={onClick}
-      className={`group relative p-4 bg-white dark:bg-[#1a1a1a] border border-carbon dark:border-bone
-                 hover:bg-bone dark:hover:bg-[#2a2a2a] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] dark:hover:shadow-[3px_3px_0px_0px_rgba(242,239,233,1)]
-                 active:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] dark:active:shadow-[1px_1px_0px_0px_rgba(242,239,233,1)]
-                 active:translate-x-[1px] active:translate-y-[1px]
-                 transition-all duration-150 cursor-pointer
-                 ${
-                   isCurrentTrack && isPlaying
-                     ? "border-walkman-orange border-2"
-                     : ""
-                 }
-                 ${isLoading ? "opacity-50" : ""}`}
+      className={`group relative flex items-center gap-4 p-2 pr-4 rounded-lg transition-colors w-full cursor-pointer
+        ${
+          isCurrentTrack
+            ? "bg-walkman-orange/10 hover:bg-walkman-orange/20"
+            : "hover:bg-white/5"
+        }
+        ${isLoading ? "opacity-50 pointer-events-none" : ""}
+      `}
     >
-      {isLoading && (
-        <div className="absolute inset-0 bg-white/90 dark:bg-carbon/90 flex items-center justify-center z-10">
-          <div className="w-6 h-6 border-2 border-carbon dark:border-bone border-t-transparent rounded-full animate-spin" />
-        </div>
-      )}
-
-      <div className="flex items-start gap-4">
-        {/* Album Art */}
-        <div
-          className="relative flex-shrink-0 w-16 h-16 bg-bone dark:bg-[#2a2a2a] border border-carbon dark:border-bone overflow-hidden
-                       shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)] dark:shadow-[inset_0_2px_4px_rgba(255,255,255,0.1)]"
-        >
-          {coverUrl ? (
-            <Image
-              src={coverUrl}
-              alt={track.album?.title || "Album cover"}
-              width={64}
-              height={64}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <Music className="w-6 h-6 text-carbon dark:text-bone" />
-            </div>
-          )}
-
-          {/* Play indicator overlay */}
-          <div
-            className="absolute inset-0 bg-carbon/0 group-hover:bg-carbon/70 dark:group-hover:bg-bone/70
-                          transition-all duration-200 flex items-center justify-center"
-          >
-            <Play
-              className="w-6 h-6 text-white dark:text-carbon opacity-0 group-hover:opacity-100
-                           transition-opacity duration-200 fill-white dark:fill-carbon"
-            />
+      {/* Cover Art / Play Overlay */}
+      <div className="relative shrink-0 w-12 h-12 rounded-md overflow-hidden bg-neutral-800 shadow-sm">
+        {coverUrl ? (
+          <Image
+            src={coverUrl}
+            alt={track.album?.title || "Album cover"}
+            width={48}
+            height={48}
+            className={`w-full h-full object-cover transition-opacity duration-300 ${isCurrentTrack && isPlaying ? "opacity-40" : "group-hover:opacity-40"}`}
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-white/5">
+            <Disc className="w-5 h-5 text-white/20" />
           </div>
+        )}
 
-          {/* Track Number Badge */}
-          {track.trackNumber && (
-            <div className="absolute bottom-0 left-0 bg-carbon dark:bg-bone text-white dark:text-carbon text-[9px] font-mono px-1 py-0.5">
-              {track.trackNumber}
-            </div>
-          )}
-        </div>
-
-        {/* Main Track Info */}
-        <div className="flex-1 min-w-0">
-          {/* Title and Explicit Badge */}
-          <div className="flex items-center gap-2 mb-1">
-            <h3 className="text-carbon dark:text-bone font-medium text-base truncate font-mono">
-              {getTrackTitle(track)}
-            </h3>
-            {track.explicit && (
-              <span className="flex-shrink-0 text-[9px] font-mono font-bold px-1.5 py-0.5 bg-carbon dark:bg-bone text-white dark:text-carbon border border-carbon dark:border-bone">
-                E
-              </span>
-            )}
-          </div>
-
-          {/* Artists */}
-          <div className="text-gray-600 dark:text-gray-400 text-sm font-mono mb-1">
-            {mainArtists.map((artist, i) => (
-              <span key={artist.id}>
-                {i > 0 && ", "}
-                {artist.name}
-              </span>
-            ))}
-            {featuredArtists.length > 0 && (
-              <span className="text-gray-400 dark:text-gray-500">
-                {" "}
-                ft. {featuredArtists.map((a) => a.name).join(", ")}
-              </span>
-            )}
-          </div>
-
-          {/* Album */}
-          {track.album?.title && (
-            <div className="flex items-center gap-1 text-gray-400 dark:text-gray-500 text-xs font-mono mb-2">
-              <Disc className="w-3 h-3" />
-              <span className="truncate">{track.album.title}</span>
-            </div>
-          )}
-
-          {/* Metadata Pills */}
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* Audio Quality Badges */}
-            {hasDolbyAtmos && (
-              <span className="text-[9px] font-mono font-bold px-2 py-1 bg-walkman-orange text-white border border-carbon dark:border-bone shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] dark:shadow-[1px_1px_0px_0px_rgba(242,239,233,1)]">
-                DOLBY ATMOS
-              </span>
-            )}
-            {hasHiRes && (
-              <span className="text-[9px] font-mono font-bold px-2 py-1 bg-walkman-yellow text-carbon border border-carbon dark:border-bone shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] dark:shadow-[1px_1px_0px_0px_rgba(242,239,233,1)]">
-                HI-RES
-              </span>
-            )}
-            {hasLossless && !hasHiRes && (
-              <span className="text-[9px] font-mono font-bold px-2 py-1 bg-bone dark:bg-[#2a2a2a] text-carbon dark:text-bone border border-carbon dark:border-bone shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] dark:shadow-[1px_1px_0px_0px_rgba(242,239,233,1)]">
-                LOSSLESS
-              </span>
-            )}
-
-            {/* Popularity */}
-            {track.popularity !== undefined && (
-              <span className="flex items-center gap-1 text-[9px] font-mono px-2 py-1 bg-white dark:bg-[#1a1a1a] border border-carbon dark:border-bone">
-                <TrendingUp className="w-3 h-3" />
-                {track.popularity}
-              </span>
-            )}
-
-            {/* BPM */}
-            {track.bpm && (
-              <span className="flex items-center gap-1 text-[9px] font-mono px-2 py-1 bg-white dark:bg-[#1a1a1a] border border-carbon dark:border-bone">
-                <Clock className="w-3 h-3" />
-                {track.bpm} BPM
-              </span>
-            )}
-
-            {/* Key */}
-            {track.key && track.keyScale && (
-              <span className="text-[9px] font-mono px-2 py-1 bg-white dark:bg-[#1a1a1a] border border-carbon dark:border-bone">
-                {track.key} {track.keyScale}
-              </span>
-            )}
-
-            {/* Audio Modes */}
-            {track.audioModes && track.audioModes.length > 0 && (
-              <span className="flex items-center gap-1 text-[9px] font-mono px-2 py-1 bg-white dark:bg-[#1a1a1a] border border-carbon dark:border-bone">
-                <Volume2 className="w-3 h-3" />
-                {track.audioModes[0]}
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Duration and Now Playing */}
-        <div className="flex-shrink-0 text-right">
-          <div className="text-[9px] font-mono tracking-widest mb-1 uppercase text-gray-500 dark:text-gray-400">
-            DURATION
-          </div>
-          <div className="text-carbon dark:text-bone text-sm font-mono tabular-nums font-bold">
-            {formatTime(track.duration)}
-          </div>
-
-          {/* Now Playing Indicator */}
-          {isCurrentTrack && isPlaying && (
-            <div className="flex items-center gap-0.5 mt-2 justify-end">
-              <div className="w-0.5 h-3 bg-walkman-orange animate-pulse"></div>
-              <div
-                className="w-0.5 h-2 bg-walkman-orange animate-pulse"
-                style={{ animationDelay: "0.1s" }}
-              ></div>
-              <div
-                className="w-0.5 h-4 bg-walkman-orange animate-pulse"
-                style={{ animationDelay: "0.2s" }}
-              ></div>
-            </div>
-          )}
+        {/* Overlay Icon (Play/Pause/Wave) */}
+        <div className={`absolute inset-0 flex items-center justify-center
+            ${isCurrentTrack && isPlaying ? "opacity-100" : "opacity-0 group-hover:opacity-100"}
+        `}>
+           {isCurrentTrack && isPlaying ? (
+               <div className="flex items-end gap-[2px] h-4 mb-1">
+                 <div className="w-1 bg-walkman-orange animate-[music-bar_0.5s_ease-in-out_infinite]" />
+                 <div className="w-1 bg-walkman-orange animate-[music-bar_0.5s_ease-in-out_0.1s_infinite]" />
+                 <div className="w-1 bg-walkman-orange animate-[music-bar_0.5s_ease-in-out_0.2s_infinite]" />
+                 <div className="w-1 bg-walkman-orange animate-[music-bar_0.5s_ease-in-out_0.3s_infinite]" />
+               </div>
+           ) : (
+             <Play className="w-5 h-5 text-white fill-white" />
+           )}
         </div>
       </div>
 
-      {/* Additional Info on Hover */}
-      <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-[9px] font-mono text-gray-500 dark:text-gray-400">
-          {track.streamStartDate && (
-            <div>
-              <span className="uppercase tracking-wider">Released:</span>{" "}
-              {new Date(track.streamStartDate).toLocaleDateString()}
-            </div>
-          )}
-          {track.isrc && (
-            <div>
-              <span className="uppercase tracking-wider">ISRC:</span>{" "}
-              {track.isrc}
-            </div>
-          )}
-          {track.replayGain !== undefined && (
-            <div>
-              <span className="uppercase tracking-wider">Gain:</span>{" "}
-              {track.replayGain.toFixed(2)} dB
-            </div>
-          )}
-          {track.copyright && (
-            <div className="col-span-2 md:col-span-4 truncate">
-              <span className="uppercase tracking-wider">©</span>{" "}
-              {track.copyright}
-            </div>
-          )}
+      {/* Track Info */}
+      <div className="flex-1 min-w-0 flex flex-col justify-center">
+        <div className="flex items-center gap-2">
+            <h3 className={`font-medium text-sm truncate ${isCurrentTrack ? "text-walkman-orange" : "text-white"}`}>
+              {getTrackTitle(track)}
+            </h3>
+            {isExplicit && (
+                <span className="shrink-0 text-[9px] font-bold px-1 rounded text-neutral-400 border border-neutral-600">E</span>
+            )}
+        </div>
+        <div className="flex items-center text-sm text-neutral-400 truncate mt-0.5">
+           <span className="truncate hover:text-white transition-colors">
+               {displayArtist}
+           </span>
+        </div>
+      </div>
+
+      {/* Album (Hidden on small screens) */}
+      <div className="hidden md:flex flex-1 min-w-0 items-center text-sm text-neutral-500 truncate group-hover:text-neutral-300 transition-colors">
+        {track.album?.title}
+      </div>
+
+      {/* Duration */}
+      <div className="shrink-0 text-xs font-mono text-neutral-500 w-10 text-right group-hover:text-neutral-300">
+        {formatTime(track.duration)}
+      </div>
+
+      {/* Detailed Metadata Popover (Hover) */}
+      <div className="absolute top-full left-0 sm:left-14 right-0 z-50 pt-2 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-[-5px] group-hover:translate-y-0 pointer-events-none group-hover:pointer-events-auto hidden sm:block">
+        <div className="bg-[#1a1a1a] border border-white/10 rounded-lg p-3 shadow-2xl backdrop-blur-xl">
+           <div className="flex items-center gap-3 flex-wrap">
+              {/* Quality Badges */}
+              {hasDolbyAtmos && (
+                <span className="text-[9px] font-bold px-1.5 py-0.5 bg-walkman-orange text-white rounded-sm">
+                  DOLBY ATMOS
+                </span>
+              )}
+              {hasHiRes && (
+                <span className="text-[9px] font-bold px-1.5 py-0.5 bg-walkman-yellow text-black rounded-sm">
+                  HI-RES
+                </span>
+              )}
+              {hasLossless && !hasHiRes && (
+                <span className="text-[9px] font-bold px-1.5 py-0.5 bg-white/10 text-white border border-white/10 rounded-sm">
+                  LOSSLESS
+                </span>
+              )}
+
+              {/* Popularity */}
+              {track.popularity !== undefined && (
+                <div className="flex items-center gap-1 text-[10px] text-neutral-400">
+                  <TrendingUp className="w-3 h-3" />
+                  <span>{track.popularity}</span>
+                </div>
+              )}
+
+              {/* BPM */}
+              {track.bpm && (
+                <div className="flex items-center gap-1 text-[10px] text-neutral-400">
+                  <Clock className="w-3 h-3" />
+                  <span>{track.bpm} BPM</span>
+                </div>
+              )}
+
+              {/* Key */}
+              {track.key && (
+                  <div className="text-[10px] text-neutral-400 border-l border-white/10 pl-3">
+                    Key: <span className="text-white">{track.key}</span>
+                  </div>
+              )}
+
+              {/* Date */}
+               {track.streamStartDate && (
+                  <div className="text-[10px] text-neutral-400 border-l border-white/10 pl-3">
+                    {new Date(track.streamStartDate).getFullYear()}
+                  </div>
+              )}
+           </div>
+
+           {/* Copyright / Extra */}
+           {(track.copyright || track.isrc) && (
+             <div className="mt-2 pt-2 border-t border-white/5 flex gap-4 text-[9px] text-neutral-600 font-mono">
+                {track.isrc && <span>ISRC: {track.isrc}</span>}
+                {track.copyright && <span className="truncate max-w-[200px]">{track.copyright}</span>}
+             </div>
+           )}
         </div>
       </div>
     </div>

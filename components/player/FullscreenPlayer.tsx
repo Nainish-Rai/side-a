@@ -2,11 +2,25 @@
 
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { getTrackTitle, getTrackArtists, formatTime } from "@/lib/api/utils";
-import { X, Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Music2, ListMusic } from "lucide-react";
+import {
+  X,
+  Play,
+  Pause,
+  SkipBack,
+  SkipForward,
+  Volume2,
+  VolumeX,
+  Music2,
+  Shuffle,
+  Repeat,
+  Repeat1,
+  ChevronLeft
+} from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import Image from "next/image";
 import { useRef, useState, useEffect } from "react";
 import { useLyrics } from "@/hooks/useLyrics";
+import { LyricsPanel } from "./LyricsPanel";
 
 interface FullscreenPlayerProps {
   isOpen: boolean;
@@ -29,15 +43,30 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
     seek,
     setVolume,
     toggleMute,
-    removeFromQueue,
     setQueue,
+    shuffleActive,
+    toggleShuffle,
+    repeatMode,
+    toggleRepeat,
   } = useAudioPlayer();
 
   const [isDraggingSeek, setIsDraggingSeek] = useState(false);
-  const [activeTab, setActiveTab] = useState<"queue" | "lyrics">("queue");
+  const [activeTab, setActiveTab] = useState<"queue" | "lyrics">("lyrics");
   const seekBarRef = useRef<HTMLDivElement>(null);
   const activeLineRef = useRef<HTMLDivElement>(null);
   const lyricsContainerRef = useRef<HTMLDivElement>(null);
+
+  // Lock body scroll when open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
 
   // Use lyrics hook
   const {
@@ -47,11 +76,20 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
     hasLyrics,
   } = useLyrics(currentTrack, currentTime, isPlaying);
 
-  const getCoverUrl = () => {
+  // Switch to queue tab if no lyrics available, but only once when track changes or initial load
+  useEffect(() => {
+    if (!lyricsLoading && !hasLyrics && activeTab === "lyrics") {
+      // Optional: Auto-switch to queue if no lyrics.
+      // Keeping it on lyrics tab with "No lyrics" message is also fine and less jarring.
+      // setActiveTab("queue");
+    }
+  }, [hasLyrics, lyricsLoading, activeTab]);
+
+  const getCoverUrl = (size: "large" | "thumb" = "large") => {
     const coverId = currentTrack?.album?.cover || currentTrack?.album?.id;
     if (!coverId) return null;
     const formattedId = String(coverId).replace(/-/g, "/");
-    return `https://resources.tidal.com/images/${formattedId}/640x640.jpg`;
+    return `https://resources.tidal.com/images/${formattedId}/${size === "large" ? "1280x1280" : "640x640"}.jpg`;
   };
 
   const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0;
@@ -78,374 +116,296 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
 
   // Auto-scroll to active lyrics line
   useEffect(() => {
-    if (activeTab === "lyrics" && activeLineRef.current && lyricsContainerRef.current) {
-      const container = lyricsContainerRef.current;
-      const activeLine = activeLineRef.current;
-
-      requestAnimationFrame(() => {
-        const containerHeight = container.clientHeight;
-        const lineTop = activeLine.offsetTop;
-        const lineHeight = activeLine.clientHeight;
-        const targetScrollTop = lineTop - containerHeight / 2 + lineHeight / 2;
-
-        container.scrollTo({
-          top: targetScrollTop,
-          behavior: "smooth",
-        });
+    if (activeTab === "lyrics" && activeLineRef.current) {
+      activeLineRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
       });
     }
   }, [currentLineIndex, activeTab]);
 
-  if (!isOpen || !currentTrack) return null;
+  if (!currentTrack) return null;
 
-  const coverUrl = getCoverUrl();
+  const coverUrl = getCoverUrl("large");
   const hasSyncedLyrics = Boolean(lyrics?.parsed && lyrics.parsed.length > 0);
 
   return (
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-100 bg-bone dark:bg-carbon"
-          style={{ height: "100vh", overflow: "hidden" }}
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 50 }}
+          transition={{ duration: 0.3, ease: "circOut" }}
+          className="fixed inset-0 z-50 bg-black text-white overflow-hidden flex flex-col"
         >
-          {/* Header */}
-          <div className="h-14 border-b border-gray-200 dark:border-gray-800 bg-bone/80 dark:bg-carbon/80 backdrop-blur-xl flex items-center justify-between px-6">
-            <button
-              onClick={onClose}
-              className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors"
-              aria-label="Close"
-            >
-              <X className="w-5 h-5 text-carbon dark:text-bone" />
-            </button>
-
-            <div className="text-sm font-medium text-carbon dark:text-bone">
-              Now Playing
-            </div>
-
-            <div className="w-8" />
+          {/* Background Layer - Blurry Album Art */}
+          <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+            {coverUrl && (
+              <div className="absolute inset-0">
+                <Image
+                  src={coverUrl}
+                  alt=""
+                  fill
+                  className="object-cover opacity-60 blur-[80px] scale-110"
+                  unoptimized
+                  priority
+                />
+                <div className="absolute inset-0 bg-black/40" /> {/* Dim overlay */}
+                <div className="absolute inset-0 bg-linear-to-t from-black via-transparent to-black/20" />
+              </div>
+            )}
           </div>
 
-          {/* Main Content - Fixed height with no scroll */}
-          <div className="flex h-[calc(100vh-56px)] overflow-hidden">
-            {/* Left Side - Album Art & Controls */}
-            <div className="flex-1 flex flex-col items-center justify-center p-8 overflow-hidden">
-              <div className="w-full max-w-md space-y-6">
-                {/* Album Art */}
-                <motion.div
-                  initial={{ scale: 0.9, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ duration: 0.4 }}
-                  className="relative max-w-80 mx-auto aspect-square rounded-lg overflow-hidden shadow-2xl"
-                >
-                  {coverUrl ? (
-                    <Image
-                      src={coverUrl}
-                      alt={getTrackTitle(currentTrack)}
-                      fill
-                      className="object-cover"
-                      unoptimized
-                      priority
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-gray-200 dark:bg-gray-800 flex items-center justify-center">
-                      <Music2 className="w-24 h-24 text-gray-400" />
-                    </div>
-                  )}
-                </motion.div>
+          {/* Header */}
+          <div className="relative z-10 flex items-center justify-between px-6 py-4 md:px-8 md:py-6">
+            <button
+              onClick={onClose}
+              className="group flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md transition-all"
+            >
+              <ChevronLeft className="w-5 h-5 text-white/90" />
+              <span className="text-sm font-medium text-white/90 hidden sm:block">Back</span>
+            </button>
 
-                {/* Track Info */}
-                <div className="text-center space-y-2">
-                  <h1 className="text-2xl font-semibold text-carbon dark:text-bone truncate">
+            <div className="flex bg-black/20 backdrop-blur-md rounded-full p-1 border border-white/5">
+               <button
+                  onClick={() => setActiveTab("queue")}
+                  className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${
+                    activeTab === "queue"
+                      ? "bg-white/20 text-white shadow-sm"
+                      : "text-white/60 hover:text-white"
+                  }`}
+                >
+                  Playing Next
+                </button>
+                <button
+                  onClick={() => setActiveTab("lyrics")}
+                  className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${
+                    activeTab === "lyrics"
+                      ? "bg-white/20 text-white shadow-sm"
+                      : "text-white/60 hover:text-white"
+                  }`}
+                >
+                  Lyrics
+                </button>
+            </div>
+
+             <button
+              onClick={onClose}
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md transition-all sm:hidden"
+            >
+               <X className="w-5 h-5" />
+            </button>
+             <div className="w-10 hidden sm:block"></div> {/* Spacer */}
+          </div>
+
+          {/* Main Content Grid */}
+          <div className="relative z-10 flex-1 w-full max-w-[1600px] mx-auto p-6 md:p-8 lg:px-12 grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center overflow-hidden">
+
+            {/* Left Side: Album Art & Controls */}
+            <div className="flex flex-col justify-center h-full max-h-[80vh] w-full max-w-xl mx-auto lg:mx-0 lg:max-w-none">
+
+              {/* Album Art Container */}
+              <div className="relative aspect-square w-full max-w-[320px] x-auto lg:mx-0 shadow-[0_24px_60px_-12px_rgba(0,0,0,0.7)] rounded-xl overflow-hidden mb-8 lg:mb-12 ">
+                {coverUrl ? (
+                  <Image
+                    src={coverUrl}
+                    alt={getTrackTitle(currentTrack)}
+                    fill
+                    className="object-cover"
+                    unoptimized
+                    priority
+                  />
+                ) : (
+                  <div className="w-full h-full bg-neutral-800 flex items-center justify-center">
+                    <Music2 className="w-24 h-24 text-neutral-600" />
+                  </div>
+                )}
+              </div>
+
+              {/* Track Info & Progress */}
+              <div className="space-y-6 w-full max-w-[480px] mx-auto lg:mx-0">
+                <div className="space-y-1 text-center lg:text-left">
+                  <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight line-clamp-1">
                     {getTrackTitle(currentTrack)}
                   </h1>
-                  <p className="text-lg text-gray-600 dark:text-gray-400 truncate">
+                  <p className="text-lg md:text-xl text-white/70 line-clamp-1">
                     {getTrackArtists(currentTrack)}
                   </p>
-                  {currentTrack.album?.title && (
-                    <p className="text-sm text-gray-500 dark:text-gray-500 truncate">
-                      {currentTrack.album.title}
-                    </p>
-                  )}
                 </div>
 
                 {/* Progress Bar */}
-                <div className="space-y-2">
+                <div className="space-y-2 group">
                   <div
                     ref={seekBarRef}
-                    className="h-1 bg-gray-200 dark:bg-gray-800 rounded-full cursor-pointer relative group"
+                    className="h-1.5 bg-white/20 rounded-full cursor-pointer relative overflow-hidden hover:h-2 transition-all"
                     onClick={handleSeekClick}
                     onMouseDown={handleSeekMouseDown}
                     onMouseMove={handleSeekMouseMove}
                     onMouseUp={handleSeekMouseUp}
                   >
                     <div
-                      className="h-full bg-walkman-orange rounded-full relative transition-none"
+                      className="h-full bg-white/90 rounded-full relative"
                       style={{ width: `${progressPercentage}%` }}
-                    >
-                      <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-walkman-orange rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </div>
+                    />
                   </div>
-                  <div className="flex justify-between text-xs text-gray-500 dark:text-gray-500">
+                  <div className="flex justify-between text-xs font-medium text-white/50 font-mono">
                     <span>{formatTime(currentTime)}</span>
                     <span>{formatTime(duration)}</span>
                   </div>
                 </div>
 
-                {/* Playback Controls */}
-                <div className="flex items-center justify-center gap-6">
-                  <button
-                    onClick={playPrev}
-                    className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors"
-                    aria-label="Previous"
+                {/* Main Controls */}
+                <div className="flex items-center justify-between lg:justify-start lg:gap-10">
+                   <button
+                    onClick={toggleShuffle}
+                    className={`p-2 rounded-full transition-colors ${
+                      shuffleActive ? "text-walkman-orange bg-white/10" : "text-white/60 hover:text-white"
+                    }`}
                   >
-                    <SkipBack className="w-5 h-5 text-carbon dark:text-bone" />
+                    <Shuffle className="w-5 h-5" />
                   </button>
 
-                  <button
-                    onClick={togglePlayPause}
-                    className="w-16 h-16 flex items-center justify-center rounded-full bg-walkman-orange hover:bg-[#ff8c61] text-white shadow-lg transition-all"
-                    aria-label={isPlaying ? "Pause" : "Play"}
-                  >
-                    {isPlaying ? (
-                      <Pause className="w-7 h-7" fill="white" />
-                    ) : (
-                      <Play className="w-7 h-7 ml-1" fill="white" />
-                    )}
-                  </button>
+                  <div className="flex items-center gap-6">
+                    <button
+                      onClick={playPrev}
+                      className="p-2 text-white/80 hover:text-white transition-transform active:scale-95"
+                    >
+                      <SkipBack className="w-8 h-8 fill-current" />
+                    </button>
+
+                    <button
+                      onClick={togglePlayPause}
+                      className="w-16 h-16 flex items-center justify-center rounded-full bg-white text-black hover:scale-105 transition-all shadow-lg active:scale-95"
+                    >
+                      {isPlaying ? (
+                        <Pause className="w-8 h-8 fill-current" />
+                      ) : (
+                        <Play className="w-8 h-8 ml-1 fill-current" />
+                      )}
+                    </button>
+
+                    <button
+                      onClick={playNext}
+                      className="p-2 text-white/80 hover:text-white transition-transform active:scale-95"
+                    >
+                      <SkipForward className="w-8 h-8 fill-current" />
+                    </button>
+                  </div>
 
                   <button
-                    onClick={playNext}
-                    className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors"
-                    aria-label="Next"
+                    onClick={toggleRepeat}
+                    className={`p-2 rounded-full transition-colors ${
+                      repeatMode !== 'off' ? "text-walkman-orange bg-white/10" : "text-white/60 hover:text-white"
+                    }`}
                   >
-                    <SkipForward className="w-5 h-5 text-carbon dark:text-bone" />
+                    {repeatMode === 'one' ? <Repeat1 className="w-5 h-5" /> : <Repeat className="w-5 h-5" />}
                   </button>
                 </div>
 
-                {/* Volume Control */}
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={toggleMute}
-                    className="shrink-0 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors"
-                    aria-label={isMuted ? "Unmute" : "Mute"}
-                  >
-                    {isMuted ? (
-                      <VolumeX className="w-4 h-4 text-carbon dark:text-bone" />
-                    ) : (
-                      <Volume2 className="w-4 h-4 text-carbon dark:text-bone" />
-                    )}
+                 {/* Volume - Desktop Only */}
+                <div className="hidden lg:flex items-center gap-3 mt-4 max-w-[200px]">
+                  <button onClick={toggleMute} className="text-white/70 hover:text-white">
+                     {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
                   </button>
-                  <div className="flex-1">
-                    <input
-                      type="range"
-                      min="0"
-                      max="100"
-                      value={isMuted ? 0 : volume * 100}
-                      onChange={(e) => setVolume(Number(e.target.value) / 100)}
-                      className="w-full h-1 bg-gray-200 dark:bg-gray-800 rounded-full appearance-none cursor-pointer
-                               [&::-webkit-slider-thumb]:appearance-none
-                               [&::-webkit-slider-thumb]:w-3
-                               [&::-webkit-slider-thumb]:h-3
-                               [&::-webkit-slider-thumb]:bg-walkman-orange
-                               [&::-webkit-slider-thumb]:rounded-full
-                               [&::-webkit-slider-thumb]:cursor-pointer
-                               [&::-moz-range-thumb]:w-3
-                               [&::-moz-range-thumb]:h-3
-                               [&::-moz-range-thumb]:bg-walkman-orange
-                               [&::-moz-range-thumb]:rounded-full
-                               [&::-moz-range-thumb]:border-0
-                               [&::-moz-range-thumb]:cursor-pointer"
-                      aria-label="Volume"
-                    />
-                  </div>
-                  <span className="shrink-0 w-10 text-sm text-gray-500 dark:text-gray-500 text-right">
-                    {Math.round((isMuted ? 0 : volume) * 100)}
-                  </span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={isMuted ? 0 : volume * 100}
+                    onChange={(e) => setVolume(Number(e.target.value) / 100)}
+                    className="w-full h-1 bg-white/20 rounded-full appearance-none cursor-pointer
+                             [&::-webkit-slider-thumb]:appearance-none
+                             [&::-webkit-slider-thumb]:w-3
+                             [&::-webkit-slider-thumb]:h-3
+                             [&::-webkit-slider-thumb]:bg-white
+                             [&::-webkit-slider-thumb]:rounded-full
+                             [&::-webkit-slider-thumb]:opacity-0
+                             [&::-webkit-slider-thumb]:hover:opacity-100"
+                  />
                 </div>
               </div>
             </div>
 
-            {/* Right Side - Queue/Lyrics */}
-            <div className="w-[420px] border-l border-gray-200 dark:border-gray-800 flex flex-col bg-white/50 dark:bg-black/20 backdrop-blur-xl overflow-hidden">
-              {/* Tabs */}
-              <div className="flex border-b border-gray-200 dark:border-gray-800">
-                <button
-                  onClick={() => setActiveTab("queue")}
-                  className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-colors relative
-                    ${activeTab === "queue"
-                      ? "text-walkman-orange"
-                      : "text-gray-600 dark:text-gray-400 hover:text-carbon dark:hover:text-bone"
-                    }`}
-                >
-                  <ListMusic className="w-4 h-4" />
-                  Queue
-                  {activeTab === "queue" && (
-                    <motion.div
-                      layoutId="activeTab"
-                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-walkman-orange"
-                      transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                    />
-                  )}
-                </button>
-                <button
-                  onClick={() => setActiveTab("lyrics")}
-                  disabled={!hasLyrics}
-                  className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-colors relative
-                    ${activeTab === "lyrics"
-                      ? "text-walkman-orange"
-                      : hasLyrics
-                        ? "text-gray-600 dark:text-gray-400 hover:text-carbon dark:hover:text-bone"
-                        : "text-gray-400 dark:text-gray-600 cursor-not-allowed"
-                    }`}
-                >
-                  <Music2 className="w-4 h-4" />
-                  Lyrics
-                  {activeTab === "lyrics" && (
-                    <motion.div
-                      layoutId="activeTab"
-                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-walkman-orange"
-                      transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                    />
-                  )}
-                </button>
-              </div>
-
-              {/* Tab Content */}
-              <div className="flex-1 overflow-hidden h-0">
-                {activeTab === "queue" && (
-                  <div className="h-full overflow-y-auto">
-                    {queue.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-                        <ListMusic className="w-12 h-12 text-gray-300 dark:text-gray-700 mb-3" />
-                        <p className="text-sm text-gray-500 dark:text-gray-500">Queue is empty</p>
-                      </div>
-                    ) : (
-                      <div className="divide-y divide-gray-100 dark:divide-gray-800">
-                        {queue.map((track, index) => {
-                          const isCurrentTrack = index === currentQueueIndex;
-
-                          return (
-                            <div
-                              key={`${track.id}-${index}`}
-                              onClick={() => !isCurrentTrack && setQueue(queue, index)}
-                              className={`group flex items-center gap-3 p-4 transition-colors
-                                ${isCurrentTrack
-                                  ? "bg-walkman-orange/5 dark:bg-walkman-orange/10"
-                                  : "hover:bg-gray-50 dark:hover:bg-gray-900 cursor-pointer"
-                                }`}
-                            >
-                              {/* Track Number */}
-                              <div className="shrink-0 w-6 text-center">
-                                {isCurrentTrack ? (
-                                  <div className="w-1.5 h-1.5 bg-walkman-orange rounded-full mx-auto animate-pulse" />
+            {/* Right Side: Lyrics or Queue */}
+            <div className="hidden lg:block h-full overflow-hidden mask-gradient-b">
+              {activeTab === "queue" && (
+                 <div className="h-full overflow-y-auto pr-4 lyrics-scroll space-y-2">
+                     <h3 className="text-sm font-bold text-white/50 uppercase tracking-widest mb-6 sticky top-0 bg-transparent backdrop-blur-none z-10">Up Next</h3>
+                     {queue.map((track, index) => {
+                        const isCurrent = index === currentQueueIndex;
+                        return (
+                          <div
+                            key={`${track.id}-${index}`}
+                            onClick={() => !isCurrent && setQueue(queue, index)}
+                            className={`group flex items-center gap-4 p-3 rounded-lg transition-all ${
+                                isCurrent ? "bg-white/10" : "hover:bg-white/5 cursor-pointer"
+                            }`}
+                          >
+                             {/* Small Art */}
+                             <div className="relative w-12 h-12 rounded overflow-hidden shrink-0 bg-neutral-800">
+                                {track.album?.cover ? (
+                                     <Image
+                                        src={`https://resources.tidal.com/images/${String(track.album.cover).replace(/-/g, "/")}/320x320.jpg`}
+                                        alt=""
+                                        fill
+                                        className="object-cover"
+                                        unoptimized
+                                     />
                                 ) : (
-                                  <span className="text-xs text-gray-500 dark:text-gray-500">
-                                    {index + 1}
-                                  </span>
+                                    <Music2 className="w-5 h-5 text-white/20 m-auto" />
                                 )}
-                              </div>
+                                {isCurrent && (
+                                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                                         <div className="w-1.5 h-1.5 bg-walkman-orange rounded-full animate-pulse" />
+                                    </div>
+                                )}
+                             </div>
 
-                              {/* Track Info */}
-                              <div className="flex-1 min-w-0">
-                                <div className={`text-sm truncate ${
-                                  isCurrentTrack
-                                    ? "text-walkman-orange font-medium"
-                                    : "text-carbon dark:text-bone"
-                                }`}>
-                                  {getTrackTitle(track)}
+                             <div className="flex-1 min-w-0">
+                                <div className={`font-medium truncate ${isCurrent ? "text-walkman-orange" : "text-white/90"}`}>
+                                    {getTrackTitle(track)}
                                 </div>
-                                <div className="text-xs text-gray-600 dark:text-gray-400 truncate">
-                                  {getTrackArtists(track)}
+                                <div className="text-sm text-white/60 truncate">
+                                    {getTrackArtists(track)}
                                 </div>
-                              </div>
+                             </div>
 
-                              {/* Duration */}
-                              <div className="shrink-0 text-xs text-gray-500 dark:text-gray-500">
+                             <div className="text-xs text-white/40 tabular-nums">
                                 {formatTime(track.duration || 0)}
-                              </div>
+                             </div>
+                          </div>
+                        );
+                     })}
+                 </div>
+              )}
 
-                              {/* Remove Button */}
-                              {!isCurrentTrack && (
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    removeFromQueue(index);
-                                  }}
-                                  className="shrink-0 w-6 h-6 flex items-center justify-center rounded-full
-                                           opacity-0 group-hover:opacity-100 hover:bg-gray-200 dark:hover:bg-gray-800
-                                           transition-all duration-150"
-                                  aria-label="Remove from queue"
-                                >
-                                  <X className="w-3.5 h-3.5 text-gray-500" />
-                                </button>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {activeTab === "lyrics" && (
-                  <div ref={lyricsContainerRef} className="h-full overflow-y-auto px-6 py-8">
-                    {lyricsLoading && (
-                      <div className="flex flex-col items-center justify-center h-full">
-                        <div className="w-8 h-8 border-2 border-gray-300 dark:border-gray-700 border-t-walkman-orange rounded-full animate-spin mb-4" />
-                        <p className="text-sm text-gray-500 dark:text-gray-500">Loading lyrics...</p>
-                      </div>
-                    )}
-
-                    {!lyricsLoading && !hasLyrics && (
-                      <div className="flex flex-col items-center justify-center h-full">
-                        <Music2 className="w-12 h-12 text-gray-300 dark:text-gray-700 mb-3" />
-                        <p className="text-sm text-gray-500 dark:text-gray-500">No lyrics available</p>
-                      </div>
-                    )}
-
-                    {hasSyncedLyrics && lyrics?.parsed && (
-                      <div className="space-y-6 py-8">
-                        {lyrics.parsed.map((line, index) => {
-                          const isActive = index === currentLineIndex;
-                          const isPast = index < currentLineIndex;
-
-                          return (
-                            <motion.div
-                              key={index}
-                              ref={isActive ? activeLineRef : null}
-                              initial={{ opacity: 0.3 }}
-                              animate={{
-                                opacity: isActive ? 1 : isPast ? 0.4 : 0.3,
-                                scale: isActive ? 1.05 : 1,
-                              }}
-                              transition={{ duration: 0.3 }}
-                              onClick={() => seek(line.time)}
-                              className={`cursor-pointer text-center transition-all duration-300
-                                ${isActive
-                                  ? "text-xl font-semibold text-walkman-orange"
-                                  : "text-base text-gray-600 dark:text-gray-400 hover:text-carbon dark:hover:text-bone"
-                                }`}
-                            >
-                              {line.text}
-                            </motion.div>
-                          );
-                        })}
-                      </div>
-                    )}
-
-                    {!hasSyncedLyrics && lyrics?.lyrics && (
-                      <div className="text-sm leading-relaxed text-carbon dark:text-bone whitespace-pre-wrap">
-                        {lyrics.lyrics}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
+              {activeTab === "lyrics" && (
+                <LyricsPanel
+                  track={currentTrack}
+                  lyrics={lyrics}
+                  currentLineIndex={currentLineIndex}
+                  isLoading={lyricsLoading}
+                  onSeek={seek}
+                  className="h-full"
+                />
+              )}
             </div>
+
+            {/* Mobile Tab Content (Overlay or Stack) - For now simplified for mobile */}
+            <div className="lg:hidden mt-8">
+                 {/* Simplified content for mobile could go here if we wanted to show lyrics below controls */}
+                 <div className="flex justify-center text-white/40 text-sm">
+                    {activeTab === 'lyrics' ? (
+                         hasSyncedLyrics && lyrics?.parsed?.[currentLineIndex] ? (
+                             <p className="text-center px-4 font-medium text-white/90 animate-pulse">
+                                 {lyrics.parsed[currentLineIndex].text}
+                             </p>
+                         ) : <p>Swipe up for lyrics</p>
+                    ) : <p>{queue.length - currentQueueIndex - 1} tracks up next</p>}
+                 </div>
+            </div>
+
           </div>
         </motion.div>
       )}

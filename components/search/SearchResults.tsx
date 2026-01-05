@@ -7,7 +7,8 @@ import { SearchResultCard } from "./SearchResultCard";
 import AlbumCard from "./AlbumCard";
 import ArtistCard from "./ArtistCard";
 import PlaylistCard from "./PlaylistCard";
-import { LayoutGrid, LayoutList } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
+import { Search, Music2, Disc, Users, ListMusic } from "lucide-react";
 
 type SearchContentType = "tracks" | "albums" | "artists" | "playlists";
 
@@ -63,33 +64,19 @@ export function SearchResults({
 }: SearchResultsProps) {
   const { setQueue, currentTrack, isPlaying } = useAudioPlayer();
   const [loadingTrackId, setLoadingTrackId] = useState<number | null>(null);
-  const [viewMode, setViewMode] = useState<"list" | "grid">("grid");
 
-  // Determine the content to display based on contentType
-  const items =
-    contentType === "tracks"
-      ? tracks
-      : contentType === "albums"
-      ? albums
-      : contentType === "artists"
-      ? artists
-      : playlists;
-
-  const contentTypeLabel =
-    contentType === "tracks"
-      ? "tracks"
-      : contentType === "albums"
-      ? "albums"
-      : contentType === "artists"
-      ? "artists"
-      : "playlists";
+  const tabs: { id: SearchContentType; label: string; icon: any }[] = [
+    { id: "tracks", label: "Songs", icon: Music2 },
+    { id: "albums", label: "Albums", icon: Disc },
+    { id: "artists", label: "Artists", icon: Users },
+    { id: "playlists", label: "Playlists", icon: ListMusic },
+  ];
 
   const handleTrackClick = async (track: Track, index: number) => {
     if (loadingTrackId === track.id) return;
 
     setLoadingTrackId(track.id);
     try {
-      // Set the entire search results as the queue, starting from the clicked track
       if (tracks) {
         await setQueue(tracks, index);
       }
@@ -102,174 +89,152 @@ export function SearchResults({
 
   const handleArtistClick = (artist: Artist) => {
     console.log("Artist clicked:", artist);
-    // TODO: Navigate to artist page
   };
 
   const handlePlaylistClick = (playlist: Playlist) => {
     console.log("Playlist clicked:", playlist);
-    // TODO: Navigate to playlist page or load playlist tracks
   };
 
   if (isLoading) {
     return (
-      <div className="w-full">
-        <div className="grid grid-cols-1 gap-3">
-          {[...Array(5)].map((_, i) => (
-            <div
-              key={i}
-              className="p-4 bg-bone dark:bg-[#1a1a1a] border border-gray-300 dark:border-gray-700 animate-pulse transition-colors duration-300"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-16 h-16 bg-gray-200 dark:bg-gray-800"></div>
-                <div className="flex-1">
-                  <div className="h-4 bg-gray-200 dark:bg-gray-800 w-3/4 mb-2"></div>
-                  <div className="h-3 bg-gray-200 dark:bg-gray-800 w-1/2"></div>
-                </div>
-              </div>
+      <div className="w-full space-y-4">
+        {[...Array(6)].map((_, i) => (
+          <div
+            key={i}
+            className="flex items-center gap-4 p-3 rounded-xl bg-white/5 animate-pulse"
+          >
+            <div className="w-12 h-12 rounded-md bg-white/10" />
+            <div className="flex-1 space-y-2">
+              <div className="h-4 w-1/3 bg-white/10 rounded" />
+              <div className="h-3 w-1/4 bg-white/10 rounded" />
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
     );
   }
 
+  const items =
+    contentType === "tracks"
+      ? tracks
+      : contentType === "albums"
+      ? albums
+      : contentType === "artists"
+      ? artists
+      : playlists;
+
   if (!items || items.length === 0) {
-    return null;
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-white/40">
+        <Search className="w-16 h-16 mb-4 opacity-50" />
+        <p className="text-lg font-medium">No results found</p>
+        <p className="text-sm">Try searching for something else</p>
+      </div>
+    );
   }
 
   return (
     <div className="w-full">
-      {/* Tab Navigation */}
-      <div className="mb-4 flex items-center border border-carbon dark:border-bone bg-white dark:bg-[#1a1a1a] transition-colors duration-300">
-        <button
-          onClick={() => onTabChange?.("tracks")}
-          className={`flex-1 px-6 py-3 font-mono text-[10px] tracking-widest uppercase transition-all duration-200
-                     ${
-                       contentType === "tracks"
-                         ? "bg-carbon dark:bg-bone text-white dark:text-carbon border-r border-carbon dark:border-bone"
-                         : "bg-white dark:bg-[#1a1a1a] text-carbon dark:text-bone hover:bg-bone dark:hover:bg-[#2a2a2a] border-r border-carbon dark:border-bone"
-                     }`}
-        >
-          <span className="block text-center">Tracks</span>
-          {tracks && tracks.length > 0 && (
-            <span className="block text-center text-[8px] mt-1 opacity-60">
-              {tracks.length}
-            </span>
-          )}
-        </button>
-        <button
-          onClick={() => onTabChange?.("albums")}
-          className={`flex-1 px-6 py-3 font-mono text-[10px] tracking-widest uppercase transition-all duration-200
-                     ${
-                       contentType === "albums"
-                         ? "bg-carbon dark:bg-bone text-white dark:text-carbon"
-                         : "bg-white dark:bg-[#1a1a1a] text-carbon dark:text-bone hover:bg-bone dark:hover:bg-[#2a2a2a]"
-                     }`}
-        >
-          <span className="block text-center">Albums</span>
-          {albums && albums.length > 0 && (
-            <span className="block text-center text-[8px] mt-1 opacity-60">
-              {albums.length}
-            </span>
-          )}
-        </button>
+      {/* Tab Navigation - Pill Style */}
+      <div className="sticky top-0 z-10 pb-6 bg-background/95 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-2">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => onTabChange?.(tab.id)}
+              className={`relative px-4 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap outline-none focus-visible:ring-2 focus-visible:ring-walkman-orange ${
+                contentType === tab.id
+                  ? "text-white"
+                  : "text-neutral-400 hover:text-white hover:bg-white/5"
+              }`}
+            >
+              {contentType === tab.id && (
+                <motion.div
+                  layoutId="activeTab"
+                  className="absolute inset-0 bg-walkman-orange rounded-full"
+                  initial={false}
+                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                />
+              )}
+              <span className="relative z-10 flex items-center gap-2">
+                <tab.icon className="w-4 h-4" />
+                {tab.label}
+              </span>
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Header with Results Count and View Toggle */}
-      <div className="mb-4 flex items-center justify-between bg-white dark:bg-[#1a1a1a] border border-carbon dark:border-bone p-3 transition-colors duration-300">
-        <div className="font-mono">
-          <span className="text-[9px] tracking-widest uppercase text-gray-500 dark:text-gray-400">
-            SEARCH RESULTS
-          </span>
-          <div className="text-sm font-bold text-carbon dark:text-bone mt-0.5">
+      {/* Results Count */}
+      <div className="mb-6 px-1">
+        <div className="text-sm font-medium text-white/50">
             {totalNumberOfItems !== undefined ? (
               <>
                 Showing {offset + 1}-
                 {Math.min(offset + limit, totalNumberOfItems)} of{" "}
-                {totalNumberOfItems.toLocaleString()} {contentTypeLabel}
+                {totalNumberOfItems.toLocaleString()} {contentType}
               </>
             ) : (
-              `${items.length} ${contentTypeLabel}`
+              `${items.length} ${contentType}`
             )}
-          </div>
-        </div>
-
-        {/* View Mode Toggle */}
-        <div className="flex items-center gap-1 border border-carbon dark:border-bone">
-          <button
-            onClick={() => setViewMode("list")}
-            className={`p-2 font-mono text-xs transition-colors
-                       ${
-                         viewMode === "list"
-                           ? "bg-carbon dark:bg-bone text-white dark:text-carbon"
-                           : "bg-white dark:bg-[#1a1a1a] text-carbon dark:text-bone hover:bg-bone dark:hover:bg-[#2a2a2a]"
-                       }`}
-            title="List View"
-          >
-            <LayoutList className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => setViewMode("grid")}
-            className={`p-2 font-mono text-xs transition-colors
-                       ${
-                         viewMode === "grid"
-                           ? "bg-carbon dark:bg-bone text-white dark:text-carbon"
-                           : "bg-white dark:bg-[#1a1a1a] text-carbon dark:text-bone hover:bg-bone dark:hover:bg-[#2a2a2a]"
-                       }`}
-            title="Grid View"
-          >
-            <LayoutGrid className="w-4 h-4" />
-          </button>
         </div>
       </div>
 
-      {/* Results Grid/List */}
-      <div
-        className={
-          viewMode === "grid"
-            ? `grid grid-cols-1 sm:grid-cols-2 ${
-                contentType === "albums" ? "lg:grid-cols-4" : ""
-              } gap-4`
-            : "grid grid-cols-1 gap-3"
-        }
+      {/* Content Area */}
+      <motion.div
+        layout
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
       >
-        {contentType === "tracks" &&
-          tracks?.map((track, index) => {
-            const isCurrentTrack = currentTrack?.id === track.id;
+        {contentType === "tracks" ? (
+            <div className="space-y-1">
+                {tracks?.map((track, index) => {
+                    const isCurrentTrack = currentTrack?.id === track.id;
+                    return (
+                    <SearchResultCard
+                        key={track.id}
+                        track={track}
+                        isCurrentTrack={isCurrentTrack}
+                        isPlaying={isCurrentTrack && isPlaying}
+                        isLoading={loadingTrackId === track.id}
+                        onClick={() => handleTrackClick(track, index)}
+                    />
+                    );
+                })}
+            </div>
+        ) : (
+             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                {contentType === "albums" &&
+                    albums?.map((album) => (
+                        <div key={album.id} className="w-full">
+                            <AlbumCard album={album} />
+                        </div>
+                    ))}
 
-            return (
-              <SearchResultCard
-                key={track.id}
-                track={track}
-                isCurrentTrack={isCurrentTrack}
-                isPlaying={isCurrentTrack && isPlaying}
-                isLoading={loadingTrackId === track.id}
-                onClick={() => handleTrackClick(track, index)}
-              />
-            );
-          })}
+                {contentType === "artists" &&
+                    artists?.map((artist) => (
+                         <div key={artist.id} className="w-full">
+                            <ArtistCard
+                                artist={artist}
+                                onClick={handleArtistClick}
+                            />
+                        </div>
+                    ))}
 
-        {contentType === "albums" &&
-          albums?.map((album) => <AlbumCard key={album.id} album={album} />)}
+                {contentType === "playlists" &&
+                    playlists?.map((playlist) => (
+                         <div key={playlist.uuid} className="w-full">
+                            <PlaylistCard
+                                playlist={playlist}
+                                onClick={handlePlaylistClick}
+                            />
+                        </div>
+                    ))}
+             </div>
+        )}
 
-        {contentType === "artists" &&
-          artists?.map((artist) => (
-            <ArtistCard
-              key={artist.id}
-              artist={artist}
-              onClick={handleArtistClick}
-            />
-          ))}
-
-        {contentType === "playlists" &&
-          playlists?.map((playlist) => (
-            <PlaylistCard
-              key={playlist.uuid}
-              playlist={playlist}
-              onClick={handlePlaylistClick}
-            />
-          ))}
-      </div>
+      </motion.div>
     </div>
   );
 }

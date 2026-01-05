@@ -20,8 +20,13 @@ export default {
       },
       animation: {
         "slide-in": "slideIn 0.3s ease-out",
+        "music-bar": "musicBar 0.5s ease-in-out infinite",
       },
       keyframes: {
+        musicBar: {
+          "0%, 100%": { height: "4px" },
+          "50%": { height: "16px" },
+        },
         slideIn: {
           "0%": { transform: "translateX(100%)" },
           "100%": { transform: "translateX(0)" },
