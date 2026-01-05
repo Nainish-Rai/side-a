@@ -62,7 +62,7 @@ export function FullscreenLyrics({
 
   return (
     <div id="karaoke-view" className="fixed inset-0 z-50 overflow-hidden bg-black flex flex-col">
-       {/* Background Layer - Blurry Album Art */}
+       {/* Background Layer - Gradient from Black to Blurry Album Art */}
        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
             {coverUrl && (
               <div className="absolute inset-0">
@@ -74,7 +74,8 @@ export function FullscreenLyrics({
                   unoptimized
                   priority
                 />
-                <div className="absolute inset-0 bg-black/30" />
+                {/* Gradient overlay: black at top, transparent at bottom */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-transparent" />
               </div>
             )}
        </div>
@@ -100,6 +101,28 @@ export function FullscreenLyrics({
         <div className="min-h-full flex items-center justify-center py-[50vh]">
             {lyrics?.parsed ? (
             <div className="flex flex-col items-start w-full max-w-4xl px-8 md:px-12 space-y-10">
+                {/* Minimal Cover Art & Metadata */}
+                <div className="flex items-center gap-4 mb-4 opacity-80">
+                  {coverUrl && (
+                    <div className="relative w-20 h-20 rounded-lg overflow-hidden shadow-lg flex-shrink-0">
+                      <Image
+                        src={coverUrl}
+                        alt={track.title}
+                        fill
+                        className="object-cover"
+                        unoptimized
+                      />
+                    </div>
+                  )}
+                  <div className="flex flex-col gap-1">
+                    <h2 className="text-lg font-semibold text-white/90 line-clamp-1">
+                      {track.title}
+                    </h2>
+                    <p className="text-sm text-white/60 line-clamp-1">
+                      {track.artists?.map(a => a.name).join(", ") || track.artist?.name || "Unknown Artist"}
+                    </p>
+                  </div>
+                </div>
                 {lyrics.parsed.map((line, index) => {
                 const isActive = index === currentLineIndex;
                 const isPast = index < currentLineIndex;
@@ -109,9 +132,9 @@ export function FullscreenLyrics({
                     key={index}
                     ref={isActive ? activeLineRef : null}
                     className={cn(
-                        "text-left transition-all duration-700 ease-[cubic-bezier(0.25,0.4,0.25,1)] cursor-pointer select-none origin-left w-full",
+                        "text-left transition-all duration-500 ease-[cubic-bezier(0.25,0.4,0.25,1)] cursor-pointer select-none origin-left w-full",
                         isActive
-                            ? "text-3xl md:text-5xl font-bold text-white scale-100 opacity-100 translate-x-0"
+                            ? "text-3xl md:text-4xl font-bold text-white scale-100 opacity-100 translate-x-0"
                             : "text-xl md:text-3xl font-semibold text-white/40 blur-[1px] scale-95 opacity-60 hover:text-white/70 hover:opacity-100 hover:blur-0"
                     )}
                     onClick={() => onSeek?.(line.time)}
