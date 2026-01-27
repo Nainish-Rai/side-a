@@ -130,9 +130,11 @@ export default function AlbumPage() {
                 src={coverUrl}
                 alt=""
                 fill
-                className="object-cover opacity-30 blur-[100px] scale-125"
-                unoptimized
-                priority
+                sizes="100vw"
+                quality={20}
+                className="object-cover opacity-30 blur-3xl"
+                priority={false}
+                loading="eager"
               />
               <div className="absolute inset-0 bg-white/30 dark:bg-black/40" /> {/* Adaptable overlay */}
               <div className="absolute inset-0 bg-linear-to-b from-white/40 via-white/80 to-white dark:from-black/20 dark:via-black/60 dark:to-black" />
@@ -170,10 +172,12 @@ export default function AlbumPage() {
                   <Image
                     src={coverUrl}
                     alt={album.title}
-                    fill
+                    width={320}
+                    height={320}
+                    sizes="(max-width: 768px) 160px, 320px"
+                    quality={90}
                     className="object-cover"
-                    priority
-                    sizes="(max-width: 768px) 100vw, 320px"
+                    priority={true}
                   />
                 ) : (
                   <div className="w-full h-full bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center">
