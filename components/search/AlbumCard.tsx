@@ -66,6 +66,10 @@ export default function AlbumCard({ album }: AlbumCardProps) {
               className="object-cover"
               priority={false}
               loading="lazy"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = "/placeholder-album.png";
+              }}
             />
 
             {/* Hover Overlay with Play Button */}
