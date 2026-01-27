@@ -38,6 +38,22 @@ export default function RootLayout({
             </ThemeProvider>
           </SearchProvider>
         </QueryProvider>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if (typeof window !== 'undefined') {
+                window.addEventListener('load', () => {
+                  const perfData = performance.getEntriesByType('navigation')[0];
+                  console.log('[Perf] Page load metrics:', {
+                    ttfb: Math.round(perfData.responseStart - perfData.requestStart),
+                    fcp: Math.round(perfData.domContentLoadedEventEnd - perfData.fetchStart),
+                    load: Math.round(perfData.loadEventEnd - perfData.fetchStart),
+                  });
+                });
+              }
+            `,
+          }}
+        />
       </body>
     </html>
   );
