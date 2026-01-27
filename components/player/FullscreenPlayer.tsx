@@ -19,6 +19,7 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import Image from "next/image";
 import { useRef, useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useLyrics } from "@/hooks/useLyrics";
 import { LyricsPanel } from "./LyricsPanel";
 
@@ -129,7 +130,7 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
   const coverUrl = getCoverUrl("large");
   const hasSyncedLyrics = Boolean(lyrics?.parsed && lyrics.parsed.length > 0);
 
-  return (
+  const content = (
     <AnimatePresence>
       {isOpen && (
         <motion.div
@@ -137,7 +138,7 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 50 }}
           transition={{ duration: 0.3, ease: "circOut" }}
-          className="fixed inset-0 z-50 bg-black text-white overflow-hidden flex flex-col"
+          className="fixed inset-0 z-[100] bg-black text-white overflow-hidden flex flex-col"
         >
           {/* Background Layer - Blurry Album Art */}
           <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
@@ -147,9 +148,11 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
                   src={coverUrl}
                   alt=""
                   fill
+                  sizes="100vw"
+                  quality={20}
                   className="object-cover opacity-60 blur-[80px] scale-110"
-                  unoptimized
-                  priority
+                  priority={false}
+                  loading="eager"
                 />
                 <div className="absolute inset-0 bg-black/40" /> {/* Dim overlay */}
                 <div className="absolute inset-0 bg-linear-to-t from-black via-transparent to-black/20" />
@@ -212,9 +215,10 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
                     src={coverUrl}
                     alt={getTrackTitle(currentTrack)}
                     fill
+                    sizes="(max-width: 768px) 80vw, 400px"
+                    quality={90}
                     className="object-cover"
-                    unoptimized
-                    priority
+                    priority={true}
                   />
                 ) : (
                   <div className="w-full h-full bg-neutral-800 flex items-center justify-center">
@@ -349,8 +353,10 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
                                         src={`https://resources.tidal.com/images/${String(track.album.cover).replace(/-/g, "/")}/320x320.jpg`}
                                         alt=""
                                         fill
+                                        sizes="48px"
+                                        quality={75}
                                         className="object-cover"
-                                        unoptimized
+                                        loading="lazy"
                                      />
                                 ) : (
                                     <Music2 className="w-5 h-5 text-white/20 m-auto" />
@@ -411,4 +417,7 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
       )}
     </AnimatePresence>
   );
+
+  // Use portal to render at document root level
+  return typeof window !== 'undefined' ? createPortal(content, document.body) : null;
 }
