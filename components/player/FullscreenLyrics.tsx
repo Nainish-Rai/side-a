@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import { useLyrics } from "@/hooks/useLyrics";
 import { Track, LyricsData } from "@/lib/api/types";
@@ -60,8 +61,8 @@ export function FullscreenLyrics({
 
   const coverUrl = getCoverUrl("large");
 
-  return (
-    <div id="karaoke-view" className="fixed inset-0 z-50 overflow-hidden bg-black flex flex-col">
+  const content = (
+    <div id="karaoke-view" className="fixed inset-0 z-[100] overflow-hidden bg-black flex flex-col">
        {/* Background Layer - Gradient from Black to Blurry Album Art */}
        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
             {coverUrl && (
@@ -70,9 +71,11 @@ export function FullscreenLyrics({
                   src={coverUrl}
                   alt=""
                   fill
+                  sizes="100vw"
+                  quality={20}
                   className="object-cover opacity-60 blur-[100px] scale-125"
-                  unoptimized
-                  priority
+                  priority={false}
+                  loading="eager"
                 />
                 {/* Gradient overlay: black at top, transparent at bottom */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-transparent" />
@@ -109,8 +112,10 @@ export function FullscreenLyrics({
                         src={coverUrl}
                         alt={track.title}
                         fill
+                        sizes="80px"
+                        quality={85}
                         className="object-cover"
-                        unoptimized
+                        loading="eager"
                       />
                     </div>
                   )}
@@ -158,4 +163,7 @@ export function FullscreenLyrics({
       </div>
     </div>
   );
+
+  // Use portal to render at document root level
+  return typeof window !== 'undefined' ? createPortal(content, document.body) : null;
 }
