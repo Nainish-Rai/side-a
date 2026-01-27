@@ -12,9 +12,9 @@ export function useSearch() {
  // Track search query with infinite scroll
  const tracksQuery = useInfiniteQuery({
   queryKey: ["search", "tracks", query],
-  queryFn: async ({ pageParam = 0 }) => {
+  queryFn: async ({ pageParam = 0, signal }) => {
    if (!query) return { items: [], totalNumberOfItems: 0, offset: 0, limit: 0 };
-   return api.searchTracks(query, { offset: pageParam, limit: 25 });
+   return api.searchTracks(query, { offset: pageParam, limit: 25, signal });
   },
   getNextPageParam: (lastPage) => {
    const currentOffset = lastPage.offset || 0;
@@ -33,9 +33,9 @@ export function useSearch() {
  // Album search query with infinite scroll
  const albumsQuery = useInfiniteQuery({
   queryKey: ["search", "albums", query],
-  queryFn: async ({ pageParam = 0 }) => {
+  queryFn: async ({ pageParam = 0, signal }) => {
    if (!query) return { items: [], totalNumberOfItems: 0, offset: 0, limit: 0 };
-   return api.searchAlbums(query, { offset: pageParam, limit: 25 });
+   return api.searchAlbums(query, { offset: pageParam, limit: 25, signal });
   },
   getNextPageParam: (lastPage) => {
    const currentOffset = lastPage.offset || 0;
@@ -53,9 +53,9 @@ export function useSearch() {
  // Artists search query with infinite scroll
  const artistsQuery = useInfiniteQuery({
   queryKey: ["search", "artists", query],
-  queryFn: async ({ pageParam = 0 }) => {
+  queryFn: async ({ pageParam = 0, signal }) => {
    if (!query) return { items: [], totalNumberOfItems: 0, offset: 0, limit: 0 };
-   return api.searchArtists(query, { offset: pageParam, limit: 25 });
+   return api.searchArtists(query, { offset: pageParam, limit: 25, signal });
   },
   getNextPageParam: (lastPage) => {
    const currentOffset = lastPage.offset || 0;

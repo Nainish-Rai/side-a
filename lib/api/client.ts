@@ -291,17 +291,24 @@ export class LosslessAPI {
 
   async searchTracks(
     query: string,
-    options: { signal?: AbortSignal } = {}
+    options: { signal?: AbortSignal; offset?: number; limit?: number } = {}
   ): Promise<SearchResponse<Track>> {
+    const { offset = 0, limit = 25 } = options;
+    const cacheKey = `${query}_${offset}_${limit}`;
     const cached = (await this.cache.get(
       "search_tracks",
-      query
+      cacheKey
     )) as SearchResponse<Track> | null;
     if (cached) return cached;
 
     try {
+      const params = new URLSearchParams({
+        s: query,
+        offset: offset.toString(),
+        limit: limit.toString(),
+      });
       const response = await this.fetchWithRetry(
-        `/search/?s=${encodeURIComponent(query)}`,
+        `/search/?${params.toString()}`,
         options
       );
       const data = await response.json();
@@ -311,7 +318,7 @@ export class LosslessAPI {
         items: normalized.items.map((t) => this.prepareTrack(t)),
       };
 
-      await this.cache.set("search_tracks", query, result);
+      await this.cache.set("search_tracks", cacheKey, result);
       return result;
     } catch (error) {
       if (error instanceof Error && error.name === "AbortError") throw error;
@@ -322,17 +329,24 @@ export class LosslessAPI {
 
   async searchAlbums(
     query: string,
-    options: { signal?: AbortSignal } = {}
+    options: { signal?: AbortSignal; offset?: number; limit?: number } = {}
   ): Promise<SearchResponse<Album>> {
+    const { offset = 0, limit = 25 } = options;
+    const cacheKey = `${query}_${offset}_${limit}`;
     const cached = (await this.cache.get(
       "search_albums",
-      query
+      cacheKey
     )) as SearchResponse<Album> | null;
     if (cached) return cached;
 
     try {
+      const params = new URLSearchParams({
+        al: query,
+        offset: offset.toString(),
+        limit: limit.toString(),
+      });
       const response = await this.fetchWithRetry(
-        `/search/?al=${encodeURIComponent(query)}`,
+        `/search/?${params.toString()}`,
         options
       );
       const data = await response.json();
@@ -342,7 +356,7 @@ export class LosslessAPI {
         items: normalized.items.map((album) => this.prepareAlbum(album)),
       };
 
-      await this.cache.set("search_albums", query, result);
+      await this.cache.set("search_albums", cacheKey, result);
       return result;
     } catch (error) {
       if (error instanceof Error && error.name === "AbortError") throw error;
@@ -353,17 +367,24 @@ export class LosslessAPI {
 
   async searchArtists(
     query: string,
-    options: { signal?: AbortSignal } = {}
+    options: { signal?: AbortSignal; offset?: number; limit?: number } = {}
   ): Promise<SearchResponse<Artist>> {
+    const { offset = 0, limit = 25 } = options;
+    const cacheKey = `${query}_${offset}_${limit}`;
     const cached = (await this.cache.get(
       "search_artists",
-      query
+      cacheKey
     )) as SearchResponse<Artist> | null;
     if (cached) return cached;
 
     try {
+      const params = new URLSearchParams({
+        a: query,
+        offset: offset.toString(),
+        limit: limit.toString(),
+      });
       const response = await this.fetchWithRetry(
-        `/search/?a=${encodeURIComponent(query)}`,
+        `/search/?${params.toString()}`,
         options
       );
       const data = await response.json();
@@ -373,7 +394,7 @@ export class LosslessAPI {
         items: normalized.items.map((a) => this.prepareArtist(a)),
       };
 
-      await this.cache.set("search_artists", query, result);
+      await this.cache.set("search_artists", cacheKey, result);
       return result;
     } catch (error) {
       if (error instanceof Error && error.name === "AbortError") throw error;
