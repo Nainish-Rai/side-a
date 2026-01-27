@@ -25,8 +25,16 @@ const Queue = dynamic(() => import('./Queue').then(mod => ({ default: mod.Queue 
   loading: () => null,
   ssr: false,
 });
+
+const FullscreenPlayer = dynamic(
+  () => import('./FullscreenPlayer').then(mod => ({ default: mod.FullscreenPlayer })),
+  {
+    loading: () => null,
+    ssr: false,
+  }
+);
+
 import { FullscreenLyrics } from "./FullscreenLyrics";
-import { FullscreenPlayer } from "./FullscreenPlayer";
 import { useLyrics } from "@/hooks/useLyrics";
 import Image from "next/image";
 import { motion } from "motion/react";
