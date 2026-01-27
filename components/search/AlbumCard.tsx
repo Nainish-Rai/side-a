@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { memo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Album } from "@/lib/api/types";
@@ -9,7 +9,7 @@ interface AlbumCardProps {
   album: Album;
 }
 
-export default function AlbumCard({ album }: AlbumCardProps) {
+function AlbumCard({ album }: AlbumCardProps) {
   const coverUrl = album.cover
     ? `https://resources.tidal.com/images/${album.cover.replace(
         /-/g,
@@ -99,3 +99,7 @@ export default function AlbumCard({ album }: AlbumCardProps) {
     </Link>
   );
 }
+
+AlbumCard.displayName = 'AlbumCard';
+
+export default memo(AlbumCard);
