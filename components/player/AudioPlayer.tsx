@@ -24,6 +24,7 @@ import { FullscreenLyrics } from "./FullscreenLyrics";
 import { FullscreenPlayer } from "./FullscreenPlayer";
 import { useLyrics } from "@/hooks/useLyrics";
 import Image from "next/image";
+import { motion } from "motion/react";
 
 export function AudioPlayer() {
   const {
@@ -54,7 +55,7 @@ export function AudioPlayer() {
   const [isStatsOpen, setIsStatsOpen] = useState(false);
   const [isLyricsOpen, setIsLyricsOpen] = useState(false);
   const [isFullscreenOpen, setIsFullscreenOpen] = useState(false);
-  const [spectrumBars, setSpectrumBars] = useState([0, 0, 0, 0, 0]);
+  const [spectrumBars, setSpectrumBars] = useState([0, 0, 0]);
   const animationFrameRef = useRef<number | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -75,7 +76,7 @@ export function AudioPlayer() {
     const coverId = currentTrack?.album?.cover || currentTrack?.album?.id;
     if (!coverId) return null;
     const formattedId = String(coverId).replace(/-/g, "/");
-    return `https://resources.tidal.com/images/${formattedId}/80x80.jpg`;
+    return `https://resources.tidal.com/images/${formattedId}/160x160.jpg`;
   };
 
   // Initialize audio analyzer for spectrum
@@ -94,10 +95,10 @@ export function AudioPlayer() {
         ).webkitAudioContext;
       audioContextRef.current = new AudioContext();
       analyserRef.current = audioContextRef.current.createAnalyser();
-      analyserRef.current.fftSize = 128; // Increased for better frequency resolution
-      analyserRef.current.smoothingTimeConstant = 0.75; // Smooth but responsive
-      analyserRef.current.minDecibels = -85; // Lower threshold for more sensitivity
-      analyserRef.current.maxDecibels = -25; // Upper threshold
+      analyserRef.current.fftSize = 64;
+      analyserRef.current.smoothingTimeConstant = 0.8;
+      analyserRef.current.minDecibels = -80;
+      analyserRef.current.maxDecibels = -20;
 
       const source =
         audioContextRef.current.createMediaElementSource(audioElement);
@@ -119,8 +120,7 @@ export function AudioPlayer() {
         cancelAnimationFrame(animationFrameRef.current);
         animationFrameRef.current = null;
       }
-      // Reset bars via timeout to avoid setState in effect
-      const timeoutId = setTimeout(() => setSpectrumBars([0, 0, 0, 0, 0]), 0);
+      const timeoutId = setTimeout(() => setSpectrumBars([0, 0, 0]), 0);
       return () => clearTimeout(timeoutId);
     }
 
@@ -131,14 +131,10 @@ export function AudioPlayer() {
     const updateSpectrum = () => {
       analyser.getByteFrequencyData(dataArray);
 
-      // Sample 5 different frequency ranges for better visualization
-      // Spread across the frequency spectrum for more variety
       const bars = [
-        Math.floor((dataArray[2] / 255) * 100), // Bass (low)
-        Math.floor((dataArray[5] / 255) * 100), // Low-mid
-        Math.floor((dataArray[8] / 255) * 100), // Mid
-        Math.floor((dataArray[12] / 255) * 100), // Mid-high
-        Math.floor((dataArray[18] / 255) * 100), // Treble (high)
+        Math.floor((dataArray[2] / 255) * 100),
+        Math.floor((dataArray[5] / 255) * 100),
+        Math.floor((dataArray[8] / 255) * 100),
       ];
 
       setSpectrumBars(bars);
@@ -153,18 +149,6 @@ export function AudioPlayer() {
       }
     };
   }, [isPlaying]);
-
-  // Format quality/bitrate for display
-  const getQualityDisplay = () => {
-    if (currentQuality === "LOSSLESS" || currentQuality === "HI_RES") {
-      return "FLAC";
-    } else if (currentQuality === "HIGH") {
-      return "320";
-    } else if (currentQuality === "LOW") {
-      return "96";
-    }
-    return "AAC";
-  };
 
   const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!progressBarRef.current || duration === 0) return;
@@ -213,7 +197,6 @@ export function AudioPlayer() {
   // Keyboard shortcut for stats (i key)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Only trigger if not typing in an input
       if (
         e.key === "i" &&
         !["INPUT", "TEXTAREA"].includes((e.target as HTMLElement).tagName)
@@ -231,78 +214,68 @@ export function AudioPlayer() {
   const coverUrl = getCoverUrl();
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-bone dark:bg-carbon border-t border-carbon dark:border-bone z-50 shadow-[0_-2px_8px_rgba(0,0,0,0.06)] dark:shadow-[0_-2px_8px_rgba(242,239,233,0.06)] transition-colors duration-300">
-      {/* Progress Bar - Clean Spotify Style */}
+    <div className="fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-2xl border-t border-white/10 z-50">
+      {/* Progress Bar - Minimal Apple Music Style */}
       <div
         ref={progressBarRef}
-        className="h-1 bg-gray-300 dark:bg-gray-700 cursor-pointer relative group"
+        className="h-1 bg-white/10 cursor-pointer relative group hover:h-1.5 transition-all duration-150"
         onClick={handleProgressClick}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
       >
         <div
-          className="h-full bg-carbon dark:bg-bone transition-none relative"
+          className="h-full bg-white/90 transition-none relative"
           style={{ width: `${progressPercentage}%` }}
         >
-          <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-carbon dark:bg-bone rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+          <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg" />
         </div>
       </div>
 
-      {/* Single Row Compact Layout */}
-      <div className="max-w-7xl mx-auto px-4 py-2.5">
-        <div className="flex items-center justify-between gap-4">
-          {/* Left: Album Art + Track Info + Spectrum */}
-          <div className="flex items-center gap-3 flex-1 min-w-0">
+      {/* Player Content */}
+      <div className="max-w-7xl mx-auto px-6 py-3">
+        <div className="flex items-center justify-between gap-6">
+          {/* Left: Track Info */}
+          <div className="flex items-center gap-4 flex-1 min-w-0">
             {/* Album Art */}
             {coverUrl && (
-              <div className="relative w-12 h-12 flex-shrink-0 rounded overflow-hidden shadow-sm">
+              <motion.div
+                className="relative w-14 h-14 flex-shrink-0 rounded-lg overflow-hidden shadow-xl"
+                whileHover={{ scale: 1.05 }}
+                transition={{ duration: 0.2 }}
+              >
                 <Image
                   src={coverUrl}
                   alt={getTrackTitle(currentTrack)}
                   fill
+                  sizes="48px"
+                  quality={85}
                   className="object-cover"
-                  unoptimized
+                  priority={true}
                 />
-              </div>
+              </motion.div>
             )}
 
             {/* Track Details */}
             <div className="flex-1 min-w-0">
-              <div className="font-medium text-sm truncate text-carbon dark:text-bone font-mono">
+              <div className="font-semibold text-sm truncate text-white">
                 {getTrackTitle(currentTrack)}
               </div>
-              <div className="text-xs text-gray-600 dark:text-gray-400 truncate font-mono">
+              <div className="text-xs text-white/50 truncate">
                 {getTrackArtists(currentTrack)}
               </div>
             </div>
 
-            {/* Spectrum Visualizer - 5 light bars that respond to audio */}
-            <div className="flex items-end gap-1 h-8 flex-shrink-0 px-2">
+            {/* Spectrum Visualizer - Minimal 3 bars */}
+            <div className="hidden md:flex items-end gap-1.5 h-6 flex-shrink-0">
               {spectrumBars.map((intensity, i) => {
-                // Calculate if this bar should be "lit" based on intensity
-                const isActive = intensity > 15;
-                const heightPercent = Math.max(
-                  12,
-                  Math.min(100, intensity * 0.32)
-                );
-
+                const heightPercent = Math.max(20, Math.min(100, intensity * 0.8));
                 return (
-                  <div
+                  <motion.div
                     key={i}
-                    className="relative w-1.5 rounded-sm transition-all duration-100 ease-out"
-                    style={{
-                      height: `${heightPercent}%`,
-                      backgroundColor: isActive
-                        ? "#ff6b35" // walkman-orange when active
-                        : "#d1d5db", // gray when inactive
-                      opacity: isActive ? 1 : 0.4,
-                      boxShadow: isActive
-                        ? `0 0 4px rgba(255, 107, 53, ${
-                            intensity / 100
-                          }), 0 0 8px rgba(255, 107, 53, ${intensity / 200})`
-                        : "none",
-                    }}
+                    className="w-1 bg-white/60 rounded-full"
+                    animate={{ height: `${heightPercent}%` }}
+                    transition={{ duration: 0.1, ease: "easeOut" }}
                   />
                 );
               })}
@@ -310,218 +283,185 @@ export function AudioPlayer() {
           </div>
 
           {/* Center: Playback Controls */}
-          <div className="flex flex-col items-center gap-1.5 flex-shrink-0">
+          <div className="flex flex-col items-center gap-2 flex-shrink-0">
             {/* Control Buttons */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-4">
               {/* Shuffle Button */}
-              <button
+              <motion.button
                 onClick={toggleShuffle}
-                className={`w-6 h-6 flex items-center justify-center hover:bg-white dark:hover:bg-[#1a1a1a]
-                           rounded transition-colors duration-150 ${
-                             shuffleActive
-                               ? "text-walkman-orange"
-                               : "text-carbon dark:text-bone"
-                           }`}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors ${
+                  shuffleActive
+                    ? "text-white bg-white/10"
+                    : "text-white/50 hover:text-white hover:bg-white/5"
+                }`}
                 aria-label="Shuffle"
-                title={shuffleActive ? "Shuffle on" : "Shuffle off"}
               >
-                <Shuffle className="w-3.5 h-3.5" />
-              </button>
+                <Shuffle className="w-4 h-4" />
+              </motion.button>
 
               {/* Previous Button */}
-              <button
+              <motion.button
                 onClick={playPrev}
-                className="w-6 h-6 flex items-center justify-center hover:bg-white dark:hover:bg-[#1a1a1a]
-                           rounded transition-colors duration-150 text-carbon dark:text-bone"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                className="w-8 h-8 flex items-center justify-center text-white/70 hover:text-white transition-colors"
                 aria-label="Previous"
               >
-                <SkipBack className="w-3.5 h-3.5" />
-              </button>
+                <SkipBack className="w-5 h-5 fill-current" />
+              </motion.button>
 
               {/* Play/Pause Button */}
-              <button
+              <motion.button
                 onClick={togglePlayPause}
-                className="flex-shrink-0 w-8 h-8 rounded-full bg-carbon dark:bg-bone hover:bg-walkman-orange dark:hover:bg-walkman-orange
-                           transition-colors duration-200 flex items-center justify-center
-                           shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)] dark:shadow-[2px_2px_0px_0px_rgba(242,239,233,0.2)]
-                           hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,0.2)] dark:hover:shadow-[1px_1px_0px_0px_rgba(242,239,233,0.2)]
-                           active:shadow-none active:translate-x-[1px] active:translate-y-[1px]"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="flex-shrink-0 w-10 h-10 rounded-full bg-white hover:bg-white/90
+                           transition-all duration-200 flex items-center justify-center
+                           shadow-lg"
                 aria-label={isPlaying ? "Pause" : "Play"}
               >
                 {isPlaying ? (
-                  <Pause
-                    className="w-4 h-4 text-white dark:text-carbon"
-                    fill="white"
-                  />
+                  <Pause className="w-5 h-5 text-black fill-black" />
                 ) : (
-                  <Play
-                    className="w-4 h-4 ml-0.5 text-white dark:text-carbon"
-                    fill="white"
-                  />
+                  <Play className="w-5 h-5 ml-0.5 text-black fill-black" />
                 )}
-              </button>
+              </motion.button>
 
               {/* Next Button */}
-              <button
+              <motion.button
                 onClick={playNext}
-                className="w-6 h-6 flex items-center justify-center hover:bg-white dark:hover:bg-[#1a1a1a]
-                           rounded transition-colors duration-150 text-carbon dark:text-bone"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                className="w-8 h-8 flex items-center justify-center text-white/70 hover:text-white transition-colors"
                 aria-label="Next"
               >
-                <SkipForward className="w-3.5 h-3.5" />
-              </button>
+                <SkipForward className="w-5 h-5 fill-current" />
+              </motion.button>
 
               {/* Repeat Button */}
-              <button
+              <motion.button
                 onClick={toggleRepeat}
-                className={`w-6 h-6 flex items-center justify-center hover:bg-white dark:hover:bg-[#1a1a1a]
-                           rounded transition-colors duration-150 ${
-                             repeatMode !== "off"
-                               ? "text-walkman-orange"
-                               : "text-carbon dark:text-bone"
-                           }`}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors ${
+                  repeatMode !== "off"
+                    ? "text-white bg-white/10"
+                    : "text-white/50 hover:text-white hover:bg-white/5"
+                }`}
                 aria-label="Repeat"
-                title={
-                  repeatMode === "off"
-                    ? "Repeat off"
-                    : repeatMode === "all"
-                    ? "Repeat all"
-                    : "Repeat one"
-                }
               >
                 {repeatMode === "one" ? (
-                  <Repeat1 className="w-3.5 h-3.5" />
+                  <Repeat1 className="w-4 h-4" />
                 ) : (
-                  <Repeat className="w-3.5 h-3.5" />
+                  <Repeat className="w-4 h-4" />
                 )}
-              </button>
+              </motion.button>
             </div>
 
             {/* Time Display */}
-            <div className="flex items-center gap-1.5 text-[10px] font-mono tabular-nums">
-              <span className="text-carbon dark:text-bone">
-                {formatTime(currentTime)}
-              </span>
-              <span className="text-gray-400 dark:text-gray-500">/</span>
-              <span className="text-gray-500 dark:text-gray-400">
-                {formatTime(duration)}
-              </span>
-              <span className="text-gray-400 dark:text-gray-500">•</span>
-              <span className="text-walkman-orange font-semibold">
-                {getQualityDisplay()}
-              </span>
+            <div className="flex items-center gap-2 text-[11px] font-mono tabular-nums text-white/50">
+              <span>{formatTime(currentTime)}</span>
+              <span className="text-white/30">/</span>
+              <span>{formatTime(duration)}</span>
             </div>
           </div>
 
-          {/* Right: Volume Controls */}
-          <div className="flex items-center gap-2 flex-shrink-0 flex-1 justify-end">
-            {/* Fullscreen Player Button */}
-            <button
-              onClick={() => setIsFullscreenOpen(true)}
-              className="w-7 h-7 flex items-center justify-center hover:bg-white dark:hover:bg-[#1a1a1a]
-                         rounded transition-colors duration-150"
-              aria-label="Fullscreen Player"
-              title="Fullscreen Player"
-            >
-              <Maximize2 className="w-3.5 h-3.5 text-carbon dark:text-bone" />
-            </button>
-
-            {/* Lyrics Button */}
-            {hasLyrics && (
-              <button
-                onClick={() => setIsLyricsOpen(true)}
-                className="relative w-7 h-7 flex items-center justify-center hover:bg-white dark:hover:bg-[#1a1a1a]
-                           rounded transition-colors duration-150"
-                aria-label="View Lyrics"
-                title="View Lyrics"
+          {/* Right: Volume & Actions */}
+          <div className="flex items-center gap-3 flex-shrink-0 flex-1 justify-end">
+            {/* Action Buttons - Always visible */}
+            <div className="flex items-center gap-2">
+              {/* Fullscreen Player Button - Always visible */}
+              <motion.button
+                onClick={() => setIsFullscreenOpen(true)}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors"
+                aria-label="Fullscreen Player"
+                title="Open Fullscreen Player"
               >
-                <Music2 className="w-3.5 h-3.5 text-carbon dark:text-bone" />
-                {lyrics && (
-                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-walkman-orange rounded-full" />
-                )}
-              </button>
-            )}
+                <Maximize2 className="w-4 h-4 text-white/60 hover:text-white transition-colors" />
+              </motion.button>
 
-            {/* Stats Button */}
-            <button
-              onClick={() => setIsStatsOpen(true)}
-              className="w-7 h-7 flex items-center justify-center hover:bg-white dark:hover:bg-[#1a1a1a]
-                         rounded transition-colors duration-150"
-              aria-label="Stats for Nerds"
-              title="Stats for Nerds (i)"
-            >
-              <Info className="w-3.5 h-3.5 text-carbon dark:text-bone" />
-            </button>
-
-            {/* Queue Button */}
-            <button
-              onClick={() => setIsQueueOpen(true)}
-              className="relative w-7 h-7 flex items-center justify-center hover:bg-white dark:hover:bg-[#1a1a1a]
-                         rounded transition-colors duration-150"
-              aria-label="View Queue"
-              title="View Queue"
-            >
-              <ListMusic className="w-3.5 h-3.5 text-carbon dark:text-bone" />
-              {queue.length > 0 && (
-                <span
-                  className="absolute -top-1 -right-1 w-4 h-4 bg-walkman-orange text-white
-                                 text-[9px] font-mono font-bold rounded-full flex items-center justify-center"
+              {/* Lyrics Button */}
+              {hasLyrics && (
+                <motion.button
+                  onClick={() => setIsLyricsOpen(true)}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="relative w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors"
+                  aria-label="View Lyrics"
+                  title="View Lyrics"
                 >
-                  {queue.length > 9 ? "9+" : queue.length}
-                </span>
+                  <Music2 className="w-4 h-4 text-white/60 hover:text-white transition-colors" />
+                  {lyrics && (
+                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-white rounded-full" />
+                  )}
+                </motion.button>
               )}
-            </button>
 
-            {/* Mute Button */}
-            <button
-              onClick={toggleMute}
-              className="w-7 h-7 flex items-center justify-center hover:bg-white dark:hover:bg-[#1a1a1a]
-                         rounded transition-colors duration-150"
-              aria-label={isMuted ? "Unmute" : "Mute"}
-            >
-              {isMuted ? (
-                <VolumeX className="w-3.5 h-3.5 text-carbon dark:text-bone" />
-              ) : (
-                <Volume2 className="w-3.5 h-3.5 text-carbon dark:text-bone" />
-              )}
-            </button>
+              {/* Queue Button */}
+              <motion.button
+                onClick={() => setIsQueueOpen(true)}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                className="relative w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors"
+                aria-label="View Queue"
+                title="View Queue"
+              >
+                <ListMusic className="w-4 h-4 text-white/60 hover:text-white transition-colors" />
+                {queue.length > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-white text-black text-[9px] font-bold rounded-full flex items-center justify-center">
+                    {queue.length > 9 ? "9+" : queue.length}
+                  </span>
+                )}
+              </motion.button>
+            </div>
 
-            {/* Volume Slider */}
-            <div className="w-20 group">
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={isMuted ? 0 : volume * 100}
-                onChange={(e) => setVolume(Number(e.target.value) / 100)}
-                className="w-full h-1 bg-gray-300 dark:bg-gray-700 appearance-none cursor-pointer
-                           [&::-webkit-slider-thumb]:appearance-none
-                           [&::-webkit-slider-thumb]:w-2.5
-                           [&::-webkit-slider-thumb]:h-2.5
-                           [&::-webkit-slider-thumb]:bg-carbon
-                           dark:[&::-webkit-slider-thumb]:bg-bone
-                           [&::-webkit-slider-thumb]:rounded-full
-                           [&::-webkit-slider-thumb]:cursor-pointer
-                           [&::-webkit-slider-thumb]:opacity-0
-                           [&::-webkit-slider-thumb]:group-hover:opacity-100
-                           [&::-webkit-slider-thumb]:transition-opacity
-                           [&::-moz-range-thumb]:w-2.5
-                           [&::-moz-range-thumb]:h-2.5
-                           [&::-moz-range-thumb]:bg-carbon
-                           dark:[&::-moz-range-thumb]:bg-bone
-                           [&::-moz-range-thumb]:rounded-full
-                           [&::-moz-range-thumb]:border-0
-                           [&::-moz-range-thumb]:cursor-pointer
-                           [&::-webkit-slider-runnable-track]:bg-carbon
-                           dark:[&::-webkit-slider-runnable-track]:bg-bone
-                           [&::-webkit-slider-runnable-track]:h-1"
-                style={{
-                  background: `linear-gradient(to right, var(--color-primary) 0%, var(--color-primary) ${
-                    isMuted ? 0 : volume * 100
-                  }%, #d1d5db ${isMuted ? 0 : volume * 100}%, #d1d5db 100%)`,
-                }}
-                aria-label="Volume"
-              />
+            {/* Volume Controls */}
+            <div className="hidden md:flex items-center gap-3">
+              <motion.button
+                onClick={toggleMute}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors"
+                aria-label={isMuted ? "Unmute" : "Mute"}
+              >
+                {isMuted ? (
+                  <VolumeX className="w-4 h-4 text-white/60" />
+                ) : (
+                  <Volume2 className="w-4 h-4 text-white/60" />
+                )}
+              </motion.button>
+
+              {/* Volume Slider */}
+              <div className="w-24 group">
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={isMuted ? 0 : volume * 100}
+                  onChange={(e) => setVolume(Number(e.target.value) / 100)}
+                  className="w-full h-1 bg-white/20 rounded-full appearance-none cursor-pointer
+                             [&::-webkit-slider-thumb]:appearance-none
+                             [&::-webkit-slider-thumb]:w-3
+                             [&::-webkit-slider-thumb]:h-3
+                             [&::-webkit-slider-thumb]:bg-white
+                             [&::-webkit-slider-thumb]:rounded-full
+                             [&::-webkit-slider-thumb]:cursor-pointer
+                             [&::-webkit-slider-thumb]:opacity-0
+                             [&::-webkit-slider-thumb]:group-hover:opacity-100
+                             [&::-webkit-slider-thumb]:transition-opacity
+                             [&::-webkit-slider-thumb]:shadow-lg"
+                  style={{
+                    background: `linear-gradient(to right, white 0%, white ${
+                      isMuted ? 0 : volume * 100
+                    }%, rgba(255,255,255,0.2) ${isMuted ? 0 : volume * 100}%, rgba(255,255,255,0.2) 100%)`,
+                  }}
+                  aria-label="Volume"
+                />
+              </div>
             </div>
           </div>
         </div>
