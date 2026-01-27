@@ -19,7 +19,6 @@ import {
 } from "lucide-react";
 import { useRef, useEffect, useState } from "react";
 import dynamic from 'next/dynamic';
-import { StatsForNerds } from "./StatsForNerds";
 
 const Queue = dynamic(() => import('./Queue').then(mod => ({ default: mod.Queue })), {
   loading: () => null,
@@ -36,6 +35,14 @@ const FullscreenPlayer = dynamic(
 
 const FullscreenLyrics = dynamic(
   () => import('./FullscreenLyrics').then(mod => ({ default: mod.FullscreenLyrics })),
+  {
+    loading: () => null,
+    ssr: false,
+  }
+);
+
+const StatsForNerds = dynamic(
+  () => import('./StatsForNerds').then(mod => ({ default: mod.StatsForNerds })),
   {
     loading: () => null,
     ssr: false,
