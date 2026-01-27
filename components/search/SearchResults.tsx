@@ -12,6 +12,7 @@ import ArtistCard from "./ArtistCard";
 import PlaylistCard from "./PlaylistCard";
 import { motion, AnimatePresence } from "motion/react";
 import { Search, Music2, Disc, Users, ListMusic, Loader2 } from "lucide-react";
+import { VirtualSearchResults } from "./VirtualSearchResults";
 
 type SearchContentType = "tracks" | "albums" | "artists" | "playlists";
 
@@ -81,9 +82,26 @@ export function SearchResults({
   const { setQueue } = useAudioPlayer();
 
   const [loadingTrackId, setLoadingTrackId] = useState<number | null>(null);
+  const [windowDimensions, setWindowDimensions] = useState({ width: 0, height: 0 });
 
   // Infinite scroll observer
   const observerTarget = React.useRef<HTMLDivElement>(null);
+
+  // Track window dimensions for virtual scrolling
+  React.useEffect(() => {
+    const handleResize = () => {
+      setWindowDimensions({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    };
+
+    // Set initial dimensions
+    handleResize();
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   React.useEffect(() => {
     const observer = new IntersectionObserver(
@@ -248,6 +266,12 @@ export function SearchResults({
                     );
                 })}
             </div>
+        ) : contentType === "albums" && albums && albums.length > 50 && windowDimensions.width > 0 ? (
+          <VirtualSearchResults
+            albums={albums}
+            height={windowDimensions.height - 200}
+            width={windowDimensions.width}
+          />
         ) : (
              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
                 {contentType === "albums" &&
