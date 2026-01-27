@@ -34,7 +34,13 @@ const FullscreenPlayer = dynamic(
   }
 );
 
-import { FullscreenLyrics } from "./FullscreenLyrics";
+const FullscreenLyrics = dynamic(
+  () => import('./FullscreenLyrics').then(mod => ({ default: mod.FullscreenLyrics })),
+  {
+    loading: () => null,
+    ssr: false,
+  }
+);
 import { useLyrics } from "@/hooks/useLyrics";
 import Image from "next/image";
 import { motion } from "motion/react";
