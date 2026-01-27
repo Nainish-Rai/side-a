@@ -17,7 +17,7 @@ import {
   Music2,
   Maximize2,
 } from "lucide-react";
-import { useRef, useEffect, useState } from "react";
+import React, { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import dynamic from 'next/dynamic';
 
 const Queue = dynamic(() => import('./Queue').then(mod => ({ default: mod.Queue })), {
@@ -96,6 +96,22 @@ export function AudioPlayer() {
   } = useLyrics(currentTrack, currentTime, isPlaying);
 
   const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0;
+
+  // Memoize play/pause handler
+  const handlePlayPause = useCallback(() => {
+    togglePlayPause();
+  }, [togglePlayPause]);
+
+  // Memoize formatted time values
+  const formattedCurrentTime = useMemo(
+    () => formatTime(currentTime),
+    [currentTime]
+  );
+
+  const formattedDuration = useMemo(
+    () => formatTime(duration),
+    [duration]
+  );
 
   // Get album cover URL
   const getCoverUrl = () => {
@@ -340,7 +356,7 @@ export function AudioPlayer() {
 
               {/* Play/Pause Button */}
               <motion.button
-                onClick={togglePlayPause}
+                onClick={handlePlayPause}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 className="flex-shrink-0 w-10 h-10 rounded-full bg-white hover:bg-white/90
@@ -388,9 +404,9 @@ export function AudioPlayer() {
 
             {/* Time Display */}
             <div className="flex items-center gap-2 text-[11px] font-mono tabular-nums text-white/50">
-              <span>{formatTime(currentTime)}</span>
+              <span>{formattedCurrentTime}</span>
               <span className="text-white/30">/</span>
-              <span>{formatTime(duration)}</span>
+              <span>{formattedDuration}</span>
             </div>
           </div>
 
