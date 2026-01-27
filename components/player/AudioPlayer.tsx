@@ -1,6 +1,8 @@
 "use client";
 
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
+import { usePlaybackState } from "@/contexts/PlaybackStateContext";
+import { useQueue } from "@/contexts/QueueContext";
 import { formatTime, getTrackTitle, getTrackArtists } from "@/lib/api/utils";
 import {
   Play,
@@ -53,17 +55,18 @@ import Image from "next/image";
 import { motion } from "motion/react";
 
 export function AudioPlayer() {
+  // Use split contexts for state
+  const { isPlaying, currentTime, duration, volume, isMuted } = usePlaybackState();
   const {
     currentTrack,
-    isPlaying,
-    currentTime,
-    duration,
-    volume,
-    isMuted,
+    queue,
     shuffleActive,
     repeatMode,
-    queue,
     currentQuality,
+  } = useQueue();
+
+  // Still need AudioPlayerContext for methods (since split contexts don't have them yet)
+  const {
     togglePlayPause,
     playNext,
     playPrev,

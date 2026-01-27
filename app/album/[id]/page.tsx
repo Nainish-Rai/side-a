@@ -6,6 +6,8 @@ import { motion } from "motion/react";
 import { useAlbum } from "@/hooks/useAlbum";
 import { Track } from "@/lib/api/types";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
+import { usePlaybackState } from "@/contexts/PlaybackStateContext";
+import { useQueue } from "@/contexts/QueueContext";
 import AppLayout from "@/components/layout/AppLayout";
 import {
   Play,
@@ -23,7 +25,13 @@ export default function AlbumPage() {
   const params = useParams();
   const router = useRouter();
   const albumId = parseInt(params.id as string);
-  const { setQueue, currentTrack, isPlaying, togglePlayPause } = useAudioPlayer();
+
+  // Use split contexts for state
+  const { isPlaying } = usePlaybackState();
+  const { currentTrack } = useQueue();
+
+  // Still need AudioPlayerContext for methods
+  const { setQueue, togglePlayPause } = useAudioPlayer();
 
   const { data, isLoading, error } = useAlbum(albumId);
 

@@ -2,13 +2,16 @@
 
 import { Track, Album } from "@/lib/api/types";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
+import { usePlaybackState } from "@/contexts/PlaybackStateContext";
+import { useQueue } from "@/contexts/QueueContext";
 import { useState } from "react";
+import React from "react";
 import { SearchResultCard } from "./SearchResultCard";
 import AlbumCard from "./AlbumCard";
 import ArtistCard from "./ArtistCard";
 import PlaylistCard from "./PlaylistCard";
 import { motion, AnimatePresence } from "motion/react";
-import { Search, Music2, Disc, Users, ListMusic } from "lucide-react";
+import { Search, Music2, Disc, Users, ListMusic, Loader2 } from "lucide-react";
 
 type SearchContentType = "tracks" | "albums" | "artists" | "playlists";
 
@@ -48,6 +51,9 @@ interface SearchResultsProps {
   offset?: number;
   limit?: number;
   onTabChange?: (tab: SearchContentType) => void;
+  hasNextPage?: boolean;
+  isFetchingMore?: boolean;
+  onLoadMore?: () => void;
 }
 
 export function SearchResults({
@@ -61,9 +67,43 @@ export function SearchResults({
   offset = 0,
   limit = 25,
   onTabChange,
+  hasNextPage = false,
+  isFetchingMore = false,
+  onLoadMore,
 }: SearchResultsProps) {
-  const { setQueue, currentTrack, isPlaying } = useAudioPlayer();
+  // Use split contexts for state
+  const { isPlaying } = usePlaybackState();
+  const { currentTrack } = useQueue();
+
+  // Still need AudioPlayerContext for methods
+  const { setQueue } = useAudioPlayer();
+
   const [loadingTrackId, setLoadingTrackId] = useState<number | null>(null);
+
+  // Infinite scroll observer
+  const observerTarget = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingMore && onLoadMore) {
+          onLoadMore();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    const currentTarget = observerTarget.current;
+    if (currentTarget) {
+      observer.observe(currentTarget);
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget);
+      }
+    };
+  }, [hasNextPage, isFetchingMore, onLoadMore]);
 
   const tabs: { id: SearchContentType; label: string; icon: any }[] = [
     { id: "tracks", label: "Songs", icon: Music2 },
@@ -135,25 +175,25 @@ export function SearchResults({
 
   return (
     <div className="w-full">
-      {/* Tab Navigation - Pill Style */}
-      <div className="sticky top-0 z-10 pb-6 bg-background/95 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-2">
+      {/* Tab Navigation - Clean Minimal Style */}
+      <div className="sticky top-0 z-10 pb-8 -mx-4 px-4 bg-black/40 backdrop-blur-2xl border-b border-white/5">
+        <div className="flex items-center gap-3 overflow-x-auto no-scrollbar py-4">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => onTabChange?.(tab.id)}
-              className={`relative px-4 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap outline-none focus-visible:ring-2 focus-visible:ring-walkman-orange ${
+              className={`relative px-5 py-2.5 rounded-full text-sm font-medium transition-all whitespace-nowrap outline-none ${
                 contentType === tab.id
-                  ? "text-white"
-                  : "text-neutral-400 hover:text-white hover:bg-white/5"
+                  ? "text-black shadow-lg"
+                  : "text-white/60 hover:text-white hover:bg-white/5"
               }`}
             >
               {contentType === tab.id && (
                 <motion.div
                   layoutId="activeTab"
-                  className="absolute inset-0 bg-walkman-orange rounded-full"
+                  className="absolute inset-0 bg-white rounded-full"
                   initial={false}
-                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
                 />
               )}
               <span className="relative z-10 flex items-center gap-2">
@@ -166,12 +206,10 @@ export function SearchResults({
       </div>
 
       {/* Results Count */}
-      <div className="mb-6 px-1">
-        <div className="text-sm font-medium text-white/50">
+      <div className="mb-6 px-1 mt-6">
+        <div className="text-sm font-medium text-white/40">
             {totalNumberOfItems !== undefined ? (
               <>
-                Showing {offset + 1}-
-                {Math.min(offset + limit, totalNumberOfItems)} of{" "}
                 {totalNumberOfItems.toLocaleString()} {contentType}
               </>
             ) : (
@@ -183,12 +221,12 @@ export function SearchResults({
       {/* Content Area */}
       <motion.div
         layout
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
+        transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
       >
         {contentType === "tracks" ? (
-            <div className="space-y-1">
+            <div className="space-y-0.5">
                 {tracks?.map((track, index) => {
                     const isCurrentTrack = currentTrack?.id === track.id;
                     return (
@@ -204,7 +242,7 @@ export function SearchResults({
                 })}
             </div>
         ) : (
-             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
                 {contentType === "albums" &&
                     albums?.map((album) => (
                         <div key={album.id} className="w-full">
@@ -234,7 +272,24 @@ export function SearchResults({
              </div>
         )}
 
-      </motion.div>
+       </motion.div>
+
+      {/* Infinite Scroll Loading Indicator */}
+      {isFetchingMore && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="flex items-center justify-center py-8 mt-4"
+        >
+          <div className="flex items-center gap-3 text-white/40">
+            <Loader2 className="w-5 h-5 animate-spin" />
+            <span className="text-sm font-medium">Loading more...</span>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Intersection Observer Target */}
+      <div ref={observerTarget} className="h-4" />
     </div>
   );
 }

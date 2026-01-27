@@ -1,6 +1,8 @@
 "use client";
 
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
+import { usePlaybackState } from "@/contexts/PlaybackStateContext";
+import { useQueue } from "@/contexts/QueueContext";
 import { getTrackTitle, getTrackArtists, formatTime } from "@/lib/api/utils";
 import {
   X,
@@ -29,15 +31,18 @@ interface FullscreenPlayerProps {
 }
 
 export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
+  // Use split contexts for state
+  const { isPlaying, currentTime, duration, volume, isMuted } = usePlaybackState();
   const {
     currentTrack,
-    isPlaying,
-    currentTime,
-    duration,
-    volume,
-    isMuted,
     queue,
     currentQueueIndex,
+    shuffleActive,
+    repeatMode,
+  } = useQueue();
+
+  // Still need AudioPlayerContext for methods
+  const {
     togglePlayPause,
     playNext,
     playPrev,
@@ -45,9 +50,7 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
     setVolume,
     toggleMute,
     setQueue,
-    shuffleActive,
     toggleShuffle,
-    repeatMode,
     toggleRepeat,
   } = useAudioPlayer();
 
