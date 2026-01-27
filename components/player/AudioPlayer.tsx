@@ -18,8 +18,13 @@ import {
   Maximize2,
 } from "lucide-react";
 import { useRef, useEffect, useState } from "react";
-import { Queue } from "./Queue";
+import dynamic from 'next/dynamic';
 import { StatsForNerds } from "./StatsForNerds";
+
+const Queue = dynamic(() => import('./Queue').then(mod => ({ default: mod.Queue })), {
+  loading: () => null,
+  ssr: false,
+});
 import { FullscreenLyrics } from "./FullscreenLyrics";
 import { FullscreenPlayer } from "./FullscreenPlayer";
 import { useLyrics } from "@/hooks/useLyrics";
