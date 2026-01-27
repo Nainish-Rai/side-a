@@ -12,6 +12,10 @@ import {
 import { Track } from "@/lib/api/types";
 import { api } from "@/lib/api";
 
+// Re-export the new split contexts
+export { PlaybackStateProvider, usePlaybackState } from "./PlaybackStateContext";
+export { QueueProvider, useQueue } from "./QueueContext";
+
 type RepeatMode = "off" | "all" | "one";
 
 interface AudioPlayerState {
