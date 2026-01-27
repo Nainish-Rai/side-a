@@ -54,6 +54,7 @@ interface SearchResultsProps {
   hasNextPage?: boolean;
   isFetchingMore?: boolean;
   onLoadMore?: () => void;
+  prefetchTab?: (tab: "tracks" | "albums" | "artists") => void;
 }
 
 export function SearchResults({
@@ -70,6 +71,7 @@ export function SearchResults({
   hasNextPage = false,
   isFetchingMore = false,
   onLoadMore,
+  prefetchTab,
 }: SearchResultsProps) {
   // Use split contexts for state
   const { isPlaying } = usePlaybackState();
@@ -182,6 +184,11 @@ export function SearchResults({
             <button
               key={tab.id}
               onClick={() => onTabChange?.(tab.id)}
+              onMouseEnter={() => {
+                if (tab.id !== "playlists" && prefetchTab) {
+                  prefetchTab(tab.id as "tracks" | "albums" | "artists");
+                }
+              }}
               className={`relative px-5 py-2.5 rounded-full text-sm font-medium transition-all whitespace-nowrap outline-none ${
                 contentType === tab.id
                   ? "text-black shadow-lg"

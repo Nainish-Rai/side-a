@@ -1,203 +1,135 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { SearchBar } from "@/components/search/SearchBar";
 import { SearchResults } from "@/components/search/SearchResults";
 import { AudioPlayer } from "@/components/player/AudioPlayer";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { useSearch } from "@/hooks/useSearch";
-import { Music2, Search, TrendingUp } from "lucide-react";
+import { Search } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 export default function Home() {
   const {
     tracks,
     albums,
+    artists,
     searchMetadata,
     isLoading,
     currentTab,
     handleSearch,
     handleTabChange,
+    hasNextPage,
+    isFetchingMore,
+    fetchNextPage,
+    prefetchTab,
   } = useSearch();
 
-  const [isCompact, setIsCompact] = useState(false);
-  const [lastScrollY, setLastScrollY] = useState(0);
+  const [hasSearched, setHasSearched] = useState(false);
 
-  useEffect(() => {
-    let ticking = false;
-    const SCROLL_THRESHOLD = 80; // Threshold to trigger compact mode
-    const SCROLL_DELTA = 10; // Minimum scroll amount to register direction change
+  const handleSearchWithTracking = (query: string) => {
+    handleSearch(query);
+    setHasSearched(true);
+  };
 
-    const handleScroll = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          const currentScrollY = window.scrollY;
-          const scrollDelta = Math.abs(currentScrollY - lastScrollY);
-
-          // Only update if scrolled enough to avoid jitter
-          if (scrollDelta > SCROLL_DELTA) {
-            // Compact when scrolling down past threshold
-            if (
-              currentScrollY > SCROLL_THRESHOLD &&
-              currentScrollY > lastScrollY
-            ) {
-              setIsCompact(true);
-            }
-            // Expand when scrolling up significantly or near top
-            else if (
-              currentScrollY < lastScrollY &&
-              currentScrollY < SCROLL_THRESHOLD - 20
-            ) {
-              setIsCompact(false);
-            }
-
-            setLastScrollY(currentScrollY);
-          }
-
-          ticking = false;
-        });
-        ticking = true;
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [lastScrollY]);
+  const hasResults = tracks.length > 0 || albums.length > 0 || artists.length > 0;
 
   return (
-    <div className="min-h-screen bg-bone dark:bg-carbon transition-colors duration-300">
-      {/* Fixed Sidebar */}
-      <aside className="fixed top-0 left-0 bottom-0 w-64 bg-carbon dark:bg-bone text-white dark:text-carbon border-r border-carbon dark:border-bone p-6 hidden lg:flex flex-col transition-colors duration-300 z-40">
-        {/* Logo */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-mono tracking-tight mb-1 font-bold">
-            SIDE A
-          </h1>
-          <div className="h-0.5 w-16 bg-walkman-orange"></div>
-          <div className="text-[9px] font-mono tracking-widest uppercase text-gray-400 dark:text-gray-600 mt-2">
-            Hi-Fi Music Player
-          </div>
-        </div>
-
-        {/* Navigation */}
-        <nav className="flex-1">
-          <div className="space-y-2">
-            <button className="w-full flex items-center gap-3 px-4 py-3 bg-white/10 dark:bg-carbon/10 border border-white/20 dark:border-carbon/20 hover:bg-white/20 dark:hover:bg-carbon/20 transition-colors text-left">
-              <Search className="w-4 h-4" />
-              <span className="text-sm font-mono">Search</span>
-            </button>
-            <button className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/10 dark:hover:bg-carbon/10 border border-transparent hover:border-white/20 dark:hover:border-carbon/20 transition-colors text-left">
-              <Music2 className="w-4 h-4" />
-              <span className="text-sm font-mono">Library</span>
-            </button>
-            <button className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/10 dark:hover:bg-carbon/10 border border-transparent hover:border-white/20 dark:hover:border-carbon/20 transition-colors text-left">
-              <TrendingUp className="w-4 h-4" />
-              <span className="text-sm font-mono">Trending</span>
-            </button>
-          </div>
-        </nav>
-
-        {/* Theme Toggle */}
-        {/* <div className="mb-4 flex justify-center">
-          <ThemeToggle />
-        </div> */}
-
-        {/* Footer */}
-        <div className="border-t border-white/20 dark:border-carbon/20 pt-4">
-          <div className="text-[9px] font-mono tracking-widest uppercase text-gray-400 dark:text-gray-600">
-            EST. 2025
-          </div>
-          <div className="text-[10px] font-mono text-gray-500 mt-1">
-            Detent Music System
-          </div>
-        </div>
-      </aside>
-
-      {/* Main Content - with left margin to account for fixed sidebar */}
-      <main className="min-h-screen lg:ml-64 pb-24">
-        {/* Header - Sticky */}
+    <div className="min-h-screen bg-black text-white">
+      {/* Main Content */}
+      <main className="min-h-screen pb-32">
+        {/* Header - Clean & Minimal */}
         <motion.header
-          animate={{
-            padding: isCompact ? "0.5rem 0.75rem" : "1rem 1.5rem",
-          }}
-          transition={{
-            duration: 0.3,
-            ease: [0.4, 0, 0.2, 1],
-          }}
-          className="sticky top-0 bg-white dark:bg-[#1a1a1a] border-b border-carbon dark:border-bone z-30"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
+          className="sticky top-0 z-30 bg-black/60 backdrop-blur-2xl border-b border-white/5"
         >
-          <div className="max-w-7xl mx-auto">
-            <AnimatePresence>
-              {!isCompact && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0, marginBottom: 0 }}
-                  animate={{ height: "auto", opacity: 1, marginBottom: "1rem" }}
-                  exit={{ height: 0, opacity: 0, marginBottom: 0 }}
-                  transition={{
-                    duration: 0.3,
-                    ease: [0.4, 0, 0.2, 1],
-                  }}
-                  className="flex items-center justify-between overflow-hidden"
-                >
-                  <div className="lg:hidden">
-                    <h1 className="text-2xl font-mono tracking-tight font-bold text-carbon dark:text-bone">
-                      SIDE A
-                    </h1>
-                  </div>
-                  <div className="hidden lg:block">
-                    <h2 className="text-2xl font-mono tracking-tight font-bold text-carbon dark:text-bone">
-                      Search
-                    </h2>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="lg:hidden">
-                      <ThemeToggle />
-                    </div>
-                    <div className="text-right">
-                      <div className="bg-carbon dark:bg-bone text-white dark:text-carbon px-3 py-1 text-[9px] font-mono inline-block tracking-widest transition-colors duration-300">
-                        26 DEC 2025
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+          <div className="max-w-6xl mx-auto px-6 py-6">
+            {/* Logo */}
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight mb-1">
+                  SIDE A
+                </h1>
+                <p className="text-xs text-white/40 tracking-wide">
+                  Hi-Fi Music Search
+                </p>
+              </div>
+            </div>
+
+            {/* Search Bar */}
             <SearchBar
-              onSearch={handleSearch}
+              onSearch={handleSearchWithTracking}
               isLoading={isLoading}
-              isCompact={isCompact}
             />
           </div>
         </motion.header>
 
-        {/* Content Area - Scrollable */}
-        <div className="p-4 lg:p-6">
-          <div className="max-w-7xl mx-auto">
-            {tracks.length > 0 || albums.length > 0 || isLoading ? (
-              <SearchResults
-                tracks={tracks}
-                albums={albums}
-                contentType={currentTab}
-                isLoading={isLoading}
-                totalNumberOfItems={searchMetadata?.totalNumberOfItems}
-                offset={searchMetadata?.offset}
-                limit={searchMetadata?.limit}
-                onTabChange={handleTabChange}
-              />
+        {/* Content Area */}
+        <div className="max-w-6xl mx-auto px-6 py-8">
+          <AnimatePresence mode="wait">
+            {hasResults || isLoading ? (
+              <motion.div
+                key="results"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+              >
+                <SearchResults
+                  tracks={tracks}
+                  albums={albums}
+                  artists={artists}
+                  contentType={currentTab}
+                  isLoading={isLoading}
+                  totalNumberOfItems={searchMetadata?.totalNumberOfItems}
+                  offset={searchMetadata?.offset}
+                  limit={searchMetadata?.limit}
+                  onTabChange={handleTabChange}
+                  hasNextPage={hasNextPage}
+                  isFetchingMore={isFetchingMore}
+                  onLoadMore={fetchNextPage}
+                  prefetchTab={prefetchTab}
+                />
+              </motion.div>
             ) : (
-              <div className="flex items-center justify-center h-64">
-                <div className="text-center">
-                  <Music2 className="w-16 h-16 text-gray-300 dark:text-gray-700 mx-auto mb-4" />
-                  <h3 className="text-lg font-mono font-bold text-carbon dark:text-bone mb-2">
-                    No results yet
+              <motion.div
+                key="empty"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+                className="flex items-center justify-center min-h-[60vh]"
+              >
+                <div className="text-center max-w-md">
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{
+                      delay: 0.2,
+                      type: "spring",
+                      stiffness: 200,
+                      damping: 15
+                    }}
+                    className="mb-8 inline-block"
+                  >
+                    <div className="w-24 h-24 rounded-full bg-white/5 backdrop-blur-xl flex items-center justify-center">
+                      <Search className="w-12 h-12 text-white/20" />
+                    </div>
+                  </motion.div>
+                  <h3 className="text-2xl font-bold text-white/90 mb-3">
+                    {hasSearched ? "No Results Found" : "Start Searching"}
                   </h3>
-                  <p className="text-sm font-mono text-gray-500 dark:text-gray-400">
-                    Search for tracks to get started
+                  <p className="text-base text-white/40 leading-relaxed">
+                    {hasSearched
+                      ? "Try searching with different keywords"
+                      : "Search for your favorite songs, albums, or artists"
+                    }
                   </p>
                 </div>
-              </div>
+              </motion.div>
             )}
-          </div>
+          </AnimatePresence>
         </div>
       </main>
 
