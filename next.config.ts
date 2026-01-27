@@ -4,14 +4,19 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       {
-        protocol: "http",
-        hostname: "**",
+        protocol: "https",
+        hostname: "resources.tidal.com",
+        pathname: "/images/**",
       },
       {
         protocol: "https",
-        hostname: "**",
+        hostname: "lyricsplus.prjktla.workers.dev",
       },
     ],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    formats: ['image/avif', 'image/webp'],
+    minimumCacheTTL: 60 * 60 * 24 * 30, // 30 days
   },
 };
 
