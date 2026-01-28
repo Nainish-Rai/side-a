@@ -13,7 +13,10 @@ import { Track } from "@/lib/api/types";
 import { api } from "@/lib/api";
 
 // Re-export the new split contexts
-export { PlaybackStateProvider, usePlaybackState } from "./PlaybackStateContext";
+export {
+  PlaybackStateProvider,
+  usePlaybackState,
+} from "./PlaybackStateContext";
 export { QueueProvider, useQueue } from "./QueueContext";
 
 type RepeatMode = "off" | "all" | "one";
@@ -605,21 +608,27 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   // Manually sync with split contexts using refs to avoid circular dependencies
   useEffect(() => {
     // Update PlaybackStateContext via a custom event
-    const event = new CustomEvent('playbackStateUpdate', {
+    const event = new CustomEvent("playbackStateUpdate", {
       detail: {
         isPlaying: state.isPlaying,
         currentTime: state.currentTime,
         duration: state.duration,
         volume: state.volume,
         isMuted: state.isMuted,
-      }
+      },
     });
     window.dispatchEvent(event);
-  }, [state.isPlaying, state.currentTime, state.duration, state.volume, state.isMuted]);
+  }, [
+    state.isPlaying,
+    state.currentTime,
+    state.duration,
+    state.volume,
+    state.isMuted,
+  ]);
 
   useEffect(() => {
     // Update QueueContext via a custom event
-    const event = new CustomEvent('queueStateUpdate', {
+    const event = new CustomEvent("queueStateUpdate", {
       detail: {
         currentTrack: state.currentTrack,
         queue: state.queue,
@@ -628,10 +637,18 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
         repeatMode: state.repeatMode,
         currentQuality: state.currentQuality,
         streamUrl: state.streamUrl,
-      }
+      },
     });
     window.dispatchEvent(event);
-  }, [state.currentTrack, state.queue, state.currentQueueIndex, state.shuffleActive, state.repeatMode, state.currentQuality, state.streamUrl]);
+  }, [
+    state.currentTrack,
+    state.queue,
+    state.currentQueueIndex,
+    state.shuffleActive,
+    state.repeatMode,
+    state.currentQuality,
+    state.streamUrl,
+  ]);
 
   return (
     <AudioPlayerContext.Provider value={value}>

@@ -1,6 +1,13 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback, ReactNode, useEffect } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  ReactNode,
+  useEffect,
+} from "react";
 
 interface PlaybackState {
   isPlaying: boolean;
@@ -18,7 +25,9 @@ interface PlaybackStateContextType extends PlaybackState {
   setIsMuted: (muted: boolean) => void;
 }
 
-const PlaybackStateContext = createContext<PlaybackStateContextType | undefined>(undefined);
+const PlaybackStateContext = createContext<
+  PlaybackStateContextType | undefined
+>(undefined);
 
 export function PlaybackStateProvider({ children }: { children: ReactNode }) {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -40,8 +49,9 @@ export function PlaybackStateProvider({ children }: { children: ReactNode }) {
       }
     };
 
-    window.addEventListener('playbackStateUpdate', handlePlaybackUpdate);
-    return () => window.removeEventListener('playbackStateUpdate', handlePlaybackUpdate);
+    window.addEventListener("playbackStateUpdate", handlePlaybackUpdate);
+    return () =>
+      window.removeEventListener("playbackStateUpdate", handlePlaybackUpdate);
   }, []);
 
   return (
@@ -67,7 +77,9 @@ export function PlaybackStateProvider({ children }: { children: ReactNode }) {
 export function usePlaybackState() {
   const context = useContext(PlaybackStateContext);
   if (!context) {
-    throw new Error("usePlaybackState must be used within PlaybackStateProvider");
+    throw new Error(
+      "usePlaybackState must be used within PlaybackStateProvider"
+    );
   }
   return context;
 }

@@ -1,6 +1,13 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback, ReactNode, useEffect } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  ReactNode,
+  useEffect,
+} from "react";
 import { Track } from "@/lib/api/types";
 
 type RepeatMode = "off" | "all" | "one";
@@ -54,30 +61,34 @@ export function QueueProvider({ children }: { children: ReactNode }) {
       }
     };
 
-    window.addEventListener('queueStateUpdate', handleQueueUpdate);
-    return () => window.removeEventListener('queueStateUpdate', handleQueueUpdate);
+    window.addEventListener("queueStateUpdate", handleQueueUpdate);
+    return () =>
+      window.removeEventListener("queueStateUpdate", handleQueueUpdate);
   }, []);
 
   const addToQueue = useCallback((track: Track) => {
     setQueue((prev) => [...prev, track]);
   }, []);
 
-  const removeFromQueue = useCallback((index: number) => {
-    setQueue((prev) => {
-      const newQueue = [...prev];
-      newQueue.splice(index, 1);
-      return newQueue;
-    });
+  const removeFromQueue = useCallback(
+    (index: number) => {
+      setQueue((prev) => {
+        const newQueue = [...prev];
+        newQueue.splice(index, 1);
+        return newQueue;
+      });
 
-    setCurrentQueueIndex((prevIndex) => {
-      if (index < prevIndex) {
-        return prevIndex - 1;
-      } else if (index === prevIndex) {
-        return Math.min(prevIndex, queue.length - 2);
-      }
-      return prevIndex;
-    });
-  }, [queue.length]);
+      setCurrentQueueIndex((prevIndex) => {
+        if (index < prevIndex) {
+          return prevIndex - 1;
+        } else if (index === prevIndex) {
+          return Math.min(prevIndex, queue.length - 2);
+        }
+        return prevIndex;
+      });
+    },
+    [queue.length]
+  );
 
   const clearQueue = useCallback(() => {
     setQueue([]);

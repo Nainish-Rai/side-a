@@ -82,7 +82,10 @@ export function SearchResults({
   const { setQueue } = useAudioPlayer();
 
   const [loadingTrackId, setLoadingTrackId] = useState<number | null>(null);
-  const [windowDimensions, setWindowDimensions] = useState({ width: 0, height: 0 });
+  const [windowDimensions, setWindowDimensions] = useState({
+    width: 0,
+    height: 0,
+  });
 
   // Infinite scroll observer
   const observerTarget = React.useRef<HTMLDivElement>(null);
@@ -99,14 +102,19 @@ export function SearchResults({
     // Set initial dimensions
     handleResize();
 
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   React.useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasNextPage && !isFetchingMore && onLoadMore) {
+        if (
+          entries[0].isIntersecting &&
+          hasNextPage &&
+          !isFetchingMore &&
+          onLoadMore
+        ) {
           onLoadMore();
         }
       },
@@ -233,13 +241,13 @@ export function SearchResults({
       {/* Results Count */}
       <div className="mb-6 px-1 mt-6">
         <div className="text-sm font-medium text-white/40">
-            {totalNumberOfItems !== undefined ? (
-              <>
-                {totalNumberOfItems.toLocaleString()} {contentType}
-              </>
-            ) : (
-              `${items.length} ${contentType}`
-            )}
+          {totalNumberOfItems !== undefined ? (
+            <>
+              {totalNumberOfItems.toLocaleString()} {contentType}
+            </>
+          ) : (
+            `${items.length} ${contentType}`
+          )}
         </div>
       </div>
 
@@ -251,59 +259,58 @@ export function SearchResults({
         transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
       >
         {contentType === "tracks" ? (
-            <div className="space-y-0.5">
-                {tracks?.map((track, index) => {
-                    const isCurrentTrack = currentTrack?.id === track.id;
-                    return (
-                    <SearchResultCard
-                        key={`${track.id}-${index}`}
-                        track={track}
-                        isCurrentTrack={isCurrentTrack}
-                        isPlaying={isCurrentTrack && isPlaying}
-                        isLoading={loadingTrackId === track.id}
-                        onClick={() => handleTrackClick(track, index)}
-                    />
-                    );
-                })}
-            </div>
-        ) : contentType === "albums" && albums && albums.length > 50 && windowDimensions.width > 0 ? (
+          <div className="space-y-0.5">
+            {tracks?.map((track, index) => {
+              const isCurrentTrack = currentTrack?.id === track.id;
+              return (
+                <SearchResultCard
+                  key={`${track.id}-${index}`}
+                  track={track}
+                  isCurrentTrack={isCurrentTrack}
+                  isPlaying={isCurrentTrack && isPlaying}
+                  isLoading={loadingTrackId === track.id}
+                  onClick={() => handleTrackClick(track, index)}
+                />
+              );
+            })}
+          </div>
+        ) : contentType === "albums" &&
+          albums &&
+          albums.length > 50 &&
+          windowDimensions.width > 0 ? (
           <VirtualSearchResults
             albums={albums}
             height={windowDimensions.height - 200}
             width={windowDimensions.width}
           />
         ) : (
-             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
-                {contentType === "albums" &&
-                    albums?.map((album) => (
-                        <div key={album.id} className="w-full">
-                            <AlbumCard album={album} />
-                        </div>
-                    ))}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
+            {contentType === "albums" &&
+              albums?.map((album) => (
+                <div key={album.id} className="w-full">
+                  <AlbumCard album={album} />
+                </div>
+              ))}
 
-                {contentType === "artists" &&
-                    artists?.map((artist) => (
-                         <div key={artist.id} className="w-full">
-                            <ArtistCard
-                                artist={artist}
-                                onClick={handleArtistClick}
-                            />
-                        </div>
-                    ))}
+            {contentType === "artists" &&
+              artists?.map((artist) => (
+                <div key={artist.id} className="w-full">
+                  <ArtistCard artist={artist} onClick={handleArtistClick} />
+                </div>
+              ))}
 
-                {contentType === "playlists" &&
-                    playlists?.map((playlist) => (
-                         <div key={playlist.uuid} className="w-full">
-                            <PlaylistCard
-                                playlist={playlist}
-                                onClick={handlePlaylistClick}
-                            />
-                        </div>
-                    ))}
-             </div>
+            {contentType === "playlists" &&
+              playlists?.map((playlist) => (
+                <div key={playlist.uuid} className="w-full">
+                  <PlaylistCard
+                    playlist={playlist}
+                    onClick={handlePlaylistClick}
+                  />
+                </div>
+              ))}
+          </div>
         )}
-
-       </motion.div>
+      </motion.div>
 
       {/* Infinite Scroll Loading Indicator */}
       {isFetchingMore && (
