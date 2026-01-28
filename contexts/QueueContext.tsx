@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback, ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, ReactNode, useEffect } from "react";
 import { Track } from "@/lib/api/types";
 
 type RepeatMode = "off" | "all" | "one";
@@ -38,6 +38,25 @@ export function QueueProvider({ children }: { children: ReactNode }) {
   const [repeatMode, setRepeatMode] = useState<RepeatMode>("off");
   const [currentQuality, setCurrentQuality] = useState("LOSSLESS");
   const [streamUrl, setStreamUrl] = useState<string | null>(null);
+
+  // Listen for updates from AudioPlayerContext
+  useEffect(() => {
+    const handleQueueUpdate = (event: Event) => {
+      const detail = (event as CustomEvent).detail;
+      if (detail) {
+        setCurrentTrack(detail.currentTrack);
+        setQueue(detail.queue);
+        setCurrentQueueIndex(detail.currentQueueIndex);
+        setShuffleActive(detail.shuffleActive);
+        setRepeatMode(detail.repeatMode);
+        setCurrentQuality(detail.currentQuality);
+        setStreamUrl(detail.streamUrl);
+      }
+    };
+
+    window.addEventListener('queueStateUpdate', handleQueueUpdate);
+    return () => window.removeEventListener('queueStateUpdate', handleQueueUpdate);
+  }, []);
 
   const addToQueue = useCallback((track: Track) => {
     setQueue((prev) => [...prev, track]);

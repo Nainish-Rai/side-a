@@ -6,7 +6,7 @@ import { usePlaybackState } from "@/contexts/PlaybackStateContext";
 import { useQueue } from "@/contexts/QueueContext";
 import { useState } from "react";
 import React from "react";
-import { SearchResultCard } from "./SearchResultCard";
+import SearchResultCard from "./SearchResultCard";
 import AlbumCard from "./AlbumCard";
 import ArtistCard from "./ArtistCard";
 import PlaylistCard from "./PlaylistCard";
@@ -256,7 +256,7 @@ export function SearchResults({
                     const isCurrentTrack = currentTrack?.id === track.id;
                     return (
                     <SearchResultCard
-                        key={track.id}
+                        key={`${track.id}-${index}`}
                         track={track}
                         isCurrentTrack={isCurrentTrack}
                         isPlaying={isCurrentTrack && isPlaying}

@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback, ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, ReactNode, useEffect } from "react";
 
 interface PlaybackState {
   isPlaying: boolean;
@@ -26,6 +26,23 @@ export function PlaybackStateProvider({ children }: { children: ReactNode }) {
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
+
+  // Listen for updates from AudioPlayerContext
+  useEffect(() => {
+    const handlePlaybackUpdate = (event: Event) => {
+      const detail = (event as CustomEvent).detail;
+      if (detail) {
+        setIsPlaying(detail.isPlaying);
+        setCurrentTime(detail.currentTime);
+        setDuration(detail.duration);
+        setVolume(detail.volume);
+        setIsMuted(detail.isMuted);
+      }
+    };
+
+    window.addEventListener('playbackStateUpdate', handlePlaybackUpdate);
+    return () => window.removeEventListener('playbackStateUpdate', handlePlaybackUpdate);
+  }, []);
 
   return (
     <PlaybackStateContext.Provider

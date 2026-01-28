@@ -1,9 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { AudioPlayerProvider } from "@/contexts/AudioPlayerContext";
-import { ThemeProvider } from "@/contexts/ThemeContext";
-import { SearchProvider } from "@/contexts/SearchContext";
-import { QueryProvider } from "@/providers/QueryProvider";
+import { Providers } from "@/components/providers";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -31,13 +28,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <QueryProvider>
-          <SearchProvider>
-            <ThemeProvider>
-              <AudioPlayerProvider>{children}</AudioPlayerProvider>
-            </ThemeProvider>
-          </SearchProvider>
-        </QueryProvider>
+        <Providers>{children}</Providers>
         <script
           dangerouslySetInnerHTML={{
             __html: `

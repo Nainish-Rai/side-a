@@ -1,6 +1,6 @@
 "use client";
 
-import { FixedSizeList as List } from "react-window";
+import { List } from "react-window";
 import AlbumCard from "./AlbumCard";
 import type { Album } from "@/lib/api/types";
 
@@ -10,11 +10,33 @@ interface VirtualSearchResultsProps {
   width: number;
 }
 
-export function VirtualSearchResults({ albums, height, width }: VirtualSearchResultsProps) {
+interface RowProps {
+  itemsPerRow: number;
+  albums: Album[];
+}
+
+export function VirtualSearchResults({
+  albums,
+  height,
+  width,
+}: VirtualSearchResultsProps) {
   const itemsPerRow = Math.floor(width / 200); // 200px per card
   const rowCount = Math.ceil(albums.length / itemsPerRow);
 
-  const Row = ({ index, style }: { index: number; style: React.CSSProperties }) => {
+  const RowComponent = ({
+    index,
+    style,
+    itemsPerRow,
+    albums,
+  }: {
+    index: number;
+    style: React.CSSProperties;
+    ariaAttributes: {
+      "aria-posinset": number;
+      "aria-setsize": number;
+      role: "listitem";
+    };
+  } & RowProps) => {
     const startIndex = index * itemsPerRow;
     const rowAlbums = albums.slice(startIndex, startIndex + itemsPerRow);
 
@@ -31,13 +53,12 @@ export function VirtualSearchResults({ albums, height, width }: VirtualSearchRes
 
   return (
     <List
-      height={height}
-      itemCount={rowCount}
-      itemSize={280}
-      width={width}
+      rowComponent={RowComponent}
+      rowCount={rowCount}
+      rowHeight={280}
+      rowProps={{ itemsPerRow, albums }}
       overscanCount={2}
-    >
-      {Row}
-    </List>
+      style={{ height, width }}
+    />
   );
 }

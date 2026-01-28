@@ -1,4 +1,4 @@
-import { losslessAPI } from "@/lib/api/client";
+import { api } from "@/lib/api";
 import { AlbumClient } from "./AlbumClient";
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
@@ -12,10 +12,7 @@ export default async function AlbumPage({ params }: AlbumPageProps) {
   const albumId = parseInt(id);
 
   try {
-    const [album, tracks] = await Promise.all([
-      losslessAPI.getAlbum(albumId),
-      losslessAPI.getAlbumTracks(albumId),
-    ]);
+    const { album, tracks } = await api.getAlbum(albumId);
 
     if (!album) {
       notFound();
@@ -28,13 +25,16 @@ export default async function AlbumPage({ params }: AlbumPageProps) {
   }
 }
 
-export async function generateMetadata({ params }: AlbumPageProps): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: AlbumPageProps): Promise<Metadata> {
   const { id } = await params;
   const albumId = parseInt(id);
 
   try {
-    const album = await losslessAPI.getAlbum(albumId);
-    const artistName = album.artist?.name || album.artists?.[0]?.name || "Unknown Artist";
+    const { album } = await api.getAlbum(albumId);
+    const artistName =
+      album.artist?.name || album.artists?.[0]?.name || "Unknown Artist";
 
     return {
       title: `${album.title} - ${artistName}`,
