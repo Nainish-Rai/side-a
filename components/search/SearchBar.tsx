@@ -47,6 +47,7 @@ export function SearchBar({
           duration: 0.2,
           ease: [0.4, 0, 0.2, 1],
         }}
+        style={{ willChange: "transform" }}
       >
         {/* Search Icon */}
         <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none z-10">
@@ -84,6 +85,7 @@ export function SearchBar({
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
               transition={{ duration: 0.15 }}
+              style={{ willChange: "opacity, transform" }}
               className="absolute right-16 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center
                        rounded-full bg-white/10 hover:bg-white/20 text-white/60 hover:text-white
                        transition-all duration-150 active:scale-95"
@@ -99,6 +101,7 @@ export function SearchBar({
           disabled={isLoading || !query.trim()}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
+          style={{ willChange: "transform" }}
           className={`absolute right-2 top-1/2 -translate-y-1/2
                      px-5 py-2 rounded-full
                      text-sm font-medium

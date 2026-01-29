@@ -1,8 +1,6 @@
 "use client";
 
-import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
-import { usePlaybackState } from "@/contexts/PlaybackStateContext";
-import { useQueue } from "@/contexts/QueueContext";
+import { useAudioPlayer, usePlaybackState, useQueue } from "@/contexts/AudioPlayerContext";
 import { getTrackTitle, getTrackArtists, formatTime } from "@/lib/api/utils";
 import {
   X,

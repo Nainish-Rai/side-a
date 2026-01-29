@@ -1,10 +1,8 @@
 "use client";
 
 import { Track, Album } from "@/lib/api/types";
-import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
-import { usePlaybackState } from "@/contexts/PlaybackStateContext";
-import { useQueue } from "@/contexts/QueueContext";
-import { useState } from "react";
+import { useAudioPlayer, usePlaybackState, useQueue } from "@/contexts/AudioPlayerContext";
+import { useState, useCallback } from "react";
 import React from "react";
 import SearchResultCard from "./SearchResultCard";
 import AlbumCard from "./AlbumCard";
@@ -82,28 +80,44 @@ export function SearchResults({
   const { setQueue } = useAudioPlayer();
 
   const [loadingTrackId, setLoadingTrackId] = useState<number | null>(null);
-  const [windowDimensions, setWindowDimensions] = useState({
-    width: 0,
-    height: 0,
-  });
+
+  // Lazy initialization to avoid SSR issues
+  const [windowDimensions, setWindowDimensions] = useState(() => ({
+    width: typeof window !== 'undefined' ? window.innerWidth : 0,
+    height: typeof window !== 'undefined' ? window.innerHeight : 0,
+  }));
 
   // Infinite scroll observer
   const observerTarget = React.useRef<HTMLDivElement>(null);
 
-  // Track window dimensions for virtual scrolling
+  // Use ref to avoid recreating observer when onLoadMore changes
+  const onLoadMoreRef = React.useRef(onLoadMore);
   React.useEffect(() => {
+    onLoadMoreRef.current = onLoadMore;
+  }, [onLoadMore]);
+
+  // Track window dimensions for virtual scrolling with debounce
+  React.useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+
     const handleResize = () => {
-      setWindowDimensions({
-        width: window.innerWidth,
-        height: window.innerHeight,
-      });
+      // Clear existing timeout
+      clearTimeout(timeoutId);
+
+      // Debounce the state update
+      timeoutId = setTimeout(() => {
+        setWindowDimensions({
+          width: window.innerWidth,
+          height: window.innerHeight,
+        });
+      }, 150);
     };
 
-    // Set initial dimensions
-    handleResize();
-
     window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener("resize", handleResize);
+    };
   }, []);
 
   React.useEffect(() => {
@@ -113,9 +127,9 @@ export function SearchResults({
           entries[0].isIntersecting &&
           hasNextPage &&
           !isFetchingMore &&
-          onLoadMore
+          onLoadMoreRef.current
         ) {
-          onLoadMore();
+          onLoadMoreRef.current();
         }
       },
       { threshold: 0.1 }
@@ -131,7 +145,7 @@ export function SearchResults({
         observer.unobserve(currentTarget);
       }
     };
-  }, [hasNextPage, isFetchingMore, onLoadMore]);
+  }, [hasNextPage, isFetchingMore]); // Removed onLoadMore from deps
 
   const tabs: { id: SearchContentType; label: string; icon: any }[] = [
     { id: "tracks", label: "Songs", icon: Music2 },

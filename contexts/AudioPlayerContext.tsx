@@ -8,16 +8,10 @@ import {
   useCallback,
   useEffect,
   ReactNode,
+  useMemo,
 } from "react";
 import { Track } from "@/lib/api/types";
 import { api } from "@/lib/api";
-
-// Re-export the new split contexts
-export {
-  PlaybackStateProvider,
-  usePlaybackState,
-} from "./PlaybackStateContext";
-export { QueueProvider, useQueue } from "./QueueContext";
 
 type RepeatMode = "off" | "all" | "one";
 
@@ -94,55 +88,67 @@ function getPersistedState(): Partial<PersistedState> {
 
 export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const persistedState = getPersistedState();
 
-  const [state, setState] = useState<AudioPlayerState>({
-    currentTrack: persistedState.currentTrack || null,
-    isPlaying: false, // Never auto-play on reload
-    currentTime: persistedState.currentTime || 0,
-    duration: 0,
-    volume: persistedState.volume ?? 1,
-    isMuted: persistedState.isMuted ?? false,
-    queue: persistedState.queue || [],
-    currentQueueIndex: persistedState.currentQueueIndex ?? -1,
-    shuffleActive: persistedState.shuffleActive ?? false,
-    repeatMode: persistedState.repeatMode || "off",
-    currentQuality: "LOSSLESS",
-    streamUrl: null,
+  // Initialize state from localStorage using lazy initialization
+  const [state, setState] = useState<AudioPlayerState>(() => {
+    const persistedState = getPersistedState();
+    return {
+      currentTrack: persistedState.currentTrack || null,
+      isPlaying: false, // Never auto-play on reload
+      currentTime: persistedState.currentTime || 0,
+      duration: 0,
+      volume: persistedState.volume ?? 1,
+      isMuted: persistedState.isMuted ?? false,
+      queue: persistedState.queue || [],
+      currentQueueIndex: persistedState.currentQueueIndex ?? -1,
+      shuffleActive: persistedState.shuffleActive ?? false,
+      repeatMode: persistedState.repeatMode || "off",
+      currentQuality: "LOSSLESS",
+      streamUrl: null,
+    };
   });
 
   const preloadCache = useRef<Map<number, string>>(new Map());
   const originalQueueBeforeShuffle = useRef<Track[]>([]);
   const shuffledQueue = useRef<Track[]>([]);
   const playNextRef = useRef<(() => Promise<void>) | null>(null);
-  const isFirstRender = useRef(true);
+  const persistTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Persist state to localStorage whenever it changes
+  // Debounce persistence to avoid frequent localStorage writes
   useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
+    // Clear any existing timer
+    if (persistTimerRef.current) {
+      clearTimeout(persistTimerRef.current);
     }
 
-    try {
-      const stateToPersist: PersistedState = {
-        volume: state.volume,
-        isMuted: state.isMuted,
-        shuffleActive: state.shuffleActive,
-        repeatMode: state.repeatMode,
-        queue: state.queue,
-        currentQueueIndex: state.currentQueueIndex,
-        currentTrack: state.currentTrack,
-        currentTime: state.currentTime,
-      };
+    // Don't persist currentTime changes immediately - debounce them
+    persistTimerRef.current = setTimeout(() => {
+      try {
+        const stateToPersist: PersistedState = {
+          volume: state.volume,
+          isMuted: state.isMuted,
+          shuffleActive: state.shuffleActive,
+          repeatMode: state.repeatMode,
+          queue: state.queue,
+          currentQueueIndex: state.currentQueueIndex,
+          currentTrack: state.currentTrack,
+          currentTime: state.currentTime,
+        };
 
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToPersist));
-    } catch (error) {
-      console.error(
-        "Failed to save audio player state to localStorage:",
-        error
-      );
-    }
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToPersist));
+      } catch (error) {
+        console.error(
+          "Failed to save audio player state to localStorage:",
+          error
+        );
+      }
+    }, 1000); // Debounce by 1 second
+
+    return () => {
+      if (persistTimerRef.current) {
+        clearTimeout(persistTimerRef.current);
+      }
+    };
   }, [
     state.volume,
     state.isMuted,
@@ -156,19 +162,19 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
   // Restore the audio element state from persisted data
   useEffect(() => {
-    const restoreAudioState = async () => {
-      if (!audioRef.current || !persistedState.currentTrack) return;
+    const currentTrack = state.currentTrack;
+    if (!audioRef.current || !currentTrack) return;
 
+    let cancelled = false;
+    const restoreAudioState = async () => {
       try {
         // Get stream URL for the persisted track
-        const streamUrl = await api.getStreamUrl(
-          persistedState.currentTrack.id
-        );
-        if (streamUrl) {
+        const streamUrl = await api.getStreamUrl(currentTrack.id);
+        if (streamUrl && !cancelled && audioRef.current) {
           audioRef.current.src = streamUrl;
-          audioRef.current.currentTime = persistedState.currentTime || 0;
-          audioRef.current.volume = persistedState.volume ?? 1;
-          audioRef.current.muted = persistedState.isMuted ?? false;
+          audioRef.current.currentTime = state.currentTime;
+          audioRef.current.volume = state.volume;
+          audioRef.current.muted = state.isMuted;
 
           setState((prev) => ({
             ...prev,
@@ -182,13 +188,27 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     };
 
     restoreAudioState();
-    // Only run once on mount
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
+    return () => {
+      cancelled = true;
+    };
+  }, []); // Empty deps array - only restore on mount
+
+  // Create Audio element once on mount
   useEffect(() => {
     const audio = new Audio();
     audioRef.current = audio;
+
+    return () => {
+      audio.pause();
+      audio.src = "";
+    };
+  }, []);
+
+  // Set up event listeners with stable refs
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
 
     const handleTimeUpdate = () => {
       setState((prev) => ({
@@ -199,19 +219,9 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     };
 
     const handleEnded = () => {
-      // Auto-play next track based on repeat mode
-      if (state.repeatMode === "one" && audio) {
-        audio.currentTime = 0;
-        audio.play();
-      } else if (
-        state.repeatMode === "all" ||
-        state.currentQueueIndex < state.queue.length - 1
-      ) {
-        if (playNextRef.current) {
-          playNextRef.current();
-        }
-      } else {
-        setState((prev) => ({ ...prev, isPlaying: false, currentTime: 0 }));
+      // Handle ended via ref callback that has access to current state
+      if (playNextRef.current) {
+        playNextRef.current();
       }
     };
 
@@ -239,9 +249,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
       audio.removeEventListener("play", handlePlay);
       audio.removeEventListener("pause", handlePause);
-      audio.pause();
     };
-  }, [state.currentQueueIndex, state.queue.length, state.repeatMode]);
+  }, []); // Empty deps - listeners are stable
 
   const playTrack = useCallback((track: Track, streamUrl: string) => {
     if (!audioRef.current) return;
@@ -363,6 +372,13 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   );
 
   const playNext = useCallback(async () => {
+    // Handle repeat-one mode
+    if (state.repeatMode === "one" && audioRef.current) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play();
+      return;
+    }
+
     const currentQueue = state.shuffleActive
       ? shuffledQueue.current
       : state.queue;
@@ -605,51 +621,6 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     getAudioElement,
   };
 
-  // Manually sync with split contexts using refs to avoid circular dependencies
-  useEffect(() => {
-    // Update PlaybackStateContext via a custom event
-    const event = new CustomEvent("playbackStateUpdate", {
-      detail: {
-        isPlaying: state.isPlaying,
-        currentTime: state.currentTime,
-        duration: state.duration,
-        volume: state.volume,
-        isMuted: state.isMuted,
-      },
-    });
-    window.dispatchEvent(event);
-  }, [
-    state.isPlaying,
-    state.currentTime,
-    state.duration,
-    state.volume,
-    state.isMuted,
-  ]);
-
-  useEffect(() => {
-    // Update QueueContext via a custom event
-    const event = new CustomEvent("queueStateUpdate", {
-      detail: {
-        currentTrack: state.currentTrack,
-        queue: state.queue,
-        currentQueueIndex: state.currentQueueIndex,
-        shuffleActive: state.shuffleActive,
-        repeatMode: state.repeatMode,
-        currentQuality: state.currentQuality,
-        streamUrl: state.streamUrl,
-      },
-    });
-    window.dispatchEvent(event);
-  }, [
-    state.currentTrack,
-    state.queue,
-    state.currentQueueIndex,
-    state.shuffleActive,
-    state.repeatMode,
-    state.currentQuality,
-    state.streamUrl,
-  ]);
-
   return (
     <AudioPlayerContext.Provider value={value}>
       {children}
@@ -664,3 +635,55 @@ export function useAudioPlayer() {
   }
   return context;
 }
+
+// Convenience hooks for accessing specific parts of the audio player state
+// These replace the old split contexts and avoid event-based synchronization
+export function usePlaybackState() {
+  const context = useContext(AudioPlayerContext);
+  if (!context) {
+    throw new Error("usePlaybackState must be used within AudioPlayerProvider");
+  }
+
+  return useMemo(
+    () => ({
+      isPlaying: context.isPlaying,
+      currentTime: context.currentTime,
+      duration: context.duration,
+      volume: context.volume,
+      isMuted: context.isMuted,
+    }),
+    [context.isPlaying, context.currentTime, context.duration, context.volume, context.isMuted]
+  );
+}
+
+export function useQueue() {
+  const context = useContext(AudioPlayerContext);
+  if (!context) {
+    throw new Error("useQueue must be used within AudioPlayerProvider");
+  }
+
+  return useMemo(
+    () => ({
+      currentTrack: context.currentTrack,
+      queue: context.queue,
+      currentQueueIndex: context.currentQueueIndex,
+      shuffleActive: context.shuffleActive,
+      repeatMode: context.repeatMode,
+      currentQuality: context.currentQuality,
+      streamUrl: context.streamUrl,
+    }),
+    [
+      context.currentTrack,
+      context.queue,
+      context.currentQueueIndex,
+      context.shuffleActive,
+      context.repeatMode,
+      context.currentQuality,
+      context.streamUrl,
+    ]
+  );
+}
+
+// Re-export provider aliases for backward compatibility
+export const PlaybackStateProvider = AudioPlayerProvider;
+export const QueueProvider = AudioPlayerProvider;

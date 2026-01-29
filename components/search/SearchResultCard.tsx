@@ -1,6 +1,6 @@
 "use client";
 
-import React, { memo } from "react";
+import React, { memo, useMemo } from "react";
 import { Track } from "@/lib/api/types";
 import { getTrackTitle, formatTime } from "@/lib/api/utils";
 import { Play, Pause, Disc, TrendingUp, Clock } from "lucide-react";
@@ -23,27 +23,41 @@ function SearchResultCard({
   isLoading,
   onClick,
 }: SearchResultCardProps) {
-  const coverId = track.album?.cover || track.album?.id;
-  const coverUrl = coverId ? api.getCoverUrl(coverId, "320") : undefined;
+  // Memoize cover URL computation
+  const coverUrl = useMemo(() => {
+    const coverId = track.album?.cover || track.album?.id;
+    return coverId ? api.getCoverUrl(coverId, "320") : undefined;
+  }, [track.album?.cover, track.album?.id]);
 
-  // Artists
-  const allArtists = track.artists || (track.artist ? [track.artist] : []);
-  const mainArtists = allArtists.filter((a) => a.type === "MAIN");
-  const displayArtist = mainArtists.length > 0 ? mainArtists.map(a => a.name).join(", ") : track.artist?.name || "Unknown Artist";
+  // Memoize artist display computation
+  const displayArtist = useMemo(() => {
+    const allArtists = track.artists || (track.artist ? [track.artist] : []);
+    const mainArtists = allArtists.filter((a) => a.type === "MAIN");
+    return mainArtists.length > 0
+      ? mainArtists.map(a => a.name).join(", ")
+      : track.artist?.name || "Unknown Artist";
+  }, [track.artists, track.artist]);
 
   const isExplicit = track.explicit;
 
-  // Metadata Tags
-  const qualityTags = track.mediaMetadata?.tags || [];
-  const hasHiRes = qualityTags.includes("HIRES_LOSSLESS");
-  const hasLossless = qualityTags.includes("LOSSLESS");
-  const hasDolbyAtmos = qualityTags.includes("DOLBY_ATMOS");
+  // Memoize quality tags computation
+  const qualityInfo = useMemo(() => {
+    const qualityTags = track.mediaMetadata?.tags || [];
+    return {
+      hasHiRes: qualityTags.includes("HIRES_LOSSLESS"),
+      hasLossless: qualityTags.includes("LOSSLESS"),
+      hasDolbyAtmos: qualityTags.includes("DOLBY_ATMOS"),
+    };
+  }, [track.mediaMetadata?.tags]);
+
+  const { hasHiRes, hasLossless, hasDolbyAtmos } = qualityInfo;
 
   return (
     <motion.div
       onClick={onClick}
       whileHover={{ backgroundColor: "rgba(255, 255, 255, 0.05)" }}
       transition={{ duration: 0.15 }}
+      style={{ willChange: "background-color" }}
       className={`group relative flex items-center gap-4 px-4 py-3 rounded-xl transition-all w-full cursor-pointer
         ${
           isCurrentTrack
@@ -75,20 +89,18 @@ function SearchResultCard({
         `}>
            {isCurrentTrack && isPlaying ? (
                <div className="flex items-end gap-[3px] h-5">
-                 <motion.div
-                   className="w-1 bg-white rounded-full"
-                   animate={{ height: ["40%", "100%", "40%"] }}
-                   transition={{ duration: 0.6, repeat: Infinity, ease: "easeInOut" }}
+                 {/* CSS animations for better performance than Motion */}
+                 <div
+                   className="w-1 bg-white rounded-full animate-[wave1_0.6s_ease-in-out_infinite]"
+                   style={{ height: '40%' }}
                  />
-                 <motion.div
-                   className="w-1 bg-white rounded-full"
-                   animate={{ height: ["100%", "40%", "100%"] }}
-                   transition={{ duration: 0.6, repeat: Infinity, ease: "easeInOut", delay: 0.1 }}
+                 <div
+                   className="w-1 bg-white rounded-full animate-[wave2_0.6s_ease-in-out_infinite]"
+                   style={{ height: '100%', animationDelay: '0.1s' }}
                  />
-                 <motion.div
-                   className="w-1 bg-white rounded-full"
-                   animate={{ height: ["60%", "80%", "60%"] }}
-                   transition={{ duration: 0.6, repeat: Infinity, ease: "easeInOut", delay: 0.2 }}
+                 <div
+                   className="w-1 bg-white rounded-full animate-[wave3_0.6s_ease-in-out_infinite]"
+                   style={{ height: '60%', animationDelay: '0.2s' }}
                  />
                </div>
            ) : (

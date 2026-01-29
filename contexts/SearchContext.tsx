@@ -45,25 +45,23 @@ function getInitialState() {
 }
 
 export function SearchProvider({ children }: { children: ReactNode }) {
-  const initialState = getInitialState();
-  const [query, setQueryState] = useState(initialState.query);
+  // Lazy initialization - only runs once
+  const [query, setQueryState] = useState(() => getInitialState().query);
   const [currentTab, setCurrentTabState] = useState<SearchContentType>(
-    initialState.currentTab
+    () => getInitialState().currentTab
   );
-  const isFirstRender = useRef(true);
 
-  // Persist state to localStorage whenever it changes (skip first render)
+  // Debounce persistence to avoid frequent localStorage writes
   useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
+    const timeoutId = setTimeout(() => {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ query, currentTab }));
+      } catch (error) {
+        console.error("Failed to save search state to localStorage:", error);
+      }
+    }, 500); // Debounce by 500ms
 
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ query, currentTab }));
-    } catch (error) {
-      console.error("Failed to save search state to localStorage:", error);
-    }
+    return () => clearTimeout(timeoutId);
   }, [query, currentTab]);
 
   const setQuery = (newQuery: string) => {

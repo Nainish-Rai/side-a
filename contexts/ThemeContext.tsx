@@ -12,46 +12,42 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [mounted, setMounted] = useState(false);
-  const [theme, setThemeState] = useState<Theme>("light");
+// Helper function to get initial theme
+function getInitialTheme(): Theme {
+  if (typeof window === "undefined") return "light";
 
-  // Apply theme to document and persist to localStorage
-  useEffect(() => {
-    // Only run on client
-    if (typeof window === "undefined") return;
-
-    // Get initial theme
+  try {
     const storedTheme = localStorage.getItem("theme") as Theme | null;
-    const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
-      .matches
+    if (storedTheme) return storedTheme;
+
+    return window.matchMedia("(prefers-color-scheme: dark)").matches
       ? "dark"
       : "light";
-    const initialTheme = storedTheme || systemTheme;
+  } catch {
+    return "light";
+  }
+}
 
-    // Apply theme
-    const root = document.documentElement;
-    root.classList.remove("light", "dark");
-    root.classList.add(initialTheme);
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  // Lazy initialization - only runs once
+  const [theme, setThemeState] = useState<Theme>(getInitialTheme);
 
-    // Update state if needed
-    if (initialTheme !== theme) {
-      setThemeState(initialTheme);
-    }
-
-    setMounted(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Update theme when it changes
+  // Apply theme on mount and when theme changes
   useEffect(() => {
-    if (!mounted) return;
-
     const root = document.documentElement;
+
+    // Remove both classes first
     root.classList.remove("light", "dark");
+    // Add the current theme
     root.classList.add(theme);
-    localStorage.setItem("theme", theme);
-  }, [theme, mounted]);
+
+    // Persist to localStorage
+    try {
+      localStorage.setItem("theme", theme);
+    } catch (error) {
+      console.error("Failed to save theme to localStorage:", error);
+    }
+  }, [theme]);
 
   const toggleTheme = () => {
     setThemeState((prevTheme) => (prevTheme === "light" ? "dark" : "light"));

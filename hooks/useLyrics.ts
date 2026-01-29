@@ -22,26 +22,35 @@ export function useLyrics(
     const trackId = currentTrack.id;
     previousTrackIdRef.current = trackId;
 
-    // Use a flag to prevent state updates after unmount
-    let isMounted = true;
+    // Use AbortController for better cancellation
+    const controller = new AbortController();
 
     const fetchLyrics = async () => {
-      if (!isMounted) return;
+      // Batch all initial state updates into a single object
+      const initialState = {
+        isLoading: true,
+        error: null,
+        lyrics: null,
+        currentLineIndex: -1,
+      };
 
-      setIsLoading(true);
-      setError(null);
-      setLyrics(null);
-      setCurrentLineIndex(-1);
+      // Set all loading states at once
+      setIsLoading(initialState.isLoading);
+      setError(initialState.error);
+      setLyrics(initialState.lyrics);
+      setCurrentLineIndex(initialState.currentLineIndex);
 
       try {
         const data = await api.fetchLyrics(currentTrack);
-        if (isMounted) {
+        if (!controller.signal.aborted) {
+          // Batch success state updates
           setLyrics(data);
           setIsLoading(false);
         }
       } catch (err) {
         console.error("Error fetching lyrics:", err);
-        if (isMounted) {
+        if (!controller.signal.aborted) {
+          // Batch error state updates
           setError("Failed to load lyrics");
           setIsLoading(false);
         }
@@ -51,28 +60,20 @@ export function useLyrics(
     fetchLyrics();
 
     return () => {
-      isMounted = false;
+      controller.abort();
     };
   }, [currentTrack]);
 
   // Update current line based on playback time
   useEffect(() => {
     if (!lyrics?.parsed || !isPlaying) {
+      setCurrentLineIndex(-1);
       return;
     }
 
     const newIndex = getCurrentLineIndex(lyrics.parsed, currentTime);
-
-    // Use requestAnimationFrame to batch state updates
-    requestAnimationFrame(() => {
-      setCurrentLineIndex((prev) => {
-        if (prev !== newIndex) {
-          return newIndex;
-        }
-        return prev;
-      });
-    });
-  }, [currentTime, lyrics, isPlaying]);
+    setCurrentLineIndex((prev) => (prev !== newIndex ? newIndex : prev));
+  }, [currentTime, lyrics?.parsed, isPlaying]); // Use lyrics.parsed instead of lyrics object
 
   const hasLyrics = Boolean(lyrics?.lyrics || lyrics?.parsed);
   const hasSyncedLyrics = Boolean(lyrics?.parsed && lyrics.parsed.length > 0);

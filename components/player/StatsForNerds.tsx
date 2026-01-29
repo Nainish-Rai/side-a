@@ -2,9 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
-import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
-import { usePlaybackState } from "@/contexts/PlaybackStateContext";
-import { useQueue } from "@/contexts/QueueContext";
+import { useAudioPlayer, usePlaybackState, useQueue } from "@/contexts/AudioPlayerContext";
 import { api } from "@/lib/api";
 
 interface StatsForNerdsProps {

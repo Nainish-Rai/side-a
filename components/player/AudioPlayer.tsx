@@ -1,8 +1,6 @@
 "use client";
 
-import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
-import { usePlaybackState } from "@/contexts/PlaybackStateContext";
-import { useQueue } from "@/contexts/QueueContext";
+import { useAudioPlayer, usePlaybackState, useQueue } from "@/contexts/AudioPlayerContext";
 import { formatTime, getTrackTitle, getTrackArtists } from "@/lib/api/utils";
 import {
   Play,
@@ -53,6 +51,14 @@ const StatsForNerds = dynamic(
 import { useLyrics } from "@/hooks/useLyrics";
 import Image from "next/image";
 import { motion } from "motion/react";
+
+// Memoized motion button component for better performance
+const MotionButton = React.memo(motion.button);
+
+// Shared animation variants for consistent, performant animations
+const buttonHoverScale = { scale: 1.1 };
+const buttonTapScale = { scale: 0.95 };
+const playButtonHoverScale = { scale: 1.05 };
 
 export function AudioPlayer() {
   // Use split contexts for state
@@ -158,39 +164,48 @@ export function AudioPlayer() {
     };
   }, [getAudioElement]);
 
-  // Animate spectrum bars
+  // Animate spectrum bars with throttling to reduce re-renders
   useEffect(() => {
     if (!isPlaying || !analyserRef.current) {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
         animationFrameRef.current = null;
       }
-      const timeoutId = setTimeout(() => setSpectrumBars([0, 0, 0]), 0);
-      return () => clearTimeout(timeoutId);
+      // Reset bars to zero when not playing
+      setSpectrumBars([0, 0, 0]);
+      return;
     }
 
     const analyser = analyserRef.current;
     const bufferLength = analyser.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
+    let lastUpdateTime = 0;
+    const updateInterval = 100; // Update every 100ms instead of every frame
 
-    const updateSpectrum = () => {
-      analyser.getByteFrequencyData(dataArray);
+    const updateSpectrum = (timestamp: number) => {
+      // Throttle updates to reduce state changes
+      if (timestamp - lastUpdateTime >= updateInterval) {
+        analyser.getByteFrequencyData(dataArray);
 
-      const bars = [
-        Math.floor((dataArray[2] / 255) * 100),
-        Math.floor((dataArray[5] / 255) * 100),
-        Math.floor((dataArray[8] / 255) * 100),
-      ];
+        const bars = [
+          Math.floor((dataArray[2] / 255) * 100),
+          Math.floor((dataArray[5] / 255) * 100),
+          Math.floor((dataArray[8] / 255) * 100),
+        ];
 
-      setSpectrumBars(bars);
+        setSpectrumBars(bars);
+        lastUpdateTime = timestamp;
+      }
+
       animationFrameRef.current = requestAnimationFrame(updateSpectrum);
     };
 
-    updateSpectrum();
+    animationFrameRef.current = requestAnimationFrame(updateSpectrum);
 
     return () => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
       }
     };
   }, [isPlaying]);
@@ -332,10 +347,10 @@ export function AudioPlayer() {
             {/* Control Buttons */}
             <div className="flex items-center gap-4">
               {/* Shuffle Button */}
-              <motion.button
+              <MotionButton
                 onClick={toggleShuffle}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={buttonHoverScale}
+                whileTap={buttonTapScale}
                 className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors ${
                   shuffleActive
                     ? "text-white bg-white/10"
@@ -344,24 +359,24 @@ export function AudioPlayer() {
                 aria-label="Shuffle"
               >
                 <Shuffle className="w-4 h-4" />
-              </motion.button>
+              </MotionButton>
 
               {/* Previous Button */}
-              <motion.button
+              <MotionButton
                 onClick={playPrev}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={buttonHoverScale}
+                whileTap={buttonTapScale}
                 className="w-8 h-8 flex items-center justify-center text-white/70 hover:text-white transition-colors"
                 aria-label="Previous"
               >
                 <SkipBack className="w-5 h-5 fill-current" />
-              </motion.button>
+              </MotionButton>
 
               {/* Play/Pause Button */}
-              <motion.button
+              <MotionButton
                 onClick={handlePlayPause}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={playButtonHoverScale}
+                whileTap={buttonTapScale}
                 className="flex-shrink-0 w-10 h-10 rounded-full bg-white hover:bg-white/90
                            transition-all duration-200 flex items-center justify-center
                            shadow-lg"
@@ -372,24 +387,24 @@ export function AudioPlayer() {
                 ) : (
                   <Play className="w-5 h-5 ml-0.5 text-black fill-black" />
                 )}
-              </motion.button>
+              </MotionButton>
 
               {/* Next Button */}
-              <motion.button
+              <MotionButton
                 onClick={playNext}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={buttonHoverScale}
+                whileTap={buttonTapScale}
                 className="w-8 h-8 flex items-center justify-center text-white/70 hover:text-white transition-colors"
                 aria-label="Next"
               >
                 <SkipForward className="w-5 h-5 fill-current" />
-              </motion.button>
+              </MotionButton>
 
               {/* Repeat Button */}
-              <motion.button
+              <MotionButton
                 onClick={toggleRepeat}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={buttonHoverScale}
+                whileTap={buttonTapScale}
                 className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors ${
                   repeatMode !== "off"
                     ? "text-white bg-white/10"
@@ -402,7 +417,7 @@ export function AudioPlayer() {
                 ) : (
                   <Repeat className="w-4 h-4" />
                 )}
-              </motion.button>
+              </MotionButton>
             </div>
 
             {/* Time Display */}
@@ -418,23 +433,23 @@ export function AudioPlayer() {
             {/* Action Buttons - Always visible */}
             <div className="flex items-center gap-2">
               {/* Fullscreen Player Button - Always visible */}
-              <motion.button
+              <MotionButton
                 onClick={() => setIsFullscreenOpen(true)}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={buttonHoverScale}
+                whileTap={buttonTapScale}
                 className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors"
                 aria-label="Fullscreen Player"
                 title="Open Fullscreen Player"
               >
                 <Maximize2 className="w-4 h-4 text-white/60 hover:text-white transition-colors" />
-              </motion.button>
+              </MotionButton>
 
               {/* Lyrics Button */}
               {hasLyrics && (
-                <motion.button
+                <MotionButton
                   onClick={() => setIsLyricsOpen(true)}
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
+                  whileHover={buttonHoverScale}
+                  whileTap={buttonTapScale}
                   className="relative w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors"
                   aria-label="View Lyrics"
                   title="View Lyrics"
@@ -443,14 +458,14 @@ export function AudioPlayer() {
                   {lyrics && (
                     <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-white rounded-full" />
                   )}
-                </motion.button>
+                </MotionButton>
               )}
 
               {/* Queue Button */}
-              <motion.button
+              <MotionButton
                 onClick={() => setIsQueueOpen(true)}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={buttonHoverScale}
+                whileTap={buttonTapScale}
                 className="relative w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors"
                 aria-label="View Queue"
                 title="View Queue"
@@ -461,15 +476,15 @@ export function AudioPlayer() {
                     {queue.length > 9 ? "9+" : queue.length}
                   </span>
                 )}
-              </motion.button>
+              </MotionButton>
             </div>
 
             {/* Volume Controls */}
             <div className="hidden md:flex items-center gap-3">
-              <motion.button
+              <MotionButton
                 onClick={toggleMute}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={buttonHoverScale}
+                whileTap={buttonTapScale}
                 className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors"
                 aria-label={isMuted ? "Unmute" : "Mute"}
               >
@@ -478,7 +493,7 @@ export function AudioPlayer() {
                 ) : (
                   <Volume2 className="w-4 h-4 text-white/60" />
                 )}
-              </motion.button>
+              </MotionButton>
 
               {/* Volume Slider */}
               <div className="w-24 group">

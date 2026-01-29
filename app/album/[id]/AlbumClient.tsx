@@ -4,9 +4,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion } from "motion/react";
 import { Album, Track } from "@/lib/api/types";
-import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
-import { usePlaybackState } from "@/contexts/PlaybackStateContext";
-import { useQueue } from "@/contexts/QueueContext";
+import { useAudioPlayer, usePlaybackState, useQueue } from "@/contexts/AudioPlayerContext";
 import AppLayout from "@/components/layout/AppLayout";
 import {
   Play,

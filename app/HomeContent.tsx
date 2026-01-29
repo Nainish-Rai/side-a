@@ -75,7 +75,8 @@ export function HomeContent() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+                transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+                style={{ willChange: "opacity, transform" }}
               >
                 <SearchResults
                   tracks={tracks}
@@ -96,10 +97,11 @@ export function HomeContent() {
             ) : (
               <motion.div
                 key="empty"
-                initial={{ opacity: 0, scale: 0.95 }}
+                initial={{ opacity: 0, scale: 0.98 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+                exit={{ opacity: 0, scale: 0.98 }}
+                transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+                style={{ willChange: "opacity, transform" }}
                 className="flex items-center justify-center min-h-[60vh]"
               >
                 <div className="text-center max-w-md">
@@ -107,11 +109,12 @@ export function HomeContent() {
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{
-                      delay: 0.2,
+                      delay: 0.1,
                       type: "spring",
-                      stiffness: 200,
-                      damping: 15,
+                      stiffness: 260,
+                      damping: 20,
                     }}
+                    style={{ willChange: "transform" }}
                     className="mb-8 inline-block"
                   >
                     <div className="w-24 h-24 rounded-full bg-white/5 backdrop-blur-xl flex items-center justify-center">

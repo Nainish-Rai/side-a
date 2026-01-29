@@ -1,6 +1,6 @@
 "use client";
 
-import { useQueue } from "@/contexts/QueueContext";
+import { useAudioPlayer, useQueue } from "@/contexts/AudioPlayerContext";
 import { getTrackTitle, getTrackArtists } from "@/lib/api/utils";
 import { X, Music } from "lucide-react";
 
@@ -10,8 +10,8 @@ interface QueueProps {
 }
 
 export function Queue({ isOpen, onClose }: QueueProps) {
-  const { queue, currentQueueIndex, removeFromQueue, clearQueue } =
-    useQueue();
+  const { queue, currentQueueIndex } = useQueue();
+  const { removeFromQueue, clearQueue } = useAudioPlayer();
 
   if (!isOpen) return null;
 
