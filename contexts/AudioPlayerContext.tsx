@@ -169,7 +169,10 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     const restoreAudioState = async () => {
       try {
         // Get stream URL for the persisted track
-        const streamUrl = await api.getStreamUrl(currentTrack.id);
+        const streamUrl = await api.getStreamUrl(
+          currentTrack.id,
+          state.currentQuality
+        );
         if (streamUrl && !cancelled && audioRef.current) {
           audioRef.current.src = streamUrl;
           audioRef.current.currentTime = state.currentTime;
@@ -197,6 +200,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   // Create Audio element once on mount
   useEffect(() => {
     const audio = new Audio();
+    // Set crossOrigin to allow Web Audio API access for spectrum analyzer
+    audio.crossOrigin = "anonymous";
     audioRef.current = audio;
 
     return () => {
@@ -237,11 +242,22 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       setState((prev) => ({ ...prev, isPlaying: false }));
     };
 
+    const handleError = (e: Event) => {
+      console.error("Audio element error:", e);
+      setState((prev) => ({ ...prev, isPlaying: false }));
+    };
+
+    const handleCanPlay = () => {
+      // Audio is ready to play
+    };
+
     audio.addEventListener("timeupdate", handleTimeUpdate);
     audio.addEventListener("ended", handleEnded);
     audio.addEventListener("loadedmetadata", handleLoadedMetadata);
     audio.addEventListener("play", handlePlay);
     audio.addEventListener("pause", handlePause);
+    audio.addEventListener("error", handleError);
+    audio.addEventListener("canplay", handleCanPlay);
 
     return () => {
       audio.removeEventListener("timeupdate", handleTimeUpdate);
@@ -249,11 +265,13 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
       audio.removeEventListener("play", handlePlay);
       audio.removeEventListener("pause", handlePause);
+      audio.removeEventListener("error", handleError);
+      audio.removeEventListener("canplay", handleCanPlay);
     };
   }, []); // Empty deps - listeners are stable
 
   const playTrack = useCallback((track: Track, streamUrl: string) => {
-    if (!audioRef.current) return;
+    if (!audioRef.current || !streamUrl) return;
 
     audioRef.current.src = streamUrl;
     audioRef.current.play().catch((error) => {
@@ -291,23 +309,50 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const play = useCallback(() => {
+  const play = useCallback(async () => {
     if (!audioRef.current) return;
+
+    // If no source is set, try to load the current track
+    if (!audioRef.current.src && state.currentTrack) {
+      try {
+        const streamUrl = await api.getStreamUrl(
+          state.currentTrack.id,
+          state.currentQuality
+        );
+        if (streamUrl && audioRef.current) {
+          audioRef.current.src = streamUrl;
+          setState((prev) => ({ ...prev, streamUrl }));
+        } else {
+          console.error("Failed to get stream URL for current track");
+          return;
+        }
+      } catch (error) {
+        console.error("Failed to load track for playback:", error);
+        return;
+      }
+    }
+
+    if (!audioRef.current.src) {
+      console.error("No audio source set and no current track to load");
+      return;
+    }
+
     audioRef.current.play().catch((error) => {
       console.error("Playback failed:", error);
+      setState((prev) => ({ ...prev, isPlaying: false }));
     });
-  }, []);
+  }, [state.currentTrack, state.currentQuality]);
 
   const pause = useCallback(() => {
     if (!audioRef.current) return;
     audioRef.current.pause();
   }, []);
 
-  const togglePlayPause = useCallback(() => {
+  const togglePlayPause = useCallback(async () => {
     if (state.isPlaying) {
       pause();
     } else {
-      play();
+      await play();
     }
   }, [state.isPlaying, play, pause]);
 
@@ -340,105 +385,145 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
   const setQueue = useCallback(
     async (tracks: Track[], startIndex: number = 0) => {
-      setState((prev) => ({
-        ...prev,
-        queue: tracks,
-        currentQueueIndex: startIndex,
-      }));
+      setState((prev) => {
+        const quality = prev.currentQuality;
 
-      if (tracks.length > 0 && startIndex >= 0 && startIndex < tracks.length) {
-        const track = tracks[startIndex];
-        const streamUrl = await api.getStreamUrl(track.id);
-        if (streamUrl && audioRef.current) {
-          audioRef.current.src = streamUrl;
-          audioRef.current.play().catch((error) => {
-            console.error("Playback failed:", error);
-          });
+        // Start async loading after state update
+        if (tracks.length > 0 && startIndex >= 0 && startIndex < tracks.length) {
+          const track = tracks[startIndex];
 
-          const quality = track.audioQuality || "HIGH";
+          // Load and play asynchronously
+          (async () => {
+            try {
+              const streamUrl = await api.getStreamUrl(track.id, quality);
+              if (!streamUrl) {
+                console.error("Failed to get stream URL for track:", track.id);
+                return;
+              }
 
-          setState((prev) => ({
-            ...prev,
-            currentTrack: track,
-            isPlaying: true,
-            currentTime: 0,
-            currentQuality: quality,
-            streamUrl: streamUrl,
-          }));
+              if (audioRef.current) {
+                audioRef.current.src = streamUrl;
+
+                const trackQuality = track.audioQuality || "HIGH";
+
+                setState((prev) => ({
+                  ...prev,
+                  currentTrack: track,
+                  currentTime: 0,
+                  currentQuality: trackQuality,
+                  streamUrl: streamUrl,
+                }));
+
+                // Play after state is set
+                await audioRef.current.play().catch((error) => {
+                  console.error("Playback failed:", error);
+                  setState((prev) => ({ ...prev, isPlaying: false }));
+                });
+              }
+            } catch (error) {
+              console.error("Error setting up playback:", error);
+            }
+          })();
         }
-      }
+
+        return {
+          ...prev,
+          queue: tracks,
+          currentQueueIndex: startIndex,
+        };
+      });
     },
     []
   );
 
   const playNext = useCallback(async () => {
-    // Handle repeat-one mode
-    if (state.repeatMode === "one" && audioRef.current) {
-      audioRef.current.currentTime = 0;
-      audioRef.current.play();
-      return;
-    }
-
-    const currentQueue = state.shuffleActive
-      ? shuffledQueue.current
-      : state.queue;
-    if (currentQueue.length === 0) return;
-
-    let nextIndex: number;
-    if (state.repeatMode === "all") {
-      nextIndex = (state.currentQueueIndex + 1) % currentQueue.length;
-    } else {
-      nextIndex = state.currentQueueIndex + 1;
-      if (nextIndex >= currentQueue.length) {
-        setState((prev) => ({ ...prev, isPlaying: false }));
-        return;
-      }
-    }
-
-    const track = currentQueue[nextIndex];
-    const streamUrl =
-      preloadCache.current.get(track.id) || (await api.getStreamUrl(track.id));
-
-    if (streamUrl && audioRef.current) {
-      audioRef.current.src = streamUrl;
-      await audioRef.current.play();
-
-      const quality = track.audioQuality || "HIGH";
-
-      setState((prev) => ({
-        ...prev,
-        currentTrack: track,
-        currentQueueIndex: nextIndex,
-        isPlaying: true,
-        currentTime: 0,
-        currentQuality: quality,
-        streamUrl: streamUrl,
-      }));
-
-      // Update Media Session metadata
-      if ("mediaSession" in navigator) {
-        const coverUrl =
-          track.album?.cover || track.album?.id
-            ? api.getCoverUrl(track.album.cover || track.album.id, "1280")
-            : undefined;
-
-        navigator.mediaSession.metadata = new MediaMetadata({
-          title: track.title,
-          artist:
-            track.artist?.name || track.artists?.[0]?.name || "Unknown Artist",
-          album: track.album?.title || "Unknown Album",
-          artwork: coverUrl
-            ? [{ src: coverUrl, sizes: "1280x1280", type: "image/jpeg" }]
-            : [],
+    setState((prev) => {
+      // Handle repeat-one mode
+      if (prev.repeatMode === "one" && audioRef.current) {
+        audioRef.current.currentTime = 0;
+        audioRef.current.play().catch((error) => {
+          console.error("Playback failed:", error);
+          setState((s) => ({ ...s, isPlaying: false }));
         });
+        return prev;
       }
-    }
-  }, [
-    state.queue,
-    state.currentQueueIndex,
-    state.repeatMode,
-    state.shuffleActive,
-  ]);
+
+      const currentQueue = prev.shuffleActive
+        ? shuffledQueue.current
+        : prev.queue;
+      if (currentQueue.length === 0) return prev;
+
+      let nextIndex: number;
+      if (prev.repeatMode === "all") {
+        nextIndex = (prev.currentQueueIndex + 1) % currentQueue.length;
+      } else {
+        nextIndex = prev.currentQueueIndex + 1;
+        if (nextIndex >= currentQueue.length) {
+          return { ...prev, isPlaying: false };
+        }
+      }
+
+      const track = currentQueue[nextIndex];
+
+      // Load and play asynchronously
+      (async () => {
+        try {
+          const streamUrl =
+            preloadCache.current.get(track.id) ||
+            (await api.getStreamUrl(track.id, prev.currentQuality));
+
+          if (!streamUrl) {
+            console.error("Failed to get stream URL for track:", track.id);
+            return;
+          }
+
+          if (audioRef.current) {
+            audioRef.current.src = streamUrl;
+
+            const quality = track.audioQuality || "HIGH";
+
+            setState((s) => ({
+              ...s,
+              currentTrack: track,
+              currentQueueIndex: nextIndex,
+              currentTime: 0,
+              currentQuality: quality,
+              streamUrl: streamUrl,
+            }));
+
+            await audioRef.current.play().catch((error) => {
+              console.error("Playback failed:", error);
+              setState((s) => ({ ...s, isPlaying: false }));
+            });
+
+            // Update Media Session metadata
+            if ("mediaSession" in navigator) {
+              const coverUrl =
+                track.album?.cover || track.album?.id
+                  ? api.getCoverUrl(track.album.cover || track.album.id, "1280")
+                  : undefined;
+
+              navigator.mediaSession.metadata = new MediaMetadata({
+                title: track.title,
+                artist:
+                  track.artist?.name ||
+                  track.artists?.[0]?.name ||
+                  "Unknown Artist",
+                album: track.album?.title || "Unknown Album",
+                artwork: coverUrl
+                  ? [{ src: coverUrl, sizes: "1280x1280", type: "image/jpeg" }]
+                  : [],
+              });
+            }
+          }
+        } catch (error) {
+          console.error("Error playing next track:", error);
+        }
+      })();
+
+      return prev;
+    });
+  }, []);
 
   // Keep ref updated
   useEffect(() => {
@@ -446,54 +531,69 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   }, [playNext]);
 
   const playPrev = useCallback(async () => {
-    const currentQueue = state.shuffleActive
-      ? shuffledQueue.current
-      : state.queue;
-    if (currentQueue.length === 0) return;
+    setState((prev) => {
+      const currentQueue = prev.shuffleActive
+        ? shuffledQueue.current
+        : prev.queue;
+      if (currentQueue.length === 0) return prev;
 
-    // If more than 3 seconds into the song, restart it
-    if (state.currentTime > 3) {
-      seek(0);
-      return;
-    }
-
-    let prevIndex: number;
-    if (state.repeatMode === "all") {
-      prevIndex = state.currentQueueIndex - 1;
-      if (prevIndex < 0) {
-        prevIndex = currentQueue.length - 1;
+      // If more than 3 seconds into the song, restart it
+      if (prev.currentTime > 3) {
+        if (audioRef.current) {
+          audioRef.current.currentTime = 0;
+        }
+        return { ...prev, currentTime: 0 };
       }
-    } else {
-      prevIndex = Math.max(0, state.currentQueueIndex - 1);
-    }
 
-    const track = currentQueue[prevIndex];
-    const streamUrl = await api.getStreamUrl(track.id);
+      let prevIndex: number;
+      if (prev.repeatMode === "all") {
+        prevIndex = prev.currentQueueIndex - 1;
+        if (prevIndex < 0) {
+          prevIndex = currentQueue.length - 1;
+        }
+      } else {
+        prevIndex = Math.max(0, prev.currentQueueIndex - 1);
+      }
 
-    if (streamUrl && audioRef.current) {
-      audioRef.current.src = streamUrl;
-      await audioRef.current.play();
+      const track = currentQueue[prevIndex];
 
-      const quality = track.audioQuality || "HIGH";
+      // Load and play asynchronously
+      (async () => {
+        try {
+          const streamUrl = await api.getStreamUrl(track.id, prev.currentQuality);
 
-      setState((prev) => ({
-        ...prev,
-        currentTrack: track,
-        currentQueueIndex: prevIndex,
-        isPlaying: true,
-        currentTime: 0,
-        currentQuality: quality,
-        streamUrl: streamUrl,
-      }));
-    }
-  }, [
-    state.queue,
-    state.currentQueueIndex,
-    state.currentTime,
-    state.repeatMode,
-    state.shuffleActive,
-    seek,
-  ]);
+          if (!streamUrl) {
+            console.error("Failed to get stream URL for track:", track.id);
+            return;
+          }
+
+          if (audioRef.current) {
+            audioRef.current.src = streamUrl;
+
+            const quality = track.audioQuality || "HIGH";
+
+            setState((s) => ({
+              ...s,
+              currentTrack: track,
+              currentQueueIndex: prevIndex,
+              currentTime: 0,
+              currentQuality: quality,
+              streamUrl: streamUrl,
+            }));
+
+            await audioRef.current.play().catch((error) => {
+              console.error("Playback failed:", error);
+              setState((s) => ({ ...s, isPlaying: false }));
+            });
+          }
+        } catch (error) {
+          console.error("Error playing previous track:", error);
+        }
+      })();
+
+      return prev;
+    });
+  }, []);
 
   const toggleShuffle = useCallback(() => {
     setState((prev) => {
@@ -652,7 +752,13 @@ export function usePlaybackState() {
       volume: context.volume,
       isMuted: context.isMuted,
     }),
-    [context.isPlaying, context.currentTime, context.duration, context.volume, context.isMuted]
+    [
+      context.isPlaying,
+      context.currentTime,
+      context.duration,
+      context.volume,
+      context.isMuted,
+    ]
   );
 }
 

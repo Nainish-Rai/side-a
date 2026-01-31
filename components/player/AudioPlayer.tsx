@@ -94,6 +94,7 @@ export function AudioPlayer() {
   const animationFrameRef = useRef<number | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
+  const sourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
 
   // Use lyrics hook
   const {
@@ -108,6 +109,10 @@ export function AudioPlayer() {
 
   // Memoize play/pause handler
   const handlePlayPause = useCallback(() => {
+    // Resume AudioContext if suspended (required after user interaction)
+    if (audioContextRef.current?.state === "suspended") {
+      audioContextRef.current.resume();
+    }
     togglePlayPause();
   }, [togglePlayPause]);
 
@@ -135,32 +140,49 @@ export function AudioPlayer() {
     const audioElement = getAudioElement();
     if (!audioElement) return;
 
-    // Create audio context and analyzer
-    if (!audioContextRef.current) {
-      const AudioContext =
-        window.AudioContext ||
-        (
-          window as unknown as {
-            webkitAudioContext: typeof window.AudioContext;
-          }
-        ).webkitAudioContext;
-      audioContextRef.current = new AudioContext();
-      analyserRef.current = audioContextRef.current.createAnalyser();
-      analyserRef.current.fftSize = 64;
-      analyserRef.current.smoothingTimeConstant = 0.8;
-      analyserRef.current.minDecibels = -80;
-      analyserRef.current.maxDecibels = -20;
+    // Only create audio context and source once
+    if (!audioContextRef.current && !sourceNodeRef.current) {
+      try {
+        const AudioContext =
+          window.AudioContext ||
+          (
+            window as unknown as {
+              webkitAudioContext: typeof window.AudioContext;
+            }
+          ).webkitAudioContext;
+        audioContextRef.current = new AudioContext();
+        analyserRef.current = audioContextRef.current.createAnalyser();
+        analyserRef.current.fftSize = 64;
+        analyserRef.current.smoothingTimeConstant = 0.8;
+        analyserRef.current.minDecibels = -80;
+        analyserRef.current.maxDecibels = -20;
 
-      const source =
-        audioContextRef.current.createMediaElementSource(audioElement);
-      source.connect(analyserRef.current);
-      analyserRef.current.connect(audioContextRef.current.destination);
+        // Create and store source node - can only create once per audio element
+        const source =
+          audioContextRef.current.createMediaElementSource(audioElement);
+        sourceNodeRef.current = source;
+        source.connect(analyserRef.current);
+        analyserRef.current.connect(audioContextRef.current.destination);
+      } catch (error) {
+        console.warn(
+          "Failed to initialize audio analyzer (likely CORS issue):",
+          error
+        );
+        // Clean up partial state if creation failed
+        audioContextRef.current = null;
+        analyserRef.current = null;
+        sourceNodeRef.current = null;
+        // Audio will play normally without analyzer
+      }
     }
 
     return () => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
+      // Note: We don't disconnect source here because the audio element
+      // can only be connected once in its lifetime. Disconnecting would
+      // prevent reconnecting later.
     };
   }, [getAudioElement]);
 
