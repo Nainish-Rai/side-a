@@ -15,7 +15,7 @@ SIDE A follows a **Brutalist Minimalist** design language inspired by clean typo
 
 ### 2. **Typography First**
 - Hierarchy achieved through size, weight, and opacity
-- Monospace fonts for data and metadata
+- Monospace fonts for metadata
 - Sans-serif for content
 - Generous letter-spacing for labels
 

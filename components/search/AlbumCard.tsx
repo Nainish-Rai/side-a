@@ -24,77 +24,68 @@ function AlbumCard({ album }: AlbumCardProps) {
     : null;
 
   return (
-    <Link href={`/album/${album.id}`} className="group relative block">
-      {/* Album Card - Swiss Design Style */}
-      <div
-        className="relative bg-white dark:bg-[#1a1a1a] border-2 border-carbon dark:border-bone
-                      shadow-[4px_4px_0px_0px_rgba(16,16,16,1)] dark:shadow-[4px_4px_0px_0px_rgba(242,239,233,1)]
-                      hover:shadow-[6px_6px_0px_0px_rgba(16,16,16,1)] dark:hover:shadow-[6px_6px_0px_0px_rgba(242,239,233,1)]
-                      hover:translate-x-[-2px] hover:translate-y-[-2px]
-                      transition-all duration-200"
-      >
+    <Link href={`/album/${album.id}`} className="group block h-full">
+      {/* Brutalist Minimal Album Card */}
+      <div className="h-full flex flex-col border border-white/10 bg-black transition-all duration-200 hover:bg-white/[0.02]">
         {/* Album Cover */}
-        <div className="relative w-full aspect-square overflow-hidden border-b-2 border-carbon dark:border-bone">
+        <div className="relative w-full aspect-square overflow-hidden border-b border-white/10 bg-white/5 flex-shrink-0">
           <Image
             src={coverUrl}
             alt={album.title}
             fill
             sizes="(max-width: 768px) 50vw, 25vw"
-            className="object-cover group-hover:scale-105 transition-transform duration-300"
+            className="object-cover"
             onError={(e) => {
               const target = e.target as HTMLImageElement;
               target.src = "/placeholder-album.png";
             }}
           />
-
-          {/* Overlay on hover */}
-          <div className="absolute inset-0 bg-walkman-orange opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
         </div>
 
-        {/* Album Info - Structured Grid */}
-        <div className="p-4 space-y-2">
-          {/* Label */}
-          <div className="text-[9px] tracking-widest uppercase text-gray-500 dark:text-gray-400 font-mono">
+        {/* Album Info - Data-Focused Layout */}
+        <div className="p-4 space-y-3 flex-1 flex flex-col">
+          {/* Type Label */}
+          <div className="text-[9px] tracking-widest uppercase text-white/40 font-mono">
             ALBUM
           </div>
 
           {/* Album Title */}
-          <h3 className="font-mono font-bold text-sm leading-tight line-clamp-2 text-carbon dark:text-bone">
+          <h3 className="font-medium text-sm leading-tight line-clamp-2 text-white/90 group-hover:text-white transition-colors duration-200">
             {album.title}
           </h3>
 
           {/* Artist Name */}
-          <p className="text-xs font-mono text-gray-600 dark:text-gray-400 line-clamp-1">
+          <p className="text-xs text-white/50 line-clamp-1 group-hover:text-white/70 transition-colors duration-200">
             {artistName}
           </p>
 
-          {/* Album Meta Info - Grid Layout */}
-          <div className="flex items-center gap-3 pt-2 border-t border-gray-200 dark:border-gray-800">
+          {/* Album Metadata - Structured Grid */}
+          <div className="flex items-center gap-4 pt-3 border-t border-white/10 mt-auto">
             {year && (
-              <div className="flex-1 text-center">
-                <div className="text-[9px] tracking-widest uppercase text-gray-400 dark:text-gray-600 font-mono">
+              <div className="flex-1">
+                <div className="text-[9px] tracking-widest uppercase text-white/40 font-mono mb-1">
                   YEAR
                 </div>
-                <div className="text-xs font-mono font-bold text-carbon dark:text-bone mt-0.5">
+                <div className="text-xs font-mono tabular-nums text-white/60">
                   {year}
                 </div>
               </div>
             )}
             {album.numberOfTracks && (
-              <div className="flex-1 text-center">
-                <div className="text-[9px] tracking-widest uppercase text-gray-400 dark:text-gray-600 font-mono">
+              <div className="flex-1">
+                <div className="text-[9px] tracking-widest uppercase text-white/40 font-mono mb-1">
                   TRACKS
                 </div>
-                <div className="text-xs font-mono font-bold text-carbon dark:text-bone mt-0.5">
+                <div className="text-xs font-mono tabular-nums text-white/60">
                   {album.numberOfTracks}
                 </div>
               </div>
             )}
+            {!year && !album.numberOfTracks && (
+              <div className="h-[34px]" />
+            )}
           </div>
         </div>
-
-        {/* Inner border for depth effect */}
-        <div className="absolute inset-0 border border-white/20 dark:border-white/5 pointer-events-none" />
       </div>
     </Link>
   );
