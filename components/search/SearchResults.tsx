@@ -8,10 +8,11 @@ import {
 } from "@/contexts/AudioPlayerContext";
 import { useState, useCallback } from "react";
 import React from "react";
-import SearchResultCard from "./SearchResultCard";
+import TrackRow from "./TrackRow";
 import AlbumCard from "./AlbumCard";
 import ArtistCard from "./ArtistCard";
 import PlaylistCard from "./PlaylistCard";
+import { TableHeader } from "./TableHeader";
 import { motion, AnimatePresence } from "motion/react";
 import { Search, Music2, Disc, Users, ListMusic, Loader2 } from "lucide-react";
 import { VirtualSearchResults } from "./VirtualSearchResults";
@@ -183,19 +184,26 @@ export function SearchResults({
 
  if (isLoading) {
   return (
-   <div className="w-full space-y-4">
-    {[...Array(6)].map((_, i) => (
-     <div
-      key={i}
-      className="flex items-center gap-4 p-3 rounded-xl bg-white/5 animate-pulse"
-     >
-      <div className="w-12 h-12 rounded-md bg-white/10" />
-      <div className="flex-1 space-y-2">
-       <div className="h-4 w-1/3 bg-white/10 rounded" />
-       <div className="h-3 w-1/4 bg-white/10 rounded" />
-      </div>
-     </div>
-    ))}
+   <div className="w-full border-t border-white/10">
+    <TableHeader />
+    <div>
+      {[...Array(12)].map((_, i) => (
+       <div
+        key={i}
+        className="grid grid-cols-[50px_40px_1fr_180px_120px_80px] lg:grid-cols-[50px_40px_1fr_180px_120px_80px] md:grid-cols-[40px_40px_1fr_60px] gap-4 items-center px-6 py-3 border-b border-white/10 animate-pulse"
+       >
+        <div className="h-3 w-6 bg-white/10 mx-auto" />
+        <div className="w-10 h-10 bg-white/10 border border-white/10" />
+        <div className="space-y-2">
+         <div className="h-4 w-2/3 bg-white/10" />
+         <div className="h-3 w-1/2 bg-white/10" />
+        </div>
+        <div className="hidden lg:block h-3 w-3/4 bg-white/10" />
+        <div className="hidden lg:block h-3 w-16 bg-white/10" />
+        <div className="h-3 w-12 bg-white/10 ml-auto" />
+       </div>
+      ))}
+    </div>
    </div>
   );
  }
@@ -221,9 +229,9 @@ export function SearchResults({
 
  return (
   <div className="w-full">
-   {/* Tab Navigation - Clean Minimal Style */}
-   <div className="sticky top-0 z-10 pb-8 -mx-4 px-4 bg-black/40 backdrop-blur-2xl border-b border-white/5">
-    <div className="flex items-center gap-3 overflow-x-auto no-scrollbar py-4">
+   {/* Tab Navigation - Brutalist Style */}
+   <div className="sticky top-0 z-10 pb-0 -mx-4 px-4 bg-black/95 backdrop-blur-2xl border-b border-white/10">
+    <div className="flex items-center gap-8 overflow-x-auto no-scrollbar py-4">
      {tabs.map((tab) => (
       <button
        key={tab.id}
@@ -233,32 +241,32 @@ export function SearchResults({
          prefetchTab(tab.id as "tracks" | "albums" | "artists");
         }
        }}
-       className={`relative px-5 py-2.5 rounded-full text-sm font-medium transition-all whitespace-nowrap outline-none ${
+       className={`relative pb-3 text-xs font-mono uppercase tracking-widest transition-all whitespace-nowrap outline-none ${
         contentType === tab.id
-         ? "text-black shadow-lg"
-         : "text-white/60 hover:text-white hover:bg-white/5"
+         ? "text-white"
+         : "text-white/40 hover:text-white/70"
        }`}
       >
+       <span className="flex items-center gap-2">
+        <tab.icon className="w-3.5 h-3.5" />
+        {tab.label}
+       </span>
        {contentType === tab.id && (
         <motion.div
-         layoutId="activeTab"
-         className="absolute inset-0 bg-white rounded-full"
+         layoutId="activeTabUnderline"
+         className="absolute bottom-0 left-0 right-0 h-[2px] bg-white"
          initial={false}
          transition={{ type: "spring", stiffness: 400, damping: 30 }}
         />
        )}
-       <span className="relative z-10 flex items-center gap-2">
-        <tab.icon className="w-4 h-4" />
-        {tab.label}
-       </span>
       </button>
      ))}
     </div>
    </div>
 
    {/* Results Count */}
-   <div className="mb-6 px-1 mt-6">
-    <div className="text-sm font-medium text-white/40">
+   <div className="mb-2 px-1 mt-6">
+    <div className="text-[10px] font-mono uppercase tracking-widest text-white/40">
      {totalNumberOfItems !== undefined ? (
       <>
        {totalNumberOfItems.toLocaleString()} {contentType}
@@ -276,20 +284,24 @@ export function SearchResults({
     transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
    >
     {contentType === "tracks" ? (
-     <div className="space-y-0.5">
-      {tracks?.map((track, index) => {
-       const isCurrentTrack = currentTrack?.id === track.id;
-       return (
-        <SearchResultCard
-         key={track.id}
-         track={track}
-         isCurrentTrack={isCurrentTrack}
-         isPlaying={isCurrentTrack && isPlaying}
-         isLoading={loadingTrackId === track.id}
-         onClick={() => handleTrackClick(track, index)}
-        />
-       );
-      })}
+     <div className="border-t border-white/10">
+      <TableHeader />
+      <div>
+        {tracks?.map((track, index) => {
+         const isCurrentTrack = currentTrack?.id === track.id;
+         return (
+          <TrackRow
+           key={track.id}
+           track={track}
+           index={index}
+           isCurrentTrack={isCurrentTrack}
+           isPlaying={isCurrentTrack && isPlaying}
+           isLoading={loadingTrackId === track.id}
+           onClick={() => handleTrackClick(track, index)}
+          />
+         );
+        })}
+      </div>
      </div>
     ) : contentType === "albums" &&
       albums &&

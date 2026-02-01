@@ -37,42 +37,31 @@ export function SearchBar({
   }, []);
 
   return (
-    <form onSubmit={handleSubmit} className="w-full max-w-2xl mx-auto">
-      <motion.div
-        className="relative group"
-        animate={{
-          scale: isFocused ? 1.01 : 1,
-        }}
-        transition={{
-          duration: 0.2,
-          ease: [0.4, 0, 0.2, 1],
-        }}
-        style={{ willChange: "transform" }}
-      >
+    <form onSubmit={handleSubmit} className="w-full max-w-3xl">
+      <div className="relative group">
         {/* Search Icon */}
         <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none z-10">
-          <Search className={`w-5 h-5 transition-colors duration-200 ${
-            isFocused ? "text-white/90" : "text-white/40"
+          <Search className={`w-4 h-4 transition-colors duration-200 ${
+            isFocused ? "text-white" : "text-white/40"
           }`} />
         </div>
 
         {/* Input Field */}
-        <motion.input
+        <input
           type="text"
           value={query}
           onChange={handleChange}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
-          placeholder="Search for songs, artists, or albums..."
+          placeholder="SEARCH MUSIC"
           disabled={isLoading}
-          className={`w-full pl-12 pr-24 py-3.5 text-base bg-white/10 backdrop-blur-xl border border-white/10
-                     text-white placeholder-white/40
-                     focus:outline-none focus:bg-white/[0.15] focus:border-white/20
+          className={`w-full pl-11 pr-32 py-3 text-sm font-mono uppercase tracking-wider
+                     bg-transparent border-b-2 transition-colors duration-200
+                     text-white placeholder-white/30
+                     focus:outline-none
                      disabled:opacity-50 disabled:cursor-not-allowed
-                     rounded-full
-                     transition-all duration-200
-                     shadow-[0_4px_20px_rgba(0,0,0,0.1)]
-                     hover:bg-white/[0.12]`}
+                     ${isFocused ? "border-white" : "border-white/20"}
+                     hover:border-white/40`}
         />
 
         {/* Clear Button */}
@@ -81,47 +70,42 @@ export function SearchBar({
             <motion.button
               type="button"
               onClick={handleClear}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
-              style={{ willChange: "opacity, transform" }}
-              className="absolute right-16 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center
-                       rounded-full bg-white/10 hover:bg-white/20 text-white/60 hover:text-white
-                       transition-all duration-150 active:scale-95"
+              className="absolute right-24 top-1/2 -translate-y-1/2
+                       text-white/40 hover:text-white
+                       transition-colors duration-150"
             >
-              <X className="w-3.5 h-3.5" />
+              <X className="w-4 h-4" />
             </motion.button>
           )}
         </AnimatePresence>
 
         {/* Submit Button */}
-        <motion.button
+        <button
           type="submit"
           disabled={isLoading || !query.trim()}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          style={{ willChange: "transform" }}
-          className={`absolute right-2 top-1/2 -translate-y-1/2
-                     px-5 py-2 rounded-full
-                     text-sm font-medium
+          className={`absolute right-0 top-1/2 -translate-y-1/2
+                     px-4 py-1.5 border
+                     text-[10px] font-mono uppercase tracking-widest
                      transition-all duration-200
-                     flex items-center gap-2
                      ${query.trim() && !isLoading
-                       ? "bg-white text-black hover:bg-white/90 shadow-lg"
-                       : "bg-white/5 text-white/30 cursor-not-allowed"
+                       ? "bg-white text-black border-white hover:bg-white/90"
+                       : "bg-transparent text-white/30 border-white/20 cursor-not-allowed"
                      }`}
         >
           {isLoading ? (
-            <>
-              <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              <span>Searching...</span>
-            </>
+            <span className="flex items-center gap-2">
+              <span className="inline-block w-3 h-3 border border-white/30 border-t-white animate-spin" />
+              <span>SEARCHING</span>
+            </span>
           ) : (
-            <span>Search</span>
+            <span>SEARCH</span>
           )}
-        </motion.button>
-      </motion.div>
+        </button>
+      </div>
     </form>
   );
 }

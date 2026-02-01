@@ -9,135 +9,124 @@ import { Search } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 export function HomeContent() {
-  const {
-    tracks,
-    albums,
-    artists,
-    searchMetadata,
-    isLoading,
-    currentTab,
-    handleSearch,
-    handleTabChange,
-    hasNextPage,
-    isFetchingMore,
-    fetchNextPage,
-    prefetchTab,
-  } = useSearch();
+ const {
+  tracks,
+  albums,
+  artists,
+  searchMetadata,
+  isLoading,
+  currentTab,
+  handleSearch,
+  handleTabChange,
+  hasNextPage,
+  isFetchingMore,
+  fetchNextPage,
+  prefetchTab,
+ } = useSearch();
 
-  const [hasSearched, setHasSearched] = useState(false);
+ const [hasSearched, setHasSearched] = useState(false);
 
-  const handleSearchWithTracking = (query: string) => {
-    handleSearch(query);
-    setHasSearched(true);
-  };
+ const handleSearchWithTracking = (query: string) => {
+  handleSearch(query);
+  setHasSearched(true);
+ };
 
-  const hasResults =
-    tracks.length > 0 || albums.length > 0 || artists.length > 0;
+ const hasResults =
+  tracks.length > 0 || albums.length > 0 || artists.length > 0;
 
-  return (
-    <div className="min-h-screen bg-black text-white">
-      {/* Main Content */}
-      <main className="min-h-screen pb-32">
-        {/* Header - Clean & Minimal */}
-        <motion.header
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
-          className="sticky top-0 z-30 bg-black/60 backdrop-blur-2xl border-b border-white/5"
-        >
-          <div className="max-w-6xl mx-auto px-6 py-6">
-            {/* Logo */}
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <h1 className="text-2xl font-bold tracking-tight mb-1">
-                  SIDE A
-                </h1>
-                <p className="text-xs text-white/40 tracking-wide">
-                  Hi-Fi Music Search
-                </p>
-              </div>
-            </div>
-
-            {/* Search Bar */}
-            <SearchBar
-              onSearch={handleSearchWithTracking}
-              isLoading={isLoading}
-            />
-          </div>
-        </motion.header>
-
-        {/* Content Area */}
-        <div className="max-w-6xl mx-auto px-6 py-8">
-          <AnimatePresence mode="wait">
-            {hasResults || isLoading ? (
-              <motion.div
-                key="results"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-                style={{ willChange: "opacity, transform" }}
-              >
-                <SearchResults
-                  tracks={tracks}
-                  albums={albums}
-                  artists={artists}
-                  contentType={currentTab}
-                  isLoading={isLoading}
-                  totalNumberOfItems={searchMetadata?.totalNumberOfItems}
-                  offset={searchMetadata?.offset}
-                  limit={searchMetadata?.limit}
-                  onTabChange={handleTabChange}
-                  hasNextPage={hasNextPage}
-                  isFetchingMore={isFetchingMore}
-                  onLoadMore={fetchNextPage}
-                  prefetchTab={prefetchTab}
-                />
-              </motion.div>
-            ) : (
-              <motion.div
-                key="empty"
-                initial={{ opacity: 0, scale: 0.98 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.98 }}
-                transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-                style={{ willChange: "opacity, transform" }}
-                className="flex items-center justify-center min-h-[60vh]"
-              >
-                <div className="text-center max-w-md">
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{
-                      delay: 0.1,
-                      type: "spring",
-                      stiffness: 260,
-                      damping: 20,
-                    }}
-                    style={{ willChange: "transform" }}
-                    className="mb-8 inline-block"
-                  >
-                    <div className="w-24 h-24 rounded-full bg-white/5 backdrop-blur-xl flex items-center justify-center">
-                      <Search className="w-12 h-12 text-white/20" />
-                    </div>
-                  </motion.div>
-                  <h3 className="text-2xl font-bold text-white/90 mb-3">
-                    {hasSearched ? "No Results Found" : "Start Searching"}
-                  </h3>
-                  <p className="text-base text-white/40 leading-relaxed">
-                    {hasSearched
-                      ? "Try searching with different keywords"
-                      : "Search for your favorite songs, albums, or artists"}
-                  </p>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+ return (
+  <div className="min-h-screen bg-black text-white">
+   {/* Main Content */}
+   <main className="min-h-screen pb-32">
+    {/* Header - Brutalist Minimal */}
+    <header className="sticky top-0 z-30 bg-black border-b border-white/10">
+     <div className="max-w-6xl mx-auto px-6 py-4">
+      {/* Logo + Search Bar in single flexbox */}
+      <div className="flex items-center gap-8">
+       <div className="flex-shrink-0 flex pt-3 gap-3">
+        {/* VHS Cassette Logo */}
+        <div className="flex flex-col mt-1 gap-[2px]">
+         <div className="w-3 h-[2px] bg-[#FF9FCF]" />
+         <div className="w-3 h-[2px] bg-[#9AC0FF]" />
+         <div className="w-3 h-[2px] bg-[#7FEDD0]" />
         </div>
-      </main>
 
-      {/* Fixed Audio Player */}
-      <AudioPlayer />
+        <div>
+         <h1 className="text-base font-medium uppercase tracking-widest text-white leading-tight">
+          SIDE A
+         </h1>
+         <p className="text-[9px] uppercase tracking-widest text-white/40">
+          HI-FI SEARCH
+         </p>
+        </div>
+       </div>
+
+       {/* Search Bar */}
+       <div className="flex-1">
+        <SearchBar onSearch={handleSearchWithTracking} isLoading={isLoading} />
+       </div>
+      </div>
+     </div>
+    </header>
+
+    {/* Content Area */}
+    <div className="max-w-6xl mx-auto px-6 py-8">
+     <AnimatePresence mode="wait">
+      {hasResults || isLoading ? (
+       <motion.div
+        key="results"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+        style={{ willChange: "opacity, transform" }}
+       >
+        <SearchResults
+         tracks={tracks}
+         albums={albums}
+         artists={artists}
+         contentType={currentTab}
+         isLoading={isLoading}
+         totalNumberOfItems={searchMetadata?.totalNumberOfItems}
+         offset={searchMetadata?.offset}
+         limit={searchMetadata?.limit}
+         onTabChange={handleTabChange}
+         hasNextPage={hasNextPage}
+         isFetchingMore={isFetchingMore}
+         onLoadMore={fetchNextPage}
+         prefetchTab={prefetchTab}
+        />
+       </motion.div>
+      ) : (
+       <motion.div
+        key="empty"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.2 }}
+        className="flex items-center justify-center min-h-[60vh]"
+       >
+        <div className="text-center max-w-md border border-white/10 px-12 py-16">
+         <div className="mb-6">
+          <Search className="w-10 h-10 text-white/20 mx-auto" />
+         </div>
+         <h3 className="text-sm font-mono uppercase tracking-widest text-white/90 mb-2">
+          {hasSearched ? "NO RESULTS" : "SEARCH MUSIC"}
+         </h3>
+         <p className="text-[11px] font-mono uppercase tracking-wider text-white/40">
+          {hasSearched
+           ? "Try different keywords"
+           : "Enter a song, album, or artist"}
+         </p>
+        </div>
+       </motion.div>
+      )}
+     </AnimatePresence>
     </div>
-  );
+   </main>
+
+   {/* Fixed Audio Player */}
+   <AudioPlayer />
+  </div>
+ );
 }
