@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { useAudioPlayer, usePlaybackState, useQueue } from "@/contexts/AudioPlayerContext";
 import { api } from "@/lib/api";
@@ -132,14 +133,15 @@ export function StatsForNerds({ isOpen, onClose }: StatsForNerdsProps) {
 
   if (!isOpen || !currentTrack || !stats) return null;
 
-  return (
+  // Only render portal on client side
+  if (typeof window === 'undefined') return null;
+
+  const content = (
     <div
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-start justify-end p-6"
-      onClick={onClose}
+      className="fixed top-6 right-6 z-[9999]"
     >
       <div
         className="bg-carbon/95 text-lime-400 font-mono text-xs p-5 rounded-lg border border-lime-900/50 shadow-2xl w-80 backdrop-blur-md"
-        onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between pb-3 mb-3 border-b border-lime-900/50">
@@ -168,11 +170,13 @@ export function StatsForNerds({ isOpen, onClose }: StatsForNerdsProps) {
 
         {/* Footer hint */}
         <div className="mt-4 pt-3 border-t border-lime-900/50 text-[10px] text-lime-600 text-center">
-          Press ESC or click outside to close
+          Press ESC or 'i' to close
         </div>
       </div>
     </div>
   );
+
+  return createPortal(content, document.body);
 }
 
 interface StatItemProps {

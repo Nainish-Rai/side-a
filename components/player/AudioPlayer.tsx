@@ -1,582 +1,410 @@
 "use client";
 
-import { useAudioPlayer, usePlaybackState, useQueue } from "@/contexts/AudioPlayerContext";
+import {
+ useAudioPlayer,
+ usePlaybackState,
+ useQueue,
+} from "@/contexts/AudioPlayerContext";
 import { formatTime, getTrackTitle, getTrackArtists } from "@/lib/api/utils";
 import {
-  Play,
-  Pause,
-  Volume2,
-  VolumeX,
-  SkipBack,
-  SkipForward,
-  Shuffle,
-  Repeat,
-  Repeat1,
-  ListMusic,
-  Info,
-  Music2,
-  Maximize2,
+ Play,
+ Pause,
+ Volume2,
+ VolumeX,
+ SkipBack,
+ SkipForward,
+ Shuffle,
+ Repeat,
+ Repeat1,
+ ListMusic,
+ Music2,
+ Maximize2,
 } from "lucide-react";
-import React, { useRef, useState, useEffect, useCallback, useMemo } from "react";
-import dynamic from 'next/dynamic';
+import React, {
+ useRef,
+ useState,
+ useEffect,
+ useCallback,
+ useMemo,
+} from "react";
+import dynamic from "next/dynamic";
 
-const Queue = dynamic(() => import('./Queue').then(mod => ({ default: mod.Queue })), {
+const Queue = dynamic(
+ () => import("./Queue").then((mod) => ({ default: mod.Queue })),
+ {
   loading: () => null,
   ssr: false,
-});
+ },
+);
 
 const FullscreenPlayer = dynamic(
-  () => import('./FullscreenPlayer').then(mod => ({ default: mod.FullscreenPlayer })),
-  {
-    loading: () => null,
-    ssr: false,
-  }
+ () =>
+  import("./FullscreenPlayer").then((mod) => ({
+   default: mod.FullscreenPlayer,
+  })),
+ {
+  loading: () => null,
+  ssr: false,
+ },
 );
 
 const FullscreenLyrics = dynamic(
-  () => import('./FullscreenLyrics').then(mod => ({ default: mod.FullscreenLyrics })),
-  {
-    loading: () => null,
-    ssr: false,
-  }
+ () =>
+  import("./FullscreenLyrics").then((mod) => ({
+   default: mod.FullscreenLyrics,
+  })),
+ {
+  loading: () => null,
+  ssr: false,
+ },
 );
 
 const StatsForNerds = dynamic(
-  () => import('./StatsForNerds').then(mod => ({ default: mod.StatsForNerds })),
-  {
-    loading: () => null,
-    ssr: false,
-  }
+ () =>
+  import("./StatsForNerds").then((mod) => ({ default: mod.StatsForNerds })),
+ {
+  loading: () => null,
+  ssr: false,
+ },
 );
 import { useLyrics } from "@/hooks/useLyrics";
 import Image from "next/image";
-import { motion } from "motion/react";
+import { QualityBadge } from "./QualityBadge";
 
-// Memoized motion button component for better performance
-const MotionButton = React.memo(motion.button);
-
-// Shared animation variants for consistent, performant animations
-const buttonHoverScale = { scale: 1.1 };
-const buttonTapScale = { scale: 0.95 };
-const playButtonHoverScale = { scale: 1.05 };
+const SEGMENT_COUNT = 300;
 
 export function AudioPlayer() {
-  // Use split contexts for state
-  const { isPlaying, currentTime, duration, volume, isMuted } = usePlaybackState();
-  const {
-    currentTrack,
-    queue,
-    shuffleActive,
-    repeatMode,
-    currentQuality,
-  } = useQueue();
+ const { isPlaying, currentTime, duration, volume, isMuted } =
+  usePlaybackState();
+ const { currentTrack, queue, shuffleActive, repeatMode, currentQuality } =
+  useQueue();
 
-  // Still need AudioPlayerContext for methods (since split contexts don't have them yet)
-  const {
-    togglePlayPause,
-    playNext,
-    playPrev,
-    seek,
-    setVolume,
-    toggleMute,
-    toggleShuffle,
-    toggleRepeat,
-    getAudioElement,
-  } = useAudioPlayer();
+ const {
+  togglePlayPause,
+  playNext,
+  playPrev,
+  seek,
+  setVolume,
+  toggleMute,
+  toggleShuffle,
+  toggleRepeat,
+ } = useAudioPlayer();
 
-  const progressBarRef = useRef<HTMLDivElement>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [isQueueOpen, setIsQueueOpen] = useState(false);
-  const [isStatsOpen, setIsStatsOpen] = useState(false);
-  const [isLyricsOpen, setIsLyricsOpen] = useState(false);
-  const [isFullscreenOpen, setIsFullscreenOpen] = useState(false);
-  const [spectrumBars, setSpectrumBars] = useState([0, 0, 0]);
-  const animationFrameRef = useRef<number | null>(null);
-  const analyserRef = useRef<AnalyserNode | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const sourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
+ const progressBarRef = useRef<HTMLDivElement>(null);
+ const [isDragging, setIsDragging] = useState(false);
+ const [isQueueOpen, setIsQueueOpen] = useState(false);
+ const [isStatsOpen, setIsStatsOpen] = useState(false);
+ const [isLyricsOpen, setIsLyricsOpen] = useState(false);
+ const [isFullscreenOpen, setIsFullscreenOpen] = useState(false);
+ const [hoverSegment, setHoverSegment] = useState<number | null>(null);
 
-  // Use lyrics hook
-  const {
-    lyrics,
-    currentLineIndex,
-    isLoading: lyricsLoading,
-    error: lyricsError,
-    hasLyrics,
-  } = useLyrics(currentTrack, currentTime, isPlaying);
+ const {
+  lyrics,
+  currentLineIndex,
+  isLoading: lyricsLoading,
+  error: lyricsError,
+  hasLyrics,
+ } = useLyrics(currentTrack, currentTime, isPlaying);
 
-  const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0;
+ const currentSegment = useMemo(() => {
+  if (duration === 0) return 0;
+  return Math.floor((currentTime / duration) * SEGMENT_COUNT);
+ }, [currentTime, duration]);
 
-  // Memoize play/pause handler
-  const handlePlayPause = useCallback(() => {
-    // Resume AudioContext if suspended (required after user interaction)
-    if (audioContextRef.current?.state === "suspended") {
-      audioContextRef.current.resume();
-    }
-    togglePlayPause();
-  }, [togglePlayPause]);
+ const formattedCurrentTime = useMemo(
+  () => formatTime(currentTime),
+  [currentTime],
+ );
 
-  // Memoize formatted time values
-  const formattedCurrentTime = useMemo(
-    () => formatTime(currentTime),
-    [currentTime]
-  );
+ const formattedDuration = useMemo(() => formatTime(duration), [duration]);
 
-  const formattedDuration = useMemo(
-    () => formatTime(duration),
-    [duration]
-  );
+ const getCoverUrl = useCallback(() => {
+  const coverId = currentTrack?.album?.cover || currentTrack?.album?.id;
+  if (!coverId) return null;
+  const formattedId = String(coverId).replace(/-/g, "/");
+  return `https://resources.tidal.com/images/${formattedId}/160x160.jpg`;
+ }, [currentTrack]);
 
-  // Get album cover URL
-  const getCoverUrl = () => {
-    const coverId = currentTrack?.album?.cover || currentTrack?.album?.id;
-    if (!coverId) return null;
-    const formattedId = String(coverId).replace(/-/g, "/");
-    return `https://resources.tidal.com/images/${formattedId}/160x160.jpg`;
+ const handleSegmentClick = useCallback(
+  (segmentIndex: number) => {
+   if (duration === 0) return;
+   const newTime = (segmentIndex / SEGMENT_COUNT) * duration;
+   seek(newTime);
+  },
+  [duration, seek],
+ );
+
+ const handleProgressMouseMove = useCallback(
+  (e: React.MouseEvent<HTMLDivElement>) => {
+   if (!progressBarRef.current) return;
+   const rect = progressBarRef.current.getBoundingClientRect();
+   const x = e.clientX - rect.left;
+   const segmentIndex = Math.floor((x / rect.width) * SEGMENT_COUNT);
+   setHoverSegment(segmentIndex);
+  },
+  [],
+ );
+
+ const handleProgressMouseLeave = useCallback(() => {
+  setHoverSegment(null);
+ }, []);
+
+ const handleSegmentInteraction = useCallback(
+  (e: React.MouseEvent<HTMLDivElement>) => {
+   if (!progressBarRef.current || duration === 0) return;
+   const rect = progressBarRef.current.getBoundingClientRect();
+   const x = e.clientX - rect.left;
+   const segmentIndex = Math.floor((x / rect.width) * SEGMENT_COUNT);
+   handleSegmentClick(segmentIndex);
+  },
+  [duration, handleSegmentClick],
+ );
+
+ useEffect(() => {
+  const handleKeyDown = (e: KeyboardEvent) => {
+   if (
+    e.key === "i" &&
+    !["INPUT", "TEXTAREA"].includes((e.target as HTMLElement).tagName)
+   ) {
+    setIsStatsOpen((prev) => !prev);
+   }
   };
 
-  // Initialize audio analyzer for spectrum
-  useEffect(() => {
-    const audioElement = getAudioElement();
-    if (!audioElement) return;
+  window.addEventListener("keydown", handleKeyDown);
+  return () => window.removeEventListener("keydown", handleKeyDown);
+ }, []);
 
-    // Only create audio context and source once
-    if (!audioContextRef.current && !sourceNodeRef.current) {
-      try {
-        const AudioContext =
-          window.AudioContext ||
-          (
-            window as unknown as {
-              webkitAudioContext: typeof window.AudioContext;
-            }
-          ).webkitAudioContext;
-        audioContextRef.current = new AudioContext();
-        analyserRef.current = audioContextRef.current.createAnalyser();
-        analyserRef.current.fftSize = 64;
-        analyserRef.current.smoothingTimeConstant = 0.8;
-        analyserRef.current.minDecibels = -80;
-        analyserRef.current.maxDecibels = -20;
+ if (!currentTrack) return null;
 
-        // Create and store source node - can only create once per audio element
-        const source =
-          audioContextRef.current.createMediaElementSource(audioElement);
-        sourceNodeRef.current = source;
-        source.connect(analyserRef.current);
-        analyserRef.current.connect(audioContextRef.current.destination);
-      } catch (error) {
-        console.warn(
-          "Failed to initialize audio analyzer (likely CORS issue):",
-          error
-        );
-        // Clean up partial state if creation failed
-        audioContextRef.current = null;
-        analyserRef.current = null;
-        sourceNodeRef.current = null;
-        // Audio will play normally without analyzer
-      }
-    }
+ const coverUrl = getCoverUrl();
 
-    return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-      // Note: We don't disconnect source here because the audio element
-      // can only be connected once in its lifetime. Disconnecting would
-      // prevent reconnecting later.
-    };
-  }, [getAudioElement]);
+ return (
+  <div className="fixed bottom-0 left-0 right-0 bg-black border-t border-white/20 z-50">
+   <div
+    ref={progressBarRef}
+    className="h-5 bg-black cursor-pointer flex items-center gap-[2px] px-4"
+    onMouseMove={handleProgressMouseMove}
+    onMouseLeave={handleProgressMouseLeave}
+    onClick={handleSegmentInteraction}
+   >
+    {Array.from({ length: SEGMENT_COUNT }).map((_, i) => {
+     const isFilled = i < currentSegment;
+     const isHovered = hoverSegment !== null && i <= hoverSegment;
 
-  // Animate spectrum bars with throttling to reduce re-renders
-  useEffect(() => {
-    if (!isPlaying || !analyserRef.current) {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-        animationFrameRef.current = null;
-      }
-      // Reset bars to zero when not playing
-      setSpectrumBars([0, 0, 0]);
-      return;
-    }
-
-    const analyser = analyserRef.current;
-    const bufferLength = analyser.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
-    let lastUpdateTime = 0;
-    const updateInterval = 100; // Update every 100ms instead of every frame
-
-    const updateSpectrum = (timestamp: number) => {
-      // Throttle updates to reduce state changes
-      if (timestamp - lastUpdateTime >= updateInterval) {
-        analyser.getByteFrequencyData(dataArray);
-
-        const bars = [
-          Math.floor((dataArray[2] / 255) * 100),
-          Math.floor((dataArray[5] / 255) * 100),
-          Math.floor((dataArray[8] / 255) * 100),
-        ];
-
-        setSpectrumBars(bars);
-        lastUpdateTime = timestamp;
-      }
-
-      animationFrameRef.current = requestAnimationFrame(updateSpectrum);
-    };
-
-    animationFrameRef.current = requestAnimationFrame(updateSpectrum);
-
-    return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-        animationFrameRef.current = null;
-      }
-    };
-  }, [isPlaying]);
-
-  const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!progressBarRef.current || duration === 0) return;
-
-    const rect = progressBarRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const percentage = x / rect.width;
-    const newTime = percentage * duration;
-
-    seek(newTime);
-  };
-
-  const handleMouseDown = () => {
-    setIsDragging(true);
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isDragging || !progressBarRef.current || duration === 0) return;
-
-    const rect = progressBarRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const percentage = Math.max(0, Math.min(1, x / rect.width));
-    const newTime = percentage * duration;
-
-    seek(newTime);
-  };
-
-  useEffect(() => {
-    const handleGlobalMouseUp = () => {
-      setIsDragging(false);
-    };
-
-    if (isDragging) {
-      document.addEventListener("mouseup", handleGlobalMouseUp);
-    }
-
-    return () => {
-      document.removeEventListener("mouseup", handleGlobalMouseUp);
-    };
-  }, [isDragging]);
-
-  // Keyboard shortcut for stats (i key)
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (
-        e.key === "i" &&
-        !["INPUT", "TEXTAREA"].includes((e.target as HTMLElement).tagName)
-      ) {
-        setIsStatsOpen((prev) => !prev);
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
-
-  if (!currentTrack) return null;
-
-  const coverUrl = getCoverUrl();
-
-  return (
-    <div className="fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-2xl border-t border-white/10 z-50">
-      {/* Progress Bar - Minimal Apple Music Style */}
+     return (
       <div
-        ref={progressBarRef}
-        className="h-1 bg-white/10 cursor-pointer relative group hover:h-1.5 transition-all duration-150"
-        onClick={handleProgressClick}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-      >
-        <div
-          className="h-full bg-white/90 transition-none relative"
-          style={{ width: `${progressPercentage}%` }}
-        >
-          <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg" />
-        </div>
-      </div>
-
-      {/* Player Content */}
-      <div className="max-w-7xl mx-auto px-6 py-3">
-        <div className="flex items-center justify-between gap-6">
-          {/* Left: Track Info */}
-          <div className="flex items-center gap-4 flex-1 min-w-0">
-            {/* Album Art */}
-            {coverUrl && (
-              <motion.div
-                className="relative w-14 h-14 flex-shrink-0 rounded-lg overflow-hidden shadow-xl"
-                whileHover={{ scale: 1.05 }}
-                transition={{ duration: 0.2 }}
-              >
-                <Image
-                  src={coverUrl}
-                  alt={getTrackTitle(currentTrack)}
-                  fill
-                  sizes="48px"
-                  quality={85}
-                  className="object-cover"
-                  priority={true}
-                />
-              </motion.div>
-            )}
-
-            {/* Track Details */}
-            <div className="flex-1 min-w-0">
-              <div className="font-semibold text-sm truncate text-white">
-                {getTrackTitle(currentTrack)}
-              </div>
-              <div className="text-xs text-white/50 truncate">
-                {getTrackArtists(currentTrack)}
-              </div>
-            </div>
-
-            {/* Spectrum Visualizer - Minimal 3 bars */}
-            <div className="hidden md:flex items-end gap-1.5 h-6 flex-shrink-0">
-              {spectrumBars.map((intensity, i) => {
-                const heightPercent = Math.max(20, Math.min(100, intensity * 0.8));
-                return (
-                  <motion.div
-                    key={i}
-                    className="w-1 bg-white/60 rounded-full"
-                    animate={{ height: `${heightPercent}%` }}
-                    transition={{ duration: 0.1, ease: "easeOut" }}
-                  />
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Center: Playback Controls */}
-          <div className="flex flex-col items-center gap-2 flex-shrink-0">
-            {/* Control Buttons */}
-            <div className="flex items-center gap-4">
-              {/* Shuffle Button */}
-              <MotionButton
-                onClick={toggleShuffle}
-                whileHover={buttonHoverScale}
-                whileTap={buttonTapScale}
-                className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors ${
-                  shuffleActive
-                    ? "text-white bg-white/10"
-                    : "text-white/50 hover:text-white hover:bg-white/5"
-                }`}
-                aria-label="Shuffle"
-              >
-                <Shuffle className="w-4 h-4" />
-              </MotionButton>
-
-              {/* Previous Button */}
-              <MotionButton
-                onClick={playPrev}
-                whileHover={buttonHoverScale}
-                whileTap={buttonTapScale}
-                className="w-8 h-8 flex items-center justify-center text-white/70 hover:text-white transition-colors"
-                aria-label="Previous"
-              >
-                <SkipBack className="w-5 h-5 fill-current" />
-              </MotionButton>
-
-              {/* Play/Pause Button */}
-              <MotionButton
-                onClick={handlePlayPause}
-                whileHover={playButtonHoverScale}
-                whileTap={buttonTapScale}
-                className="flex-shrink-0 w-10 h-10 rounded-full bg-white hover:bg-white/90
-                           transition-all duration-200 flex items-center justify-center
-                           shadow-lg"
-                aria-label={isPlaying ? "Pause" : "Play"}
-              >
-                {isPlaying ? (
-                  <Pause className="w-5 h-5 text-black fill-black" />
-                ) : (
-                  <Play className="w-5 h-5 ml-0.5 text-black fill-black" />
-                )}
-              </MotionButton>
-
-              {/* Next Button */}
-              <MotionButton
-                onClick={playNext}
-                whileHover={buttonHoverScale}
-                whileTap={buttonTapScale}
-                className="w-8 h-8 flex items-center justify-center text-white/70 hover:text-white transition-colors"
-                aria-label="Next"
-              >
-                <SkipForward className="w-5 h-5 fill-current" />
-              </MotionButton>
-
-              {/* Repeat Button */}
-              <MotionButton
-                onClick={toggleRepeat}
-                whileHover={buttonHoverScale}
-                whileTap={buttonTapScale}
-                className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors ${
-                  repeatMode !== "off"
-                    ? "text-white bg-white/10"
-                    : "text-white/50 hover:text-white hover:bg-white/5"
-                }`}
-                aria-label="Repeat"
-              >
-                {repeatMode === "one" ? (
-                  <Repeat1 className="w-4 h-4" />
-                ) : (
-                  <Repeat className="w-4 h-4" />
-                )}
-              </MotionButton>
-            </div>
-
-            {/* Time Display */}
-            <div className="flex items-center gap-2 text-[11px] font-mono tabular-nums text-white/50">
-              <span>{formattedCurrentTime}</span>
-              <span className="text-white/30">/</span>
-              <span>{formattedDuration}</span>
-            </div>
-          </div>
-
-          {/* Right: Volume & Actions */}
-          <div className="flex items-center gap-3 flex-shrink-0 flex-1 justify-end">
-            {/* Action Buttons - Always visible */}
-            <div className="flex items-center gap-2">
-              {/* Fullscreen Player Button - Always visible */}
-              <MotionButton
-                onClick={() => setIsFullscreenOpen(true)}
-                whileHover={buttonHoverScale}
-                whileTap={buttonTapScale}
-                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors"
-                aria-label="Fullscreen Player"
-                title="Open Fullscreen Player"
-              >
-                <Maximize2 className="w-4 h-4 text-white/60 hover:text-white transition-colors" />
-              </MotionButton>
-
-              {/* Lyrics Button */}
-              {hasLyrics && (
-                <MotionButton
-                  onClick={() => setIsLyricsOpen(true)}
-                  whileHover={buttonHoverScale}
-                  whileTap={buttonTapScale}
-                  className="relative w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors"
-                  aria-label="View Lyrics"
-                  title="View Lyrics"
-                >
-                  <Music2 className="w-4 h-4 text-white/60 hover:text-white transition-colors" />
-                  {lyrics && (
-                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-white rounded-full" />
-                  )}
-                </MotionButton>
-              )}
-
-              {/* Queue Button */}
-              <MotionButton
-                onClick={() => setIsQueueOpen(true)}
-                whileHover={buttonHoverScale}
-                whileTap={buttonTapScale}
-                className="relative w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors"
-                aria-label="View Queue"
-                title="View Queue"
-              >
-                <ListMusic className="w-4 h-4 text-white/60 hover:text-white transition-colors" />
-                {queue.length > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-white text-black text-[9px] font-bold rounded-full flex items-center justify-center">
-                    {queue.length > 9 ? "9+" : queue.length}
-                  </span>
-                )}
-              </MotionButton>
-            </div>
-
-            {/* Volume Controls */}
-            <div className="hidden md:flex items-center gap-3">
-              <MotionButton
-                onClick={toggleMute}
-                whileHover={buttonHoverScale}
-                whileTap={buttonTapScale}
-                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors"
-                aria-label={isMuted ? "Unmute" : "Mute"}
-              >
-                {isMuted ? (
-                  <VolumeX className="w-4 h-4 text-white/60" />
-                ) : (
-                  <Volume2 className="w-4 h-4 text-white/60" />
-                )}
-              </MotionButton>
-
-              {/* Volume Slider */}
-              <div className="w-24 group">
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={isMuted ? 0 : volume * 100}
-                  onChange={(e) => setVolume(Number(e.target.value) / 100)}
-                  className="w-full h-1 bg-white/20 rounded-full appearance-none cursor-pointer
-                             [&::-webkit-slider-thumb]:appearance-none
-                             [&::-webkit-slider-thumb]:w-3
-                             [&::-webkit-slider-thumb]:h-3
-                             [&::-webkit-slider-thumb]:bg-white
-                             [&::-webkit-slider-thumb]:rounded-full
-                             [&::-webkit-slider-thumb]:cursor-pointer
-                             [&::-webkit-slider-thumb]:opacity-0
-                             [&::-webkit-slider-thumb]:group-hover:opacity-100
-                             [&::-webkit-slider-thumb]:transition-opacity
-                             [&::-webkit-slider-thumb]:shadow-lg"
-                  style={{
-                    background: `linear-gradient(to right, white 0%, white ${
-                      isMuted ? 0 : volume * 100
-                    }%, rgba(255,255,255,0.2) ${isMuted ? 0 : volume * 100}%, rgba(255,255,255,0.2) 100%)`,
-                  }}
-                  aria-label="Volume"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Queue Panel */}
-      <Queue isOpen={isQueueOpen} onClose={() => setIsQueueOpen(false)} />
-
-      {/* Stats for Nerds */}
-      <StatsForNerds
-        isOpen={isStatsOpen}
-        onClose={() => setIsStatsOpen(false)}
+       key={i}
+       className={`flex-1 h-3 transition-colors duration-75 ${
+        isFilled ? "bg-gray-100" : isHovered ? "bg-white/30" : "bg-white/10"
+       }`}
+       style={{ minWidth: "2px" }}
       />
+     );
+    })}
+   </div>
 
-      {/* Fullscreen Lyrics */}
-      {currentTrack && (
-        <FullscreenLyrics
-          isOpen={isLyricsOpen}
-          onClose={() => setIsLyricsOpen(false)}
-          track={currentTrack}
-          lyrics={lyrics}
-          currentLineIndex={currentLineIndex}
-          isLoading={lyricsLoading}
-          error={lyricsError}
-          onSeek={seek}
+   <div className="max-w-7xl mx-auto px-6 py-4">
+    <div className="flex items-center justify-between gap-6">
+     <div className="flex items-center gap-4 flex-1 min-w-0">
+      {coverUrl && (
+       <div className="relative w-12 h-12 flex-shrink-0 overflow-hidden bg-white/5">
+        <Image
+         src={coverUrl}
+         alt={getTrackTitle(currentTrack)}
+         fill
+         sizes="48px"
+         quality={85}
+         className="object-cover"
+         priority={true}
         />
+       </div>
       )}
 
-      {/* Fullscreen Player */}
-      <FullscreenPlayer
-        isOpen={isFullscreenOpen}
-        onClose={() => setIsFullscreenOpen(false)}
-      />
+      <div className="flex-1 min-w-0">
+       <div className="flex items-center gap-2">
+        <div className=" text-xs truncate text-white tracking-tight">
+         {getTrackTitle(currentTrack)}
+        </div>
+        {currentQuality && (
+         <button
+          onClick={() => setIsStatsOpen(true)}
+          className="px-1.5 py-0.5 bg-white/10 hover:bg-white/20 transition-colors text-[8px] text-white/60 tracking-wider border border-white/20 flex-shrink-0"
+         >
+          {currentQuality}
+         </button>
+        )}
+       </div>
+       <div className=" text-[10px] text-white/40 truncate tracking-tight">
+        {getTrackArtists(currentTrack)}
+       </div>
+      </div>
+     </div>
+
+     <div className="flex flex-col items-center gap-3 flex-shrink-0">
+      <div className="flex items-center gap-3">
+       <button
+        onClick={toggleShuffle}
+        className={`w-7 h-7 flex items-center justify-center transition-colors ${
+         shuffleActive
+          ? "text-white bg-white/10"
+          : "text-white/40 hover:text-white/70"
+        }`}
+        aria-label="Shuffle"
+       >
+        <Shuffle className="w-3.5 h-3.5" />
+       </button>
+
+       <button
+        onClick={playPrev}
+        className="w-7 h-7 flex items-center justify-center text-white/60 hover:text-white transition-colors"
+        aria-label="Previous"
+       >
+        <SkipBack className="w-4 h-4 fill-current" />
+       </button>
+
+       <button
+        onClick={togglePlayPause}
+        className="flex-shrink-0 w-9 h-9 bg-white hover:bg-white/90 transition-colors flex items-center justify-center"
+        aria-label={isPlaying ? "Pause" : "Play"}
+       >
+        {isPlaying ? (
+         <Pause className="w-4 h-4 text-black fill-black" />
+        ) : (
+         <Play className="w-4 h-4 ml-0.5 text-black fill-black" />
+        )}
+       </button>
+
+       <button
+        onClick={playNext}
+        className="w-7 h-7 flex items-center justify-center text-white/60 hover:text-white transition-colors"
+        aria-label="Next"
+       >
+        <SkipForward className="w-4 h-4 fill-current" />
+       </button>
+
+       <button
+        onClick={toggleRepeat}
+        className={`w-7 h-7 flex items-center justify-center transition-colors ${
+         repeatMode !== "off"
+          ? "text-white bg-white/10"
+          : "text-white/40 hover:text-white/70"
+        }`}
+        aria-label="Repeat"
+       >
+        {repeatMode === "one" ? (
+         <Repeat1 className="w-3.5 h-3.5" />
+        ) : (
+         <Repeat className="w-3.5 h-3.5" />
+        )}
+       </button>
+      </div>
+
+      <div className="flex items-center gap-2 text-xs tabular-nums text-white/60">
+       <span>{formattedCurrentTime}</span>
+       <span className="text-white/30">·</span>
+       <span>{formattedDuration}</span>
+      </div>
+     </div>
+
+     <div className="flex items-center gap-3 flex-shrink-0 flex-1 justify-end">
+      <div className="flex items-center gap-2">
+       <button
+        onClick={() => setIsFullscreenOpen(true)}
+        className="w-7 h-7 flex items-center justify-center hover:bg-white/10 transition-colors"
+        aria-label="Fullscreen Player"
+        title="Open Fullscreen Player"
+       >
+        <Maximize2 className="w-3.5 h-3.5 text-white/50 hover:text-white transition-colors" />
+       </button>
+
+       {hasLyrics && (
+        <button
+         onClick={() => setIsLyricsOpen(true)}
+         className="relative w-7 h-7 flex items-center justify-center hover:bg-white/10 transition-colors"
+         aria-label="View Lyrics"
+         title="View Lyrics"
+        >
+         <Music2 className="w-3.5 h-3.5 text-white/50 hover:text-white transition-colors" />
+         {lyrics && (
+          <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-white" />
+         )}
+        </button>
+       )}
+
+       <button
+        onClick={() => setIsQueueOpen(true)}
+        className="relative w-7 h-7 flex items-center justify-center hover:bg-white/10 transition-colors"
+        aria-label="View Queue"
+        title="View Queue"
+       >
+        <ListMusic className="w-3.5 h-3.5 text-white/50 hover:text-white transition-colors" />
+        {queue.length > 0 && (
+         <span className="absolute -top-0.5 -right-0.5 px-1 bg-white text-black text-[8px] font-bold flex items-center justify-center min-w-[14px] h-[14px]">
+          {queue.length > 9 ? "9+" : queue.length}
+         </span>
+        )}
+       </button>
+      </div>
+
+      <div className="hidden md:flex items-center gap-3">
+       <button
+        onClick={toggleMute}
+        className="w-7 h-7 flex items-center justify-center hover:bg-white/10 transition-colors"
+        aria-label={isMuted ? "Unmute" : "Mute"}
+       >
+        {isMuted ? (
+         <VolumeX className="w-3.5 h-3.5 text-white/50" />
+        ) : (
+         <Volume2 className="w-3.5 h-3.5 text-white/50" />
+        )}
+       </button>
+
+       <div className="w-20 flex items-center gap-[2px]">
+        {Array.from({ length: 10 }).map((_, i) => {
+         const volumeLevel = Math.floor((isMuted ? 0 : volume) * 10);
+         return (
+          <button
+           key={i}
+           onClick={() => setVolume((i + 1) / 10)}
+           className={`flex-1 h-2 transition-colors ${
+            i < volumeLevel ? "bg-white" : "bg-white/20 hover:bg-white/40"
+           }`}
+           style={{ minWidth: "2px" }}
+           aria-label={`Set volume to ${(i + 1) * 10}%`}
+          />
+         );
+        })}
+       </div>
+      </div>
+     </div>
     </div>
-  );
+   </div>
+
+   {/* Queue Panel */}
+   <Queue isOpen={isQueueOpen} onClose={() => setIsQueueOpen(false)} />
+
+   {/* Stats for Nerds */}
+   <StatsForNerds isOpen={isStatsOpen} onClose={() => setIsStatsOpen(false)} />
+
+   {/* Fullscreen Lyrics */}
+   {currentTrack && (
+    <FullscreenLyrics
+     isOpen={isLyricsOpen}
+     onClose={() => setIsLyricsOpen(false)}
+     track={currentTrack}
+     lyrics={lyrics}
+     currentLineIndex={currentLineIndex}
+     isLoading={lyricsLoading}
+     error={lyricsError}
+     onSeek={seek}
+    />
+   )}
+
+   {/* Fullscreen Player */}
+   <FullscreenPlayer
+    isOpen={isFullscreenOpen}
+    onClose={() => setIsFullscreenOpen(false)}
+   />
+  </div>
+ );
 }

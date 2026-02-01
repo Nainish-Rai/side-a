@@ -88,6 +88,7 @@ function getPersistedState(): Partial<PersistedState> {
 
 export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const currentPlayPromiseRef = useRef<Promise<void> | null>(null);
 
   // Initialize state from localStorage using lazy initialization
   const [state, setState] = useState<AudioPlayerState>(() => {
@@ -113,6 +114,31 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const shuffledQueue = useRef<Track[]>([]);
   const playNextRef = useRef<(() => Promise<void>) | null>(null);
   const persistTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Helper function to safely play audio, handling AbortError from interrupted loads
+  const safePlay = useCallback(async (audio: HTMLAudioElement) => {
+    // Wait for any pending play promise to settle first
+    if (currentPlayPromiseRef.current) {
+      await currentPlayPromiseRef.current.catch(() => {
+        // Silently ignore errors from previous play attempts
+      });
+    }
+
+    // Create new play promise
+    const playPromise = audio.play().catch((error) => {
+      // AbortError is expected when switching tracks rapidly
+      // Only log other types of errors
+      if (error.name !== 'AbortError') {
+        console.error("Playback failed:", error);
+        setState((prev) => ({ ...prev, isPlaying: false }));
+      }
+    });
+
+    // Store the promise so we can wait for it if needed
+    currentPlayPromiseRef.current = playPromise;
+
+    return playPromise;
+  }, []);
 
   // Debounce persistence to avoid frequent localStorage writes
   useEffect(() => {
@@ -274,9 +300,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     if (!audioRef.current || !streamUrl) return;
 
     audioRef.current.src = streamUrl;
-    audioRef.current.play().catch((error) => {
-      console.error("Playback failed:", error);
-    });
+    safePlay(audioRef.current);
 
     // Determine quality from track metadata
     const quality = track.audioQuality || "HIGH";
@@ -307,7 +331,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
           : [],
       });
     }
-  }, []);
+  }, [safePlay]);
 
   const play = useCallback(async () => {
     if (!audioRef.current) return;
@@ -337,11 +361,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    audioRef.current.play().catch((error) => {
-      console.error("Playback failed:", error);
-      setState((prev) => ({ ...prev, isPlaying: false }));
-    });
-  }, [state.currentTrack, state.currentQuality]);
+    await safePlay(audioRef.current);
+  }, [state.currentTrack, state.currentQuality, safePlay]);
 
   const pause = useCallback(() => {
     if (!audioRef.current) return;
@@ -415,10 +436,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
                 }));
 
                 // Play after state is set
-                await audioRef.current.play().catch((error) => {
-                  console.error("Playback failed:", error);
-                  setState((prev) => ({ ...prev, isPlaying: false }));
-                });
+                await safePlay(audioRef.current);
               }
             } catch (error) {
               console.error("Error setting up playback:", error);
@@ -433,7 +451,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
         };
       });
     },
-    []
+    [safePlay]
   );
 
   const playNext = useCallback(async () => {
@@ -441,10 +459,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       // Handle repeat-one mode
       if (prev.repeatMode === "one" && audioRef.current) {
         audioRef.current.currentTime = 0;
-        audioRef.current.play().catch((error) => {
-          console.error("Playback failed:", error);
-          setState((s) => ({ ...s, isPlaying: false }));
-        });
+        safePlay(audioRef.current);
         return prev;
       }
 
@@ -491,10 +506,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
               streamUrl: streamUrl,
             }));
 
-            await audioRef.current.play().catch((error) => {
-              console.error("Playback failed:", error);
-              setState((s) => ({ ...s, isPlaying: false }));
-            });
+            await safePlay(audioRef.current);
 
             // Update Media Session metadata
             if ("mediaSession" in navigator) {
@@ -523,7 +535,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
       return prev;
     });
-  }, []);
+  }, [safePlay]);
 
   // Keep ref updated
   useEffect(() => {
@@ -581,10 +593,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
               streamUrl: streamUrl,
             }));
 
-            await audioRef.current.play().catch((error) => {
-              console.error("Playback failed:", error);
-              setState((s) => ({ ...s, isPlaying: false }));
-            });
+            await safePlay(audioRef.current);
           }
         } catch (error) {
           console.error("Error playing previous track:", error);
@@ -593,7 +602,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
       return prev;
     });
-  }, []);
+  }, [safePlay]);
 
   const toggleShuffle = useCallback(() => {
     setState((prev) => {

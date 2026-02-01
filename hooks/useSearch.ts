@@ -6,199 +6,254 @@ import { useSearchContext } from "@/contexts/SearchContext";
 type SearchContentType = "tracks" | "albums" | "artists" | "playlists";
 
 export function useSearch() {
-  const queryClient = useQueryClient();
-  const { query, currentTab, setQuery, setCurrentTab } = useSearchContext();
+ const queryClient = useQueryClient();
+ const { query, currentTab, setQuery, setCurrentTab } = useSearchContext();
 
-  // Track search query with infinite scroll
-  const tracksQuery = useInfiniteQuery({
-    queryKey: ["search", "tracks", query],
-    queryFn: async ({ pageParam = 0, signal }) => {
-      if (!query)
-        return { items: [], totalNumberOfItems: 0, offset: 0, limit: 0 };
-      return api.searchTracks(query, { offset: pageParam, limit: 25, signal });
-    },
-    getNextPageParam: (lastPage) => {
-      const currentOffset = lastPage.offset || 0;
-      const currentLimit = lastPage.limit || 25;
-      const totalItems = lastPage.totalNumberOfItems || 0;
-      const nextOffset = currentOffset + currentLimit;
+ // Track search query with infinite scroll
+ const tracksQuery = useInfiniteQuery({
+  queryKey: ["search", "tracks", query],
+  queryFn: async ({ pageParam, signal }) => {
+   if (!query) return { items: [], totalNumberOfItems: 0, offset: 0, limit: 0 };
+   const offset = pageParam ?? 0;
+   console.log("[Tracks] Fetching with offset:", offset);
+   const result = await api.searchTracks(query, { offset, limit: 25, signal });
+   console.log(
+    "[Tracks] Received:",
+    result.items.length,
+    "items, API returned offset:",
+    result.offset,
+    "but we requested:",
+    offset,
+   );
+   // Override the offset with what we actually requested since API returns wrong offset
+   return { ...result, offset };
+  },
+  getNextPageParam: (lastPage, allPages) => {
+   const currentOffset = lastPage.offset ?? 0;
+   const currentLimit = lastPage.limit ?? 25;
+   const totalItems = lastPage.totalNumberOfItems ?? 0;
+   const nextOffset = currentOffset + currentLimit;
 
-      // Return undefined if we've reached the end
-      if (nextOffset >= totalItems) return undefined;
-      return nextOffset;
-    },
+   console.log(
+    "[Tracks] getNextPageParam - current:",
+    currentOffset,
+    "limit:",
+    currentLimit,
+    "total:",
+    totalItems,
+    "next:",
+    nextOffset,
+    "pages so far:",
+    allPages.length,
+   );
+
+   // Return undefined if we've reached the end
+   if (nextOffset >= totalItems) {
+    console.log("[Tracks] No more pages");
+    return undefined;
+   }
+   return nextOffset;
+  },
+  initialPageParam: 0,
+  enabled: !!query && currentTab === "tracks",
+ });
+
+ // Album search query with infinite scroll
+ const albumsQuery = useInfiniteQuery({
+  queryKey: ["search", "albums", query],
+  queryFn: async ({ pageParam, signal }) => {
+   if (!query) return { items: [], totalNumberOfItems: 0, offset: 0, limit: 0 };
+   const offset = pageParam ?? 0;
+   const result = await api.searchAlbums(query, { offset, limit: 25, signal });
+   // Override the offset with what we actually requested since API returns wrong offset
+   return { ...result, offset };
+  },
+  getNextPageParam: (lastPage) => {
+   const currentOffset = lastPage.offset ?? 0;
+   const currentLimit = lastPage.limit ?? 25;
+   const totalItems = lastPage.totalNumberOfItems ?? 0;
+   const nextOffset = currentOffset + currentLimit;
+
+   if (nextOffset >= totalItems) return undefined;
+   return nextOffset;
+  },
+  initialPageParam: 0,
+  enabled: !!query && currentTab === "albums",
+ });
+
+ // Artists search query with infinite scroll
+ const artistsQuery = useInfiniteQuery({
+  queryKey: ["search", "artists", query],
+  queryFn: async ({ pageParam, signal }) => {
+   if (!query) return { items: [], totalNumberOfItems: 0, offset: 0, limit: 0 };
+   const offset = pageParam ?? 0;
+   const result = await api.searchArtists(query, { offset, limit: 25, signal });
+   // Override the offset with what we actually requested since API returns wrong offset
+   return { ...result, offset };
+  },
+  getNextPageParam: (lastPage) => {
+   const currentOffset = lastPage.offset ?? 0;
+   const currentLimit = lastPage.limit ?? 25;
+   const totalItems = lastPage.totalNumberOfItems ?? 0;
+   const nextOffset = currentOffset + currentLimit;
+
+   if (nextOffset >= totalItems) return undefined;
+   return nextOffset;
+  },
+  initialPageParam: 0,
+  enabled: !!query && currentTab === "artists",
+ });
+
+ // Search handler - triggers track search and resets to tracks tab
+ const handleSearch = useCallback(
+  (newQuery: string) => {
+   setQuery(newQuery);
+   setCurrentTab("tracks");
+  },
+  [setQuery, setCurrentTab],
+ );
+
+ // Tab change handler - fetches data for the selected tab if needed
+ const handleTabChange = useCallback(
+  (tab: SearchContentType) => {
+   setCurrentTab(tab);
+  },
+  [setCurrentTab],
+ );
+
+ // Clear search results
+ const clearSearch = useCallback(() => {
+  setQuery("");
+  setCurrentTab("tracks");
+  queryClient.removeQueries({ queryKey: ["search"] });
+ }, [queryClient, setQuery, setCurrentTab]);
+
+ // Flatten paginated results
+ const tracks = tracksQuery.data?.pages.flatMap((page) => page.items) || [];
+ const albums = albumsQuery.data?.pages.flatMap((page) => page.items) || [];
+ const artists = artistsQuery.data?.pages.flatMap((page) => page.items) || [];
+
+ // Debug: Check for duplicates
+ if (tracks.length > 0) {
+  const trackIds = tracks.map((t) => t.id);
+  const uniqueIds = new Set(trackIds);
+  if (trackIds.length !== uniqueIds.size) {
+   console.warn(
+    "[Tracks] Duplicates detected!",
+    "Total:",
+    trackIds.length,
+    "Unique:",
+    uniqueIds.size,
+   );
+   console.warn(
+    "[Tracks] Pages:",
+    tracksQuery.data?.pages.map((p) => ({
+     offset: p.offset,
+     count: p.items.length,
+    })),
+   );
+  } else {
+   console.log("[Tracks] No duplicates -", "Total tracks:", trackIds.length);
+  }
+ }
+
+ // Get metadata from the first page
+ const firstTracksPage = tracksQuery.data?.pages[0];
+ const firstAlbumsPage = albumsQuery.data?.pages[0];
+ const firstArtistsPage = artistsQuery.data?.pages[0];
+
+ const prefetchTab = useCallback(
+  (tab: "tracks" | "albums" | "artists") => {
+   if (!query) return;
+
+   const queryKey =
+    tab === "tracks"
+     ? ["search", "tracks", query]
+     : tab === "albums"
+       ? ["search", "albums", query]
+       : ["search", "artists", query];
+
+   queryClient.prefetchInfiniteQuery({
+    queryKey,
+    queryFn: (({ pageParam = 0 }) => {
+     if (tab === "tracks") {
+      return api.searchTracks(query, { offset: pageParam, limit: 25 });
+     } else if (tab === "albums") {
+      return api.searchAlbums(query, { offset: pageParam, limit: 25 });
+     } else {
+      return api.searchArtists(query, { offset: pageParam, limit: 25 });
+     }
+    }) as any,
     initialPageParam: 0,
-    enabled: !!query,
-  });
+   });
+  },
+  [query, queryClient],
+ );
 
-  // Album search query with infinite scroll
-  const albumsQuery = useInfiniteQuery({
-    queryKey: ["search", "albums", query],
-    queryFn: async ({ pageParam = 0, signal }) => {
-      if (!query)
-        return { items: [], totalNumberOfItems: 0, offset: 0, limit: 0 };
-      return api.searchAlbums(query, { offset: pageParam, limit: 25, signal });
-    },
-    getNextPageParam: (lastPage) => {
-      const currentOffset = lastPage.offset || 0;
-      const currentLimit = lastPage.limit || 25;
-      const totalItems = lastPage.totalNumberOfItems || 0;
-      const nextOffset = currentOffset + currentLimit;
+ return {
+  // Data
+  tracks,
+  albums,
+  artists,
 
-      if (nextOffset >= totalItems) return undefined;
-      return nextOffset;
-    },
-    initialPageParam: 0,
-    enabled: !!query && currentTab === "albums",
-  });
+  // Metadata
+  searchMetadata: {
+   totalNumberOfItems:
+    currentTab === "tracks"
+     ? firstTracksPage?.totalNumberOfItems || 0
+     : currentTab === "albums"
+       ? firstAlbumsPage?.totalNumberOfItems || 0
+       : firstArtistsPage?.totalNumberOfItems || 0,
+   offset:
+    currentTab === "tracks"
+     ? firstTracksPage?.offset || 0
+     : currentTab === "albums"
+       ? firstAlbumsPage?.offset || 0
+       : firstArtistsPage?.offset || 0,
+   limit:
+    currentTab === "tracks"
+     ? firstTracksPage?.limit || 0
+     : currentTab === "albums"
+       ? firstAlbumsPage?.limit || 0
+       : firstArtistsPage?.limit || 0,
+  },
 
-  // Artists search query with infinite scroll
-  const artistsQuery = useInfiniteQuery({
-    queryKey: ["search", "artists", query],
-    queryFn: async ({ pageParam = 0, signal }) => {
-      if (!query)
-        return { items: [], totalNumberOfItems: 0, offset: 0, limit: 0 };
-      return api.searchArtists(query, { offset: pageParam, limit: 25, signal });
-    },
-    getNextPageParam: (lastPage) => {
-      const currentOffset = lastPage.offset || 0;
-      const currentLimit = lastPage.limit || 25;
-      const totalItems = lastPage.totalNumberOfItems || 0;
-      const nextOffset = currentOffset + currentLimit;
+  // Loading states
+  isLoading:
+   tracksQuery.isLoading || albumsQuery.isLoading || artistsQuery.isLoading,
+  isTracksLoading: tracksQuery.isLoading,
+  isAlbumsLoading: albumsQuery.isLoading,
+  isArtistsLoading: artistsQuery.isLoading,
+  isFetchingMore:
+   tracksQuery.isFetchingNextPage ||
+   albumsQuery.isFetchingNextPage ||
+   artistsQuery.isFetchingNextPage,
 
-      if (nextOffset >= totalItems) return undefined;
-      return nextOffset;
-    },
-    initialPageParam: 0,
-    enabled: !!query && currentTab === "artists",
-  });
+  // Infinite scroll
+  hasNextPage:
+   currentTab === "tracks"
+    ? tracksQuery.hasNextPage
+    : currentTab === "albums"
+      ? albumsQuery.hasNextPage
+      : artistsQuery.hasNextPage,
+  fetchNextPage: () => {
+   if (currentTab === "tracks") {
+    return tracksQuery.fetchNextPage();
+   } else if (currentTab === "albums") {
+    return albumsQuery.fetchNextPage();
+   } else {
+    return artistsQuery.fetchNextPage();
+   }
+  },
 
-  // Search handler - triggers track search and resets to tracks tab
-  const handleSearch = useCallback(
-    (newQuery: string) => {
-      setQuery(newQuery);
-      setCurrentTab("tracks");
-    },
-    [setQuery, setCurrentTab]
-  );
+  // State
+  currentTab: currentTab,
+  lastQuery: query,
 
-  // Tab change handler - fetches data for the selected tab if needed
-  const handleTabChange = useCallback(
-    (tab: SearchContentType) => {
-      setCurrentTab(tab);
-    },
-    [setCurrentTab]
-  );
-
-  // Clear search results
-  const clearSearch = useCallback(() => {
-    setQuery("");
-    setCurrentTab("tracks");
-    queryClient.removeQueries({ queryKey: ["search"] });
-  }, [queryClient, setQuery, setCurrentTab]);
-
-  // Flatten paginated results
-  const tracks = tracksQuery.data?.pages.flatMap((page) => page.items) || [];
-  const albums = albumsQuery.data?.pages.flatMap((page) => page.items) || [];
-  const artists = artistsQuery.data?.pages.flatMap((page) => page.items) || [];
-
-  // Get metadata from the first page
-  const firstTracksPage = tracksQuery.data?.pages[0];
-  const firstAlbumsPage = albumsQuery.data?.pages[0];
-  const firstArtistsPage = artistsQuery.data?.pages[0];
-
-  const prefetchTab = useCallback(
-    (tab: "tracks" | "albums" | "artists") => {
-      if (!query) return;
-
-      const queryKey =
-        tab === "tracks"
-          ? ["search", "tracks", query]
-          : tab === "albums"
-          ? ["search", "albums", query]
-          : ["search", "artists", query];
-
-      queryClient.prefetchInfiniteQuery({
-        queryKey,
-        queryFn: (({ pageParam = 0 }) => {
-          if (tab === "tracks") {
-            return api.searchTracks(query, { offset: pageParam, limit: 25 });
-          } else if (tab === "albums") {
-            return api.searchAlbums(query, { offset: pageParam, limit: 25 });
-          } else {
-            return api.searchArtists(query, { offset: pageParam, limit: 25 });
-          }
-        }) as any,
-        initialPageParam: 0,
-      });
-    },
-    [query, queryClient]
-  );
-
-  return {
-    // Data
-    tracks,
-    albums,
-    artists,
-
-    // Metadata
-    searchMetadata: {
-      totalNumberOfItems:
-        currentTab === "tracks"
-          ? firstTracksPage?.totalNumberOfItems || 0
-          : currentTab === "albums"
-          ? firstAlbumsPage?.totalNumberOfItems || 0
-          : firstArtistsPage?.totalNumberOfItems || 0,
-      offset:
-        currentTab === "tracks"
-          ? firstTracksPage?.offset || 0
-          : currentTab === "albums"
-          ? firstAlbumsPage?.offset || 0
-          : firstArtistsPage?.offset || 0,
-      limit:
-        currentTab === "tracks"
-          ? firstTracksPage?.limit || 0
-          : currentTab === "albums"
-          ? firstAlbumsPage?.limit || 0
-          : firstArtistsPage?.limit || 0,
-    },
-
-    // Loading states
-    isLoading:
-      tracksQuery.isLoading || albumsQuery.isLoading || artistsQuery.isLoading,
-    isTracksLoading: tracksQuery.isLoading,
-    isAlbumsLoading: albumsQuery.isLoading,
-    isArtistsLoading: artistsQuery.isLoading,
-    isFetchingMore:
-      tracksQuery.isFetchingNextPage ||
-      albumsQuery.isFetchingNextPage ||
-      artistsQuery.isFetchingNextPage,
-
-    // Infinite scroll
-    hasNextPage:
-      currentTab === "tracks"
-        ? tracksQuery.hasNextPage
-        : currentTab === "albums"
-        ? albumsQuery.hasNextPage
-        : artistsQuery.hasNextPage,
-    fetchNextPage: () => {
-      if (currentTab === "tracks") {
-        return tracksQuery.fetchNextPage();
-      } else if (currentTab === "albums") {
-        return albumsQuery.fetchNextPage();
-      } else {
-        return artistsQuery.fetchNextPage();
-      }
-    },
-
-    // State
-    currentTab: currentTab,
-    lastQuery: query,
-
-    // Actions
-    handleSearch,
-    handleTabChange,
-    clearSearch,
-    prefetchTab,
-  };
+  // Actions
+  handleSearch,
+  handleTabChange,
+  clearSearch,
+  prefetchTab,
+ };
 }
