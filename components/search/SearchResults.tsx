@@ -291,7 +291,7 @@ export function SearchResults({
          const isCurrentTrack = currentTrack?.id === track.id;
          return (
           <TrackRow
-           key={track.id}
+           key={`${track.id}-${index}`}
            track={track}
            index={index}
            isCurrentTrack={isCurrentTrack}
