@@ -9,6 +9,7 @@ import {
 import { useState, useCallback } from "react";
 import React from "react";
 import TrackRow from "./TrackRow";
+import MobileTrackRow from "../mobile/MobileTrackRow";
 import AlbumCard from "./AlbumCard";
 import ArtistCard from "./ArtistCard";
 import PlaylistCard from "./PlaylistCard";
@@ -91,6 +92,9 @@ export function SearchResults({
   width: typeof window !== "undefined" ? window.innerWidth : 0,
   height: typeof window !== "undefined" ? window.innerHeight : 0,
  }));
+
+ // Check if mobile (< 1024px)
+ const isMobile = windowDimensions.width > 0 && windowDimensions.width < 1024;
 
  // Infinite scroll observer
  const observerTarget = React.useRef<HTMLDivElement>(null);
@@ -246,9 +250,12 @@ export function SearchResults({
 
  return (
   <div className="w-full">
-   {/* Tab Navigation - Brutalist Style */}
-   <div className="sticky -top-6 z-10 pb-0 -mx-4 px-4 bg-background/95 backdrop-blur-2xl border-b border-foreground/10">
-    <div className="flex items-center gap-8 overflow-x-auto no-scrollbar py-4">
+   {/* Tab Navigation - Touch-optimized with horizontal scroll */}
+   <div className="sticky -top-6 z-10 pb-0 -mx-4 px-0 lg:px-4 bg-background/95 backdrop-blur-2xl border-b border-foreground/10">
+    <div
+     className="flex items-center gap-1 lg:gap-8 overflow-x-auto no-scrollbar py-2 lg:py-4 px-4"
+     style={{ WebkitOverflowScrolling: "touch" }}
+    >
      {tabs.map((tab) => (
       <button
        key={tab.id}
@@ -258,14 +265,20 @@ export function SearchResults({
          prefetchTab(tab.id as "tracks" | "albums" | "artists");
         }
        }}
-       className={`relative pb-3 text-xs font-mono uppercase tracking-widest transition-all whitespace-nowrap outline-none ${
-        contentType === tab.id
+       className={`
+        relative flex-shrink-0
+        px-4 py-3 lg:px-0 lg:pb-3 lg:pt-0
+        text-xs font-mono uppercase tracking-widest
+        transition-all whitespace-nowrap outline-none
+        active:bg-foreground/5 lg:active:bg-transparent
+        ${contentType === tab.id
          ? "text-foreground"
          : "text-foreground/40 hover:text-foreground/70"
-       }`}
+        }
+       `}
       >
        <span className="flex items-center gap-2">
-        <tab.icon className="w-3.5 h-3.5" />
+        <tab.icon className="w-4 h-4 lg:w-3.5 lg:h-3.5" />
         {tab.label}
        </span>
        {contentType === tab.id && (
@@ -302,12 +315,42 @@ export function SearchResults({
    >
     {contentType === "tracks" ? (
      <div className="border-t border-foreground/10">
-      <div className="sticky top-[4.8rem] z-10">
+      {/* Table header - desktop only */}
+      <div className="sticky top-[4.8rem] z-10 hidden lg:block">
        <TableHeader />
       </div>
       <div>
        {tracks?.map((track, index) => {
         const isCurrentTrack = currentTrack?.id === track.id;
+
+        // Use MobileTrackRow on mobile, TrackRow on desktop
+        if (isMobile) {
+         return (
+          <MobileTrackRow
+           key={`${track.id}-${index}`}
+           track={track}
+           index={index}
+           isCurrentTrack={isCurrentTrack}
+           isPlaying={isCurrentTrack && isPlaying}
+           isLoading={loadingTrackId === track.id}
+           onClick={() => handleTrackClick(track, index)}
+           onAddToQueue={() => {
+            // Add to queue functionality
+            console.log("Add to queue:", track);
+           }}
+           onShare={() => {
+            // Share functionality
+            if (navigator.share) {
+             navigator.share({
+              title: track.title,
+              text: `Check out ${track.title} by ${track.artist?.name}`,
+             });
+            }
+           }}
+          />
+         );
+        }
+
         return (
          <TrackRow
           key={`${track.id}-${index}`}

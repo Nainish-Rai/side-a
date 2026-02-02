@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { SearchBar } from "@/components/search/SearchBar";
 import { SearchResults } from "@/components/search/SearchResults";
 import { AudioPlayer } from "@/components/player/AudioPlayer";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { MobileSearchHeader } from "@/components/mobile/MobileSearchHeader";
 import { useSearch } from "@/hooks/useSearch";
 import { Search } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
@@ -26,6 +27,17 @@ export function HomeContent() {
  } = useSearch();
 
  const [hasSearched, setHasSearched] = useState(false);
+ const [isMobile, setIsMobile] = useState(false);
+
+ // Detect mobile viewport
+ useEffect(() => {
+  const checkMobile = () => {
+   setIsMobile(window.innerWidth < 1024);
+  };
+  checkMobile();
+  window.addEventListener("resize", checkMobile);
+  return () => window.removeEventListener("resize", checkMobile);
+ }, []);
 
  const handleSearchWithTracking = (query: string) => {
   handleSearch(query);
@@ -39,8 +51,16 @@ export function HomeContent() {
   <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
    {/* Main Content */}
    <main className="min-h-screen pb-32">
-    {/* Header - Brutalist Minimal */}
-    <header className="sticky top-0 z-30 bg-background border-b border-foreground/10 transition-colors duration-300">
+    {/* Mobile Header */}
+    {isMobile && (
+     <MobileSearchHeader
+      onSearch={handleSearchWithTracking}
+      isLoading={isLoading}
+     />
+    )}
+
+    {/* Desktop Header - Brutalist Minimal */}
+    <header className="sticky top-0 z-30 bg-background border-b border-foreground/10 transition-colors duration-300 hidden lg:block">
      <div className="max-w-6xl mx-auto px-6 py-4">
       {/* Logo + Search Bar + Theme Toggle in single flexbox */}
       <div className="flex items-center gap-4 md:gap-8">
