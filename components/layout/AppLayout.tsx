@@ -1,18 +1,40 @@
 "use client";
 
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import Link from "next/link";
-import { AudioPlayer } from "@/components/player/AudioPlayer";
+import dynamic from "next/dynamic";
 import { Music2, Search, TrendingUp } from "lucide-react";
+import { MobileNav } from "@/components/mobile/MobileNav";
+import { MiniPlayer } from "@/components/mobile/MiniPlayer";
+import { useQueue } from "@/contexts/AudioPlayerContext";
+
+// Dynamic import for desktop audio player
+const AudioPlayer = dynamic(
+  () => import("@/components/player/AudioPlayer").then((mod) => ({ default: mod.AudioPlayer })),
+  { ssr: false }
+);
+
+// Dynamic import for fullscreen player (used by MiniPlayer expand)
+const FullscreenPlayer = dynamic(
+  () => import("@/components/player/FullscreenPlayer").then((mod) => ({ default: mod.FullscreenPlayer })),
+  { ssr: false }
+);
 
 interface AppLayoutProps {
   children: ReactNode;
 }
 
 export default function AppLayout({ children }: AppLayoutProps) {
+  const [isFullscreenOpen, setIsFullscreenOpen] = useState(false);
+  const { currentTrack } = useQueue();
+
+  const handleExpandPlayer = () => {
+    setIsFullscreenOpen(true);
+  };
+
   return (
     <div className="min-h-screen bg-background transition-colors duration-300">
-      {/* Fixed Sidebar */}
+      {/* Fixed Sidebar - Desktop only */}
       <aside className="fixed top-0 left-0 bottom-0 w-64 bg-foreground text-background border-r border-foreground p-6 hidden lg:flex flex-col transition-colors duration-300 z-40">
         {/* Logo */}
         <div className="mb-8">
@@ -47,11 +69,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
           </div>
         </nav>
 
-        {/* Theme Toggle */}
-        {/* <div className="mb-4 flex justify-center">
-          <ThemeToggle />
-        </div> */}
-
         {/* Footer */}
         <div className="border-t border-background/20 pt-4">
           <div className="text-[9px] font-mono tracking-widest uppercase text-background/40">
@@ -63,11 +80,41 @@ export default function AppLayout({ children }: AppLayoutProps) {
         </div>
       </aside>
 
-      {/* Main Content - with left margin to account for fixed sidebar */}
-      <main className="min-h-screen lg:ml-64 pb-24">{children}</main>
+      {/* Main Content */}
+      {/* Desktop: margin for sidebar + padding for audio player */}
+      {/* Mobile: padding for mini player + bottom nav */}
+      <main
+        className="min-h-screen lg:ml-64"
+        style={{
+          paddingBottom: currentTrack
+            ? "calc(64px + 56px + env(safe-area-inset-bottom))" // Mini player + nav + safe area
+            : "calc(56px + env(safe-area-inset-bottom))", // Nav + safe area only
+        }}
+      >
+        <div className="lg:pb-24">{children}</div>
+      </main>
 
-      {/* Fixed Audio Player */}
-      <AudioPlayer />
+      {/* Desktop Audio Player - hidden on mobile */}
+      <div className="hidden lg:block">
+        <AudioPlayer />
+      </div>
+
+      {/* Mobile Mini Player - positioned above bottom nav */}
+      <div
+        className="fixed left-0 right-0 z-40 lg:hidden"
+        style={{ bottom: "calc(56px + env(safe-area-inset-bottom))" }}
+      >
+        <MiniPlayer onExpand={handleExpandPlayer} />
+      </div>
+
+      {/* Mobile Bottom Navigation */}
+      <MobileNav />
+
+      {/* Fullscreen Player - used by both desktop and mobile */}
+      <FullscreenPlayer
+        isOpen={isFullscreenOpen}
+        onClose={() => setIsFullscreenOpen(false)}
+      />
     </div>
   );
 }

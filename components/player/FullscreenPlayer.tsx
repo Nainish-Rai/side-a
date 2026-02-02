@@ -17,7 +17,7 @@ import {
   ChevronLeft,
   GripVertical
 } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, PanInfo, useAnimation } from "motion/react";
 import Image from "next/image";
 import { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
@@ -161,6 +161,30 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
   const activeLineRef = useRef<HTMLDivElement>(null);
   const lyricsContainerRef = useRef<HTMLDivElement>(null);
 
+  // Swipe gesture controls
+  const controls = useAnimation();
+  const SWIPE_THRESHOLD = 100;
+
+  const handleSwipeEnd = useCallback(
+    (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+      if (info.offset.y > SWIPE_THRESHOLD) {
+        // Swipe down to close
+        controls.start({ y: "100%", opacity: 0 }).then(onClose);
+      } else {
+        // Snap back
+        controls.start({ y: 0, opacity: 1 });
+      }
+    },
+    [controls, onClose]
+  );
+
+  // Reset animation when opening
+  useEffect(() => {
+    if (isOpen) {
+      controls.set({ y: 0, opacity: 1 });
+    }
+  }, [isOpen, controls]);
+
   // Create unique IDs for sortable items (track.id + index to handle duplicates)
   const sortableIds = useMemo(() =>
     queue.map((track, index) => `${track.id}-${index}`),
@@ -282,10 +306,14 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
       {isOpen && (
         <motion.div
           initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 50 }}
+          animate={controls}
+          exit={{ opacity: 0, y: "100%" }}
           transition={{ duration: 0.3, ease: "circOut" }}
-          className="fixed inset-0 z-[100] bg-background text-foreground overflow-hidden flex flex-col"
+          drag="y"
+          dragConstraints={{ top: 0, bottom: 0 }}
+          dragElastic={{ top: 0, bottom: 0.5 }}
+          onDragEnd={handleSwipeEnd}
+          className="fixed inset-0 z-[100] bg-background text-foreground overflow-hidden flex flex-col touch-pan-x"
         >
           {/* Header - Brutalist Style */}
           <div className="relative z-10 border-b border-foreground/10 px-6 py-4 md:px-8">
