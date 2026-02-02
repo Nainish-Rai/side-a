@@ -66,7 +66,7 @@ export function FullscreenLyrics({
    id="karaoke-view"
    className="fixed inset-0 z-[100] overflow-hidden bg-background flex flex-col"
   >
-   {/* Background Layer - Gradient from Black to Blurry Album Art */}
+   {/* Background Layer - Gradient from Background to Blurry Album Art */}
    <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
     {coverUrl && (
      <div className="absolute inset-0">
@@ -74,12 +74,12 @@ export function FullscreenLyrics({
        src={coverUrl}
        alt=""
        fill
-       className="object-cover opacity-50 blur-[100px] scale-125"
+       className="object-cover opacity-40 dark:opacity-50 blur-[100px] scale-125"
        unoptimized
        priority
       />
-      {/* Gradient overlay: black at top, transparent at bottom */}
-      <div className="absolute inset-0 bg-gradient-to-tl from-black via-black to-black/30" />
+      {/* Gradient overlay: adapts to light/dark mode */}
+      <div className="absolute inset-0 bg-gradient-to-tl from-background via-background to-background/30" />
      </div>
     )}
    </div>

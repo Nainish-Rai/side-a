@@ -195,7 +195,7 @@ export function AudioPlayer() {
       <div
        key={i}
        className={`flex-1 h-3 transition-colors duration-75 ${
-        isFilled ? "bg-gray-100" : isHovered ? "bg-foreground/30" : "bg-foreground/10"
+        isFilled ? "bg-foreground" : isHovered ? "bg-foreground/40" : "bg-foreground/15"
        }`}
        style={{ minWidth: "2px" }}
       />

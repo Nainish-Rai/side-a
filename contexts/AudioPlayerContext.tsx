@@ -34,6 +34,7 @@ interface AudioPlayerContextValue extends AudioPlayerState {
   playTrack: (track: Track, streamUrl: string) => void;
   addToQueue: (track: Track) => void;
   setQueue: (tracks: Track[], startIndex?: number) => void;
+  reorderQueue: (newQueue: Track[], newCurrentIndex: number) => void;
   play: () => void;
   pause: () => void;
   togglePlayPause: () => void;
@@ -404,6 +405,15 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
+  // Reorder queue without interrupting playback
+  const reorderQueue = useCallback((newQueue: Track[], newCurrentIndex: number) => {
+    setState((prev) => ({
+      ...prev,
+      queue: newQueue,
+      currentQueueIndex: newCurrentIndex,
+    }));
+  }, []);
+
   const setQueue = useCallback(
     async (tracks: Track[], startIndex: number = 0) => {
       setState((prev) => {
@@ -715,6 +725,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     playTrack,
     addToQueue,
     setQueue,
+    reorderQueue,
     play,
     pause,
     togglePlayPause,
