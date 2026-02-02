@@ -59,11 +59,11 @@ function TrackRow({
    className={`
         group relative grid grid-cols-[50px_40px_1fr_180px_120px_80px] lg:grid-cols-[50px_40px_1fr_180px_120px_80px]
         md:grid-cols-[40px_40px_1fr_60px] gap-4 items-center
-        px-6 py-3 border-b border-white/10 cursor-pointer
+        px-6 py-3 border-b border-foreground/10 cursor-pointer
         transition-all duration-200
         ${isCurrentTrack ? "border-l-[3px] border-l-white pl-[21px]" : "border-l-[3px] border-l-transparent"}
         ${isLoading ? "opacity-50 pointer-events-none" : ""}
-        hover:bg-white/[0.02]
+        hover:bg-foreground/[0.02]
       `}
   >
    {/* Track Number / Playing Indicator */}
@@ -71,22 +71,22 @@ function TrackRow({
     {isCurrentTrack && isPlaying ? (
      <div className="flex items-end justify-center gap-[3px] h-5">
       <div
-       className="w-1 bg-white rounded-full animate-[wave1_0.6s_ease-in-out_infinite]"
+       className="w-1 bg-foreground rounded-full animate-[wave1_0.6s_ease-in-out_infinite]"
        style={{ height: "40%" }}
       />
       <div
-       className="w-1 bg-white rounded-full animate-[wave2_0.6s_ease-in-out_infinite]"
+       className="w-1 bg-foreground rounded-full animate-[wave2_0.6s_ease-in-out_infinite]"
        style={{ height: "100%", animationDelay: "0.1s" }}
       />
       <div
-       className="w-1 bg-white rounded-full animate-[wave3_0.6s_ease-in-out_infinite]"
+       className="w-1 bg-foreground rounded-full animate-[wave3_0.6s_ease-in-out_infinite]"
        style={{ height: "60%", animationDelay: "0.2s" }}
       />
      </div>
     ) : (
      <span
       className={`text-sm font-mono transition-colors ${
-       isCurrentTrack ? "text-white" : "text-white/40 group-hover:text-white/70"
+       isCurrentTrack ? "text-foreground" : "text-foreground/40 group-hover:text-foreground/70"
       }`}
      >
       {String(index + 1).padStart(2, "0")}
@@ -95,7 +95,7 @@ function TrackRow({
    </div>
 
    {/* Cover Art - Square */}
-   <div className="w-10 h-10 shrink-0 bg-white/5 border border-white/10 overflow-hidden">
+   <div className="w-10 h-10 shrink-0 bg-foreground/5 border border-foreground/10 overflow-hidden">
     {coverUrl ? (
      <Image
       src={coverUrl}
@@ -106,7 +106,7 @@ function TrackRow({
      />
     ) : (
      <div className="w-full h-full flex items-center justify-center">
-      <Disc className="w-4 h-4 text-white/20" />
+      <Disc className="w-4 h-4 text-foreground/20" />
      </div>
     )}
    </div>
@@ -116,30 +116,30 @@ function TrackRow({
     <div className="flex items-center gap-2 mb-1">
      <h3
       className={`font-medium text-[15px] md:text-[14px] truncate transition-colors tracking-[-0.01em] ${
-       isCurrentTrack ? "text-white" : "text-white/90 group-hover:text-white"
+       isCurrentTrack ? "text-foreground" : "text-foreground/90 group-hover:text-foreground"
       }`}
      >
       {getTrackTitle(track)}
      </h3>
      {isExplicit && (
-      <span className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 border border-white/20 text-white/60 font-mono uppercase tracking-wider">
+      <span className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 border border-foreground/20 text-foreground/60 font-mono uppercase tracking-wider">
        E
       </span>
      )}
     </div>
     <div className="flex items-center gap-2 flex-wrap">
-     <span className="text-[13px] md:text-[12px] text-white/50 group-hover:text-white/70 transition-colors truncate">
+     <span className="text-[13px] md:text-[12px] text-foreground/50 group-hover:text-foreground/70 transition-colors truncate">
       {displayArtist}
      </span>
      {/* Quality Badges on Mobile */}
      <div className="flex items-center gap-1.5 md:hidden">
       {hasDolbyAtmos && (
-       <span className="text-[9px] font-bold font-mono px-1.5 py-0.5 border border-white/20 text-white/60 uppercase tracking-wider">
+       <span className="text-[9px] font-bold font-mono px-1.5 py-0.5 border border-foreground/20 text-foreground/60 uppercase tracking-wider">
         ATMOS
        </span>
       )}
       {hasHiRes && (
-       <span className="text-[9px] font-bold font-mono px-1.5 py-0.5 border border-white/20 text-white/60 uppercase tracking-wider">
+       <span className="text-[9px] font-bold font-mono px-1.5 py-0.5 border border-foreground/20 text-foreground/60 uppercase tracking-wider">
         HI-RES
        </span>
       )}
@@ -147,7 +147,7 @@ function TrackRow({
     </div>
     {/* Album name on mobile - shown under artist */}
     <div className="md:block lg:hidden mt-0.5">
-     <span className="text-[12px] text-white/30 italic truncate block">
+     <span className="text-[12px] text-foreground/30 italic truncate block">
       {track.album?.title}
      </span>
     </div>
@@ -155,7 +155,7 @@ function TrackRow({
 
    {/* Album (Hidden on mobile, shown on desktop) */}
    <div className="hidden lg:block min-w-0">
-    <span className="text-[13px] text-white/30 group-hover:text-white/50 transition-colors italic truncate block">
+    <span className="text-[13px] text-foreground/30 group-hover:text-foreground/50 transition-colors italic truncate block">
      {track.album?.title}
     </span>
    </div>
@@ -163,13 +163,13 @@ function TrackRow({
    {/* Quality Badges (Desktop only) */}
    <div className="hidden lg:flex items-center gap-1.5">
     {hasDolbyAtmos && (
-     <span className="text-[9px] font-bold font-mono px-1.5 py-0.5 border border-white/20 text-white/60 uppercase tracking-wider">
+     <span className="text-[9px] font-bold font-mono px-1.5 py-0.5 border border-foreground/20 text-foreground/60 uppercase tracking-wider">
       ATMOS
      </span>
     )}
 
     {track.audioQuality && (
-     <span className="text-[9px] font-bold font-mono px-1.5 py-0.5 border border-white/20 text-white/60 uppercase tracking-wider">
+     <span className="text-[9px] font-bold font-mono px-1.5 py-0.5 border border-foreground/20 text-foreground/60 uppercase tracking-wider">
       {track.audioQuality}
      </span>
     )}
@@ -177,7 +177,7 @@ function TrackRow({
 
    {/* Duration */}
    <div className="text-right">
-    <span className="text-[12px] font-mono text-white/40 group-hover:text-white/60 transition-colors tabular-nums">
+    <span className="text-[12px] font-mono text-foreground/40 group-hover:text-foreground/60 transition-colors tabular-nums">
      {formatTime(track.duration)}
     </span>
    </div>

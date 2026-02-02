@@ -64,7 +64,7 @@ export function FullscreenLyrics({
  const content = (
   <div
    id="karaoke-view"
-   className="fixed inset-0 z-[100] overflow-hidden bg-black flex flex-col"
+   className="fixed inset-0 z-[100] overflow-hidden bg-background flex flex-col"
   >
    {/* Background Layer - Gradient from Black to Blurry Album Art */}
    <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
@@ -87,7 +87,7 @@ export function FullscreenLyrics({
    {/* Close Button - Minimal */}
    <button
     onClick={onClose}
-    className="absolute top-8 right-8 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-black/20 text-white/60 hover:text-white hover:bg-black/40 backdrop-blur-md transition-all"
+    className="absolute top-8 right-8 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-background/20 text-foreground/60 hover:text-foreground hover:bg-background/40 backdrop-blur-md transition-all"
     title="Close Lyrics"
    >
     <svg
@@ -135,10 +135,10 @@ export function FullscreenLyrics({
          </div>
         )}
         <div className="flex flex-col gap-1">
-         <h2 className="text-lg font-semibold text-white/90 line-clamp-1">
+         <h2 className="text-lg font-semibold text-foreground/90 line-clamp-1">
           {track.title}
          </h2>
-         <p className="text-sm text-white/60 line-clamp-1">
+         <p className="text-sm text-foreground/60 line-clamp-1">
           {track.artists?.map((a) => a.name).join(", ") ||
            track.artist?.name ||
            "Unknown Artist"}
@@ -156,8 +156,8 @@ export function FullscreenLyrics({
           className={cn(
            "text-left transition-all duration-500 ease-[cubic-bezier(0.25,0.4,0.25,1)] cursor-pointer select-none origin-left w-full",
            isActive
-            ? "text-3xl md:text-4xl font-bold text-white scale-100 opacity-100 translate-x-0"
-            : "text-xl md:text-3xl font-semibold text-white/40 blur-[1px] scale-95 opacity-60 hover:text-white/70 hover:opacity-100 hover:blur-0",
+            ? "text-3xl md:text-4xl font-bold text-foreground scale-100 opacity-100 translate-x-0"
+            : "text-xl md:text-3xl font-semibold text-foreground/40 blur-[1px] scale-95 opacity-60 hover:text-foreground/70 hover:opacity-100 hover:blur-0",
           )}
           onClick={() => onSeek?.(line.time)}
          >
@@ -167,7 +167,7 @@ export function FullscreenLyrics({
        })}
       </div>
      ) : (
-      <div className="flex flex-col items-center justify-center text-white/50 space-y-4">
+      <div className="flex flex-col items-center justify-center text-foreground/50 space-y-4">
        <p className="text-xl font-medium">
         {lyrics?.lyrics
          ? "Plain lyrics available (see details)"
@@ -175,7 +175,7 @@ export function FullscreenLyrics({
        </p>
        <button
         onClick={onClose}
-        className="px-6 py-2 rounded-full border border-white/20 hover:bg-white/10 transition-colors text-sm"
+        className="px-6 py-2 rounded-full border border-foreground/20 hover:bg-foreground/10 transition-colors text-sm"
        >
         Go Back
        </button>

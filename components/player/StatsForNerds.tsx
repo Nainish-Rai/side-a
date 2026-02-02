@@ -141,7 +141,7 @@ export function StatsForNerds({ isOpen, onClose }: StatsForNerdsProps) {
       className="fixed top-6 right-6 z-[9999]"
     >
       <div
-        className="bg-carbon/95 text-lime-400 font-mono text-xs p-5 rounded-lg border border-lime-900/50 shadow-2xl w-80 backdrop-blur-md"
+        className="bg-foreground/95 text-lime-400 font-mono text-xs p-5 border border-lime-900/50 shadow-2xl w-80 backdrop-blur-md"
       >
         {/* Header */}
         <div className="flex items-center justify-between pb-3 mb-3 border-b border-lime-900/50">

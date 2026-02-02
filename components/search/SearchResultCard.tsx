@@ -61,14 +61,14 @@ function SearchResultCard({
       className={`group relative flex items-center gap-4 px-4 py-3 rounded-xl transition-all w-full cursor-pointer
         ${
           isCurrentTrack
-            ? "bg-white/[0.08]"
+            ? "bg-foreground/[0.08]"
             : ""
         }
         ${isLoading ? "opacity-50 pointer-events-none" : ""}
       `}
     >
       {/* Cover Art / Play Overlay */}
-      <div className="relative shrink-0 w-14 h-14 rounded-lg overflow-hidden bg-white/5 shadow-lg">
+      <div className="relative shrink-0 w-14 h-14 rounded-lg overflow-hidden bg-foreground/5 shadow-lg">
         {coverUrl ? (
           <Image
             src={coverUrl}
@@ -78,33 +78,33 @@ function SearchResultCard({
             className={`w-full h-full object-cover transition-all duration-300 ${isCurrentTrack && isPlaying ? "scale-105" : "group-hover:scale-105"}`}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-white/5">
-            <Disc className="w-6 h-6 text-white/20" />
+          <div className="w-full h-full flex items-center justify-center bg-foreground/5">
+            <Disc className="w-6 h-6 text-foreground/20" />
           </div>
         )}
 
         {/* Overlay Icon (Play/Pause/Wave) */}
-        <div className={`absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm transition-opacity duration-200
+        <div className={`absolute inset-0 flex items-center justify-center bg-background/40 backdrop-blur-sm transition-opacity duration-200
             ${isCurrentTrack && isPlaying ? "opacity-100" : "opacity-0 group-hover:opacity-100"}
         `}>
            {isCurrentTrack && isPlaying ? (
                <div className="flex items-end gap-[3px] h-5">
                  {/* CSS animations for better performance than Motion */}
                  <div
-                   className="w-1 bg-white rounded-full animate-[wave1_0.6s_ease-in-out_infinite]"
+                   className="w-1 bg-foreground rounded-full animate-[wave1_0.6s_ease-in-out_infinite]"
                    style={{ height: '40%' }}
                  />
                  <div
-                   className="w-1 bg-white rounded-full animate-[wave2_0.6s_ease-in-out_infinite]"
+                   className="w-1 bg-foreground rounded-full animate-[wave2_0.6s_ease-in-out_infinite]"
                    style={{ height: '100%', animationDelay: '0.1s' }}
                  />
                  <div
-                   className="w-1 bg-white rounded-full animate-[wave3_0.6s_ease-in-out_infinite]"
+                   className="w-1 bg-foreground rounded-full animate-[wave3_0.6s_ease-in-out_infinite]"
                    style={{ height: '60%', animationDelay: '0.2s' }}
                  />
                </div>
            ) : (
-             <Play className="w-6 h-6 text-white fill-white ml-0.5" />
+             <Play className="w-6 h-6 text-foreground fill-foreground ml-0.5" />
            )}
         </div>
       </div>
@@ -112,25 +112,25 @@ function SearchResultCard({
       {/* Track Info */}
       <div className="flex-1 min-w-0 flex flex-col justify-center gap-1">
         <div className="flex items-center gap-2">
-            <h3 className={`font-semibold text-base truncate transition-colors ${isCurrentTrack ? "text-white" : "text-white/90"}`}>
+            <h3 className={`font-semibold text-base truncate transition-colors ${isCurrentTrack ? "text-foreground" : "text-foreground/90"}`}>
               {getTrackTitle(track)}
             </h3>
             {isExplicit && (
-                <span className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded bg-white/10 text-white/60">E</span>
+                <span className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded bg-foreground/10 text-foreground/60">E</span>
             )}
         </div>
-        <div className="flex items-center gap-2 text-sm text-white/50">
-           <span className="truncate hover:text-white/70 transition-colors">
+        <div className="flex items-center gap-2 text-sm text-foreground/50">
+           <span className="truncate hover:text-foreground/70 transition-colors">
                {displayArtist}
            </span>
            {/* Quality Badges - Inline */}
            {hasDolbyAtmos && (
-             <span className="shrink-0 text-[8px] font-bold px-1.5 py-0.5 bg-white/10 text-white/70 rounded">
+             <span className="shrink-0 text-[8px] font-bold px-1.5 py-0.5 bg-foreground/10 text-foreground/70 rounded">
                ATMOS
              </span>
            )}
            {hasHiRes && (
-             <span className="shrink-0 text-[8px] font-bold px-1.5 py-0.5 bg-white/10 text-white/70 rounded">
+             <span className="shrink-0 text-[8px] font-bold px-1.5 py-0.5 bg-foreground/10 text-foreground/70 rounded">
                HI-RES
              </span>
            )}
@@ -138,12 +138,12 @@ function SearchResultCard({
       </div>
 
       {/* Album (Hidden on small screens) */}
-      <div className="hidden lg:flex flex-1 min-w-0 items-center text-sm text-white/40 truncate group-hover:text-white/60 transition-colors">
+      <div className="hidden lg:flex flex-1 min-w-0 items-center text-sm text-foreground/40 truncate group-hover:text-foreground/60 transition-colors">
         {track.album?.title}
       </div>
 
       {/* Duration */}
-      <div className="shrink-0 text-sm font-mono text-white/40 w-12 text-right group-hover:text-white/60 transition-colors">
+      <div className="shrink-0 text-sm font-mono text-foreground/40 w-12 text-right group-hover:text-foreground/60 transition-colors">
         {formatTime(track.duration)}
       </div>
     </motion.div>

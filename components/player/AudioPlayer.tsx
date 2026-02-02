@@ -179,10 +179,10 @@ export function AudioPlayer() {
  const coverUrl = getCoverUrl();
 
  return (
-  <div className="fixed bottom-0 left-0 right-0 bg-black border-t border-white/20 z-50">
+  <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-foreground/20 z-50">
    <div
     ref={progressBarRef}
-    className="h-5 bg-black cursor-pointer flex items-center gap-[2px] px-4"
+    className="h-5 bg-background cursor-pointer flex items-center gap-[2px] px-4"
     onMouseMove={handleProgressMouseMove}
     onMouseLeave={handleProgressMouseLeave}
     onClick={handleSegmentInteraction}
@@ -195,7 +195,7 @@ export function AudioPlayer() {
       <div
        key={i}
        className={`flex-1 h-3 transition-colors duration-75 ${
-        isFilled ? "bg-gray-100" : isHovered ? "bg-white/30" : "bg-white/10"
+        isFilled ? "bg-gray-100" : isHovered ? "bg-foreground/30" : "bg-foreground/10"
        }`}
        style={{ minWidth: "2px" }}
       />
@@ -207,7 +207,7 @@ export function AudioPlayer() {
     <div className="flex items-center justify-between gap-6">
      <div className="flex items-center gap-4 flex-1 min-w-0">
       {coverUrl && (
-       <div className="relative w-12 h-12 flex-shrink-0 overflow-hidden bg-white/5">
+       <div className="relative w-12 h-12 flex-shrink-0 overflow-hidden bg-foreground/5">
         <Image
          src={coverUrl}
          alt={getTrackTitle(currentTrack)}
@@ -222,19 +222,19 @@ export function AudioPlayer() {
 
       <div className="flex-1 min-w-0">
        <div className="flex items-center gap-2">
-        <div className=" text-xs truncate text-white tracking-tight">
+        <div className=" text-xs truncate text-foreground tracking-tight">
          {getTrackTitle(currentTrack)}
         </div>
         {currentQuality && (
          <button
           onClick={() => setIsStatsOpen(true)}
-          className="px-1.5 py-0.5 bg-white/10 hover:bg-white/20 transition-colors text-[8px] text-white/60 tracking-wider border border-white/20 flex-shrink-0"
+          className="px-1.5 py-0.5 bg-foreground/10 hover:bg-foreground/20 transition-colors text-[8px] text-foreground/60 tracking-wider border border-foreground/20 flex-shrink-0"
          >
           {currentQuality}
          </button>
         )}
        </div>
-       <div className=" text-[10px] text-white/40 truncate tracking-tight">
+       <div className=" text-[10px] text-foreground/40 truncate tracking-tight">
         {getTrackArtists(currentTrack)}
        </div>
       </div>
@@ -246,8 +246,8 @@ export function AudioPlayer() {
         onClick={toggleShuffle}
         className={`w-7 h-7 flex items-center justify-center transition-colors ${
          shuffleActive
-          ? "text-white bg-white/10"
-          : "text-white/40 hover:text-white/70"
+          ? "text-foreground bg-foreground/10"
+          : "text-foreground/40 hover:text-foreground/70"
         }`}
         aria-label="Shuffle"
        >
@@ -256,7 +256,7 @@ export function AudioPlayer() {
 
        <button
         onClick={playPrev}
-        className="w-7 h-7 flex items-center justify-center text-white/60 hover:text-white transition-colors"
+        className="w-7 h-7 flex items-center justify-center text-foreground/60 hover:text-foreground transition-colors"
         aria-label="Previous"
        >
         <SkipBack className="w-4 h-4 fill-current" />
@@ -264,19 +264,19 @@ export function AudioPlayer() {
 
        <button
         onClick={togglePlayPause}
-        className="flex-shrink-0 w-9 h-9 bg-white hover:bg-white/90 transition-colors flex items-center justify-center"
+        className="flex-shrink-0 w-9 h-9 bg-foreground hover:bg-foreground/90 transition-colors flex items-center justify-center"
         aria-label={isPlaying ? "Pause" : "Play"}
        >
         {isPlaying ? (
-         <Pause className="w-4 h-4 text-black fill-black" />
+         <Pause className="w-4 h-4 text-background fill-background" />
         ) : (
-         <Play className="w-4 h-4 ml-0.5 text-black fill-black" />
+         <Play className="w-4 h-4 ml-0.5 text-background fill-background" />
         )}
        </button>
 
        <button
         onClick={playNext}
-        className="w-7 h-7 flex items-center justify-center text-white/60 hover:text-white transition-colors"
+        className="w-7 h-7 flex items-center justify-center text-foreground/60 hover:text-foreground transition-colors"
         aria-label="Next"
        >
         <SkipForward className="w-4 h-4 fill-current" />
@@ -286,8 +286,8 @@ export function AudioPlayer() {
         onClick={toggleRepeat}
         className={`w-7 h-7 flex items-center justify-center transition-colors ${
          repeatMode !== "off"
-          ? "text-white bg-white/10"
-          : "text-white/40 hover:text-white/70"
+          ? "text-foreground bg-foreground/10"
+          : "text-foreground/40 hover:text-foreground/70"
         }`}
         aria-label="Repeat"
        >
@@ -299,9 +299,9 @@ export function AudioPlayer() {
        </button>
       </div>
 
-      <div className="flex items-center gap-2 text-xs tabular-nums text-white/60">
+      <div className="flex items-center gap-2 text-xs tabular-nums text-foreground/60">
        <span>{formattedCurrentTime}</span>
-       <span className="text-white/30">·</span>
+       <span className="text-foreground/30">·</span>
        <span>{formattedDuration}</span>
       </div>
      </div>
@@ -310,36 +310,36 @@ export function AudioPlayer() {
       <div className="flex items-center gap-2">
        <button
         onClick={() => setIsFullscreenOpen(true)}
-        className="w-7 h-7 flex items-center justify-center hover:bg-white/10 transition-colors"
+        className="w-7 h-7 flex items-center justify-center hover:bg-foreground/10 transition-colors"
         aria-label="Fullscreen Player"
         title="Open Fullscreen Player"
        >
-        <Maximize2 className="w-3.5 h-3.5 text-white/50 hover:text-white transition-colors" />
+        <Maximize2 className="w-3.5 h-3.5 text-foreground/50 hover:text-foreground transition-colors" />
        </button>
 
        {hasLyrics && (
         <button
          onClick={() => setIsLyricsOpen(true)}
-         className="relative w-7 h-7 flex items-center justify-center hover:bg-white/10 transition-colors"
+         className="relative w-7 h-7 flex items-center justify-center hover:bg-foreground/10 transition-colors"
          aria-label="View Lyrics"
          title="View Lyrics"
         >
-         <Music2 className="w-3.5 h-3.5 text-white/50 hover:text-white transition-colors" />
+         <Music2 className="w-3.5 h-3.5 text-foreground/50 hover:text-foreground transition-colors" />
          {lyrics && (
-          <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-white" />
+          <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-foreground" />
          )}
         </button>
        )}
 
        <button
         onClick={() => setIsQueueOpen(true)}
-        className="relative w-7 h-7 flex items-center justify-center hover:bg-white/10 transition-colors"
+        className="relative w-7 h-7 flex items-center justify-center hover:bg-foreground/10 transition-colors"
         aria-label="View Queue"
         title="View Queue"
        >
-        <ListMusic className="w-3.5 h-3.5 text-white/50 hover:text-white transition-colors" />
+        <ListMusic className="w-3.5 h-3.5 text-foreground/50 hover:text-foreground transition-colors" />
         {queue.length > 0 && (
-         <span className="absolute -top-0.5 -right-0.5 px-1 bg-white text-black text-[8px] font-bold flex items-center justify-center min-w-[14px] h-[14px]">
+         <span className="absolute -top-0.5 -right-0.5 px-1 bg-foreground text-background text-[8px] font-bold flex items-center justify-center min-w-[14px] h-[14px]">
           {queue.length > 9 ? "9+" : queue.length}
          </span>
         )}
@@ -349,13 +349,13 @@ export function AudioPlayer() {
       <div className="hidden md:flex items-center gap-3">
        <button
         onClick={toggleMute}
-        className="w-7 h-7 flex items-center justify-center hover:bg-white/10 transition-colors"
+        className="w-7 h-7 flex items-center justify-center hover:bg-foreground/10 transition-colors"
         aria-label={isMuted ? "Unmute" : "Mute"}
        >
         {isMuted ? (
-         <VolumeX className="w-3.5 h-3.5 text-white/50" />
+         <VolumeX className="w-3.5 h-3.5 text-foreground/50" />
         ) : (
-         <Volume2 className="w-3.5 h-3.5 text-white/50" />
+         <Volume2 className="w-3.5 h-3.5 text-foreground/50" />
         )}
        </button>
 
@@ -367,7 +367,7 @@ export function AudioPlayer() {
            key={i}
            onClick={() => setVolume((i + 1) / 10)}
            className={`flex-1 h-2 transition-colors ${
-            i < volumeLevel ? "bg-white" : "bg-white/20 hover:bg-white/40"
+            i < volumeLevel ? "bg-foreground" : "bg-foreground/20 hover:bg-foreground/40"
            }`}
            style={{ minWidth: "2px" }}
            aria-label={`Set volume to ${(i + 1) * 10}%`}

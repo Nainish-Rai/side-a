@@ -152,12 +152,29 @@ export function SearchResults({
   };
  }, [hasNextPage, isFetchingMore]); // Removed onLoadMore from deps
 
- const tabs: { id: SearchContentType; label: string; icon: any }[] = [
+ // Filter tabs to only show those with results
+ const allTabs: { id: SearchContentType; label: string; icon: any }[] = [
   { id: "tracks", label: "Songs", icon: Music2 },
   { id: "albums", label: "Albums", icon: Disc },
   { id: "artists", label: "Artists", icon: Users },
   { id: "playlists", label: "Playlists", icon: ListMusic },
  ];
+
+ const tabs = allTabs.filter((tab) => {
+  if (tab.id === "tracks") return tracks && tracks.length > 0;
+  if (tab.id === "albums") return albums && albums.length > 0;
+  if (tab.id === "artists") return artists && artists.length > 0;
+  if (tab.id === "playlists") return playlists && playlists.length > 0;
+  return false;
+ });
+
+ // Auto-switch to first available tab if current tab has no results
+ React.useEffect(() => {
+  const currentTabHasResults = tabs.some((tab) => tab.id === contentType);
+  if (!currentTabHasResults && tabs.length > 0 && onTabChange) {
+   onTabChange(tabs[0].id);
+  }
+ }, [tabs, contentType, onTabChange]);
 
  const handleTrackClick = async (track: Track, index: number) => {
   if (loadingTrackId === track.id) return;
@@ -184,25 +201,25 @@ export function SearchResults({
 
  if (isLoading) {
   return (
-   <div className="w-full border-t border-white/10">
+   <div className="w-full border-t border-foreground/10">
     <TableHeader />
     <div>
-      {[...Array(12)].map((_, i) => (
-       <div
-        key={i}
-        className="grid grid-cols-[50px_40px_1fr_180px_120px_80px] lg:grid-cols-[50px_40px_1fr_180px_120px_80px] md:grid-cols-[40px_40px_1fr_60px] gap-4 items-center px-6 py-3 border-b border-white/10 animate-pulse"
-       >
-        <div className="h-3 w-6 bg-white/10 mx-auto" />
-        <div className="w-10 h-10 bg-white/10 border border-white/10" />
-        <div className="space-y-2">
-         <div className="h-4 w-2/3 bg-white/10" />
-         <div className="h-3 w-1/2 bg-white/10" />
-        </div>
-        <div className="hidden lg:block h-3 w-3/4 bg-white/10" />
-        <div className="hidden lg:block h-3 w-16 bg-white/10" />
-        <div className="h-3 w-12 bg-white/10 ml-auto" />
+     {[...Array(12)].map((_, i) => (
+      <div
+       key={i}
+       className="grid grid-cols-[50px_40px_1fr_180px_120px_80px] lg:grid-cols-[50px_40px_1fr_180px_120px_80px] md:grid-cols-[40px_40px_1fr_60px] gap-4 items-center px-6 py-3 border-b border-foreground/10 animate-pulse"
+      >
+       <div className="h-3 w-6 bg-foreground/10 mx-auto" />
+       <div className="w-10 h-10 bg-foreground/10 border border-foreground/10" />
+       <div className="space-y-2">
+        <div className="h-4 w-2/3 bg-foreground/10" />
+        <div className="h-3 w-1/2 bg-foreground/10" />
        </div>
-      ))}
+       <div className="hidden lg:block h-3 w-3/4 bg-foreground/10" />
+       <div className="hidden lg:block h-3 w-16 bg-foreground/10" />
+       <div className="h-3 w-12 bg-foreground/10 ml-auto" />
+      </div>
+     ))}
     </div>
    </div>
   );
@@ -219,7 +236,7 @@ export function SearchResults({
 
  if (!items || items.length === 0) {
   return (
-   <div className="flex flex-col items-center justify-center py-20 text-white/40">
+   <div className="flex flex-col items-center justify-center py-20 text-foreground/40">
     <Search className="w-16 h-16 mb-4 opacity-50" />
     <p className="text-lg font-medium">No results found</p>
     <p className="text-sm">Try searching for something else</p>
@@ -230,7 +247,7 @@ export function SearchResults({
  return (
   <div className="w-full">
    {/* Tab Navigation - Brutalist Style */}
-   <div className="sticky top-0 z-10 pb-0 -mx-4 px-4 bg-black/95 backdrop-blur-2xl border-b border-white/10">
+   <div className="sticky -top-6 z-10 pb-0 -mx-4 px-4 bg-background/95 backdrop-blur-2xl border-b border-foreground/10">
     <div className="flex items-center gap-8 overflow-x-auto no-scrollbar py-4">
      {tabs.map((tab) => (
       <button
@@ -243,8 +260,8 @@ export function SearchResults({
        }}
        className={`relative pb-3 text-xs font-mono uppercase tracking-widest transition-all whitespace-nowrap outline-none ${
         contentType === tab.id
-         ? "text-white"
-         : "text-white/40 hover:text-white/70"
+         ? "text-foreground"
+         : "text-foreground/40 hover:text-foreground/70"
        }`}
       >
        <span className="flex items-center gap-2">
@@ -254,7 +271,7 @@ export function SearchResults({
        {contentType === tab.id && (
         <motion.div
          layoutId="activeTabUnderline"
-         className="absolute bottom-0 left-0 right-0 h-[2px] bg-white"
+         className="absolute bottom-0 left-0 right-0 h-[2px] bg-foreground"
          initial={false}
          transition={{ type: "spring", stiffness: 400, damping: 30 }}
         />
@@ -266,7 +283,7 @@ export function SearchResults({
 
    {/* Results Count */}
    <div className="mb-2 px-1 mt-6">
-    <div className="text-[10px] font-mono uppercase tracking-widest text-white/40">
+    <div className="text-[10px] font-mono uppercase tracking-widest text-foreground/40">
      {totalNumberOfItems !== undefined ? (
       <>
        {totalNumberOfItems.toLocaleString()} {contentType}
@@ -284,23 +301,25 @@ export function SearchResults({
     transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
    >
     {contentType === "tracks" ? (
-     <div className="border-t border-white/10">
-      <TableHeader />
+     <div className="border-t border-foreground/10">
+      <div className="sticky top-[4.8rem] z-10">
+       <TableHeader />
+      </div>
       <div>
-        {tracks?.map((track, index) => {
-         const isCurrentTrack = currentTrack?.id === track.id;
-         return (
-          <TrackRow
-           key={`${track.id}-${index}`}
-           track={track}
-           index={index}
-           isCurrentTrack={isCurrentTrack}
-           isPlaying={isCurrentTrack && isPlaying}
-           isLoading={loadingTrackId === track.id}
-           onClick={() => handleTrackClick(track, index)}
-          />
-         );
-        })}
+       {tracks?.map((track, index) => {
+        const isCurrentTrack = currentTrack?.id === track.id;
+        return (
+         <TrackRow
+          key={`${track.id}-${index}`}
+          track={track}
+          index={index}
+          isCurrentTrack={isCurrentTrack}
+          isPlaying={isCurrentTrack && isPlaying}
+          isLoading={loadingTrackId === track.id}
+          onClick={() => handleTrackClick(track, index)}
+         />
+        );
+       })}
       </div>
      </div>
     ) : contentType === "albums" &&
@@ -345,7 +364,7 @@ export function SearchResults({
      animate={{ opacity: 1 }}
      className="flex items-center justify-center py-8 mt-4"
     >
-     <div className="flex items-center gap-3 text-white/40">
+     <div className="flex items-center gap-3 text-foreground/40">
       <Loader2 className="w-5 h-5 animate-spin" />
       <span className="text-sm font-medium">Loading more...</span>
      </div>

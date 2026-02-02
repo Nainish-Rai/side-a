@@ -30,7 +30,7 @@ export const QualityBadge = React.memo(({ quality, onClick }: QualityBadgeProps)
 
   // Color scheme: gray for standard, accent for premium
   const colorClasses = isPremium
-    ? "bg-white/20 text-white"
+    ? "bg-foreground/20 text-foreground"
     : "bg-gray-500/20 text-gray-400";
 
   return (

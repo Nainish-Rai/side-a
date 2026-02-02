@@ -137,14 +137,14 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 50 }}
           transition={{ duration: 0.3, ease: "circOut" }}
-          className="fixed inset-0 z-[100] bg-black text-white overflow-hidden flex flex-col"
+          className="fixed inset-0 z-[100] bg-background text-foreground overflow-hidden flex flex-col"
         >
           {/* Header - Brutalist Style */}
-          <div className="relative z-10 border-b border-white/10 px-6 py-4 md:px-8">
+          <div className="relative z-10 border-b border-foreground/10 px-6 py-4 md:px-8">
             <div className="flex items-center justify-between">
               <button
                 onClick={onClose}
-                className="flex items-center gap-2 text-white/70 hover:text-white transition-colors duration-200"
+                className="flex items-center gap-2 text-foreground/70 hover:text-foreground transition-colors duration-200"
               >
                 <ChevronLeft className="w-5 h-5" />
                 <span className="text-xs font-mono uppercase tracking-widest hidden sm:block">Back</span>
@@ -156,15 +156,15 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
                   onClick={() => setActiveTab("queue")}
                   className={`relative pb-2 text-xs font-mono uppercase tracking-widest transition-all ${
                     activeTab === "queue"
-                      ? "text-white"
-                      : "text-white/40 hover:text-white/70"
+                      ? "text-foreground"
+                      : "text-foreground/40 hover:text-foreground/70"
                   }`}
                 >
                   Queue
                   {activeTab === "queue" && (
                     <motion.div
                       layoutId="playerTabUnderline"
-                      className="absolute bottom-0 left-0 right-0 h-[2px] bg-white"
+                      className="absolute bottom-0 left-0 right-0 h-[2px] bg-foreground"
                       transition={{ type: "spring", stiffness: 400, damping: 30 }}
                     />
                   )}
@@ -174,15 +174,15 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
                     onClick={() => setActiveTab("lyrics")}
                     className={`relative pb-2 text-xs font-mono uppercase tracking-widest transition-all ${
                       activeTab === "lyrics"
-                        ? "text-white"
-                        : "text-white/40 hover:text-white/70"
+                        ? "text-foreground"
+                        : "text-foreground/40 hover:text-foreground/70"
                     }`}
                   >
                     Lyrics
                     {activeTab === "lyrics" && (
                       <motion.div
                         layoutId="playerTabUnderline"
-                        className="absolute bottom-0 left-0 right-0 h-[2px] bg-white"
+                        className="absolute bottom-0 left-0 right-0 h-[2px] bg-foreground"
                         transition={{ type: "spring", stiffness: 400, damping: 30 }}
                       />
                     )}
@@ -192,7 +192,7 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
 
               <button
                 onClick={onClose}
-                className="w-8 h-8 flex items-center justify-center text-white/70 hover:text-white transition-colors sm:hidden"
+                className="w-8 h-8 flex items-center justify-center text-foreground/70 hover:text-foreground transition-colors sm:hidden"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -207,7 +207,7 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
             <div className="flex flex-col justify-center w-full max-w-xl mx-auto lg:mx-0 lg:max-w-none space-y-6 lg:space-y-8">
 
               {/* Album Art Container - Square with Border */}
-              <div className="relative aspect-square w-full max-w-[280px] md:max-w-[360px] mx-auto lg:mx-0 border border-white/10 overflow-hidden bg-white/5">
+              <div className="relative aspect-square w-full max-w-[280px] md:max-w-[360px] mx-auto lg:mx-0 border border-foreground/10 overflow-hidden bg-foreground/5">
                 {coverUrl ? (
                   <Image
                     src={coverUrl}
@@ -219,8 +219,8 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
                     priority={true}
                   />
                 ) : (
-                  <div className="w-full h-full bg-white/5 flex items-center justify-center">
-                    <Music2 className="w-24 h-24 text-white/20" />
+                  <div className="w-full h-full bg-foreground/5 flex items-center justify-center">
+                    <Music2 className="w-24 h-24 text-foreground/20" />
                   </div>
                 )}
               </div>
@@ -229,13 +229,13 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
               <div className="space-y-4 lg:space-y-6 w-full max-w-[360px] mx-auto lg:mx-0">
                 {/* Track Info */}
                 <div className="space-y-2">
-                  <div className="text-[9px] tracking-widest uppercase text-white/40 font-mono">
+                  <div className="text-[9px] tracking-widest uppercase text-foreground/40 font-mono">
                     Now Playing
                   </div>
-                  <h1 className="text-xl md:text-2xl font-medium text-white/90 leading-tight line-clamp-2">
+                  <h1 className="text-xl md:text-2xl font-medium text-foreground/90 leading-tight line-clamp-2">
                     {getTrackTitle(currentTrack)}
                   </h1>
-                  <p className="text-sm md:text-base text-white/50 line-clamp-1">
+                  <p className="text-sm md:text-base text-foreground/50 line-clamp-1">
                     {getTrackArtists(currentTrack)}
                   </p>
                 </div>
@@ -244,18 +244,18 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
                 <div className="space-y-2">
                   <div
                     ref={seekBarRef}
-                    className="h-2 bg-white/20 cursor-pointer relative overflow-hidden group"
+                    className="h-2 bg-foreground/20 cursor-pointer relative overflow-hidden group"
                     onClick={handleSeekClick}
                     onMouseDown={handleSeekMouseDown}
                     onMouseMove={handleSeekMouseMove}
                     onMouseUp={handleSeekMouseUp}
                   >
                     <div
-                      className="h-full bg-white relative"
+                      className="h-full bg-foreground relative"
                       style={{ width: `${progressPercentage}%` }}
                     />
                   </div>
-                  <div className="flex justify-between text-[11px] text-white/40 font-mono tabular-nums">
+                  <div className="flex justify-between text-[11px] text-foreground/40 font-mono tabular-nums">
                     <span>{formatTime(currentTime)}</span>
                     <span>{formatTime(duration)}</span>
                   </div>
@@ -266,7 +266,7 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
                   <button
                     onClick={toggleShuffle}
                     className={`p-2 transition-colors ${
-                      shuffleActive ? "text-white" : "text-white/40 hover:text-white/70"
+                      shuffleActive ? "text-foreground" : "text-foreground/40 hover:text-foreground/70"
                     }`}
                   >
                     <Shuffle className="w-5 h-5" />
@@ -274,14 +274,14 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
 
                   <button
                     onClick={playPrev}
-                    className="p-2 text-white/70 hover:text-white transition-colors"
+                    className="p-2 text-foreground/70 hover:text-foreground transition-colors"
                   >
                     <SkipBack className="w-7 h-7 fill-current" />
                   </button>
 
                   <button
                     onClick={togglePlayPause}
-                    className="w-14 h-14 flex items-center justify-center border-2 border-white bg-transparent text-white hover:bg-white hover:text-black transition-all"
+                    className="w-14 h-14 flex items-center justify-center border-2 border-foreground bg-transparent text-foreground hover:bg-foreground hover:text-background transition-all"
                   >
                     {isPlaying ? (
                       <Pause className="w-6 h-6 fill-current" />
@@ -292,7 +292,7 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
 
                   <button
                     onClick={playNext}
-                    className="p-2 text-white/70 hover:text-white transition-colors"
+                    className="p-2 text-foreground/70 hover:text-foreground transition-colors"
                   >
                     <SkipForward className="w-7 h-7 fill-current" />
                   </button>
@@ -300,7 +300,7 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
                   <button
                     onClick={toggleRepeat}
                     className={`p-2 transition-colors ${
-                      repeatMode !== 'off' ? "text-white" : "text-white/40 hover:text-white/70"
+                      repeatMode !== 'off' ? "text-foreground" : "text-foreground/40 hover:text-foreground/70"
                     }`}
                   >
                     {repeatMode === 'one' ? <Repeat1 className="w-5 h-5" /> : <Repeat className="w-5 h-5" />}
@@ -308,12 +308,12 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
                 </div>
 
                 {/* Volume - Desktop Only */}
-                <div className="hidden lg:flex items-center gap-3 pt-2 border-t border-white/10">
-                  <div className="text-[9px] tracking-widest uppercase text-white/40 font-mono pt-3">
+                <div className="hidden lg:flex items-center gap-3 pt-2 border-t border-foreground/10">
+                  <div className="text-[9px] tracking-widest uppercase text-foreground/40 font-mono pt-3">
                     Volume
                   </div>
                   <div className="flex-1 flex items-center gap-3 pt-3">
-                    <button onClick={toggleMute} className="text-white/40 hover:text-white/70 transition-colors">
+                    <button onClick={toggleMute} className="text-foreground/40 hover:text-foreground/70 transition-colors">
                       {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
                     </button>
                     <input
@@ -322,15 +322,15 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
                       max="100"
                       value={isMuted ? 0 : volume * 100}
                       onChange={(e) => setVolume(Number(e.target.value) / 100)}
-                      className="flex-1 h-1 bg-white/20 appearance-none cursor-pointer
+                      className="flex-1 h-1 bg-foreground/20 appearance-none cursor-pointer
                                [&::-webkit-slider-thumb]:appearance-none
                                [&::-webkit-slider-thumb]:w-3
                                [&::-webkit-slider-thumb]:h-3
-                               [&::-webkit-slider-thumb]:bg-white
+                               [&::-webkit-slider-thumb]:bg-foreground
                                [&::-webkit-slider-thumb]:opacity-0
                                [&::-webkit-slider-thumb]:hover:opacity-100"
                     />
-                    <span className="text-xs font-mono tabular-nums text-white/40 w-8 text-right">
+                    <span className="text-xs font-mono tabular-nums text-foreground/40 w-8 text-right">
                       {Math.round(isMuted ? 0 : volume * 100)}
                     </span>
                   </div>
@@ -339,10 +339,10 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
             </div>
 
             {/* Right Side: Lyrics or Queue - Brutalist Style */}
-            <div className="hidden lg:block max-h-[calc(100vh-12rem)] overflow-hidden border-l border-white/10 pl-8">
+            <div className="hidden lg:block max-h-[calc(100vh-12rem)] overflow-hidden border-l border-foreground/10 pl-8">
               {activeTab === "queue" && (
                  <div className="h-full max-h-[calc(100vh-12rem)] overflow-y-auto pr-4 space-y-1">
-                     <div className="text-[9px] tracking-widest uppercase text-white/40 font-mono mb-6 sticky top-0 bg-black pt-2 pb-2 z-10">
+                     <div className="text-[9px] tracking-widest uppercase text-foreground/40 font-mono mb-6 sticky top-0 bg-background pt-2 pb-2 z-10">
                        Up Next ({queue.length - currentQueueIndex - 1})
                      </div>
                      {queue.map((track, index) => {
@@ -351,12 +351,12 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
                           <div
                             key={`${track.id}-${index}`}
                             onClick={() => !isCurrent && setQueue(queue, index)}
-                            className={`group flex items-center gap-4 p-3 border-b border-white/10 transition-all ${
-                                isCurrent ? "border-l-2 border-l-white pl-[10px]" : "hover:bg-white/[0.02] cursor-pointer border-l-2 border-l-transparent"
+                            className={`group flex items-center gap-4 p-3 border-b border-foreground/10 transition-all ${
+                                isCurrent ? "border-l-2 border-l-white pl-[10px]" : "hover:bg-foreground/[0.02] cursor-pointer border-l-2 border-l-transparent"
                             }`}
                           >
                              {/* Small Art - Square with Border */}
-                             <div className="relative w-10 h-10 shrink-0 bg-white/5 border border-white/10 overflow-hidden">
+                             <div className="relative w-10 h-10 shrink-0 bg-foreground/5 border border-foreground/10 overflow-hidden">
                                 {track.album?.cover ? (
                                      <Image
                                         src={`https://resources.tidal.com/images/${String(track.album.cover).replace(/-/g, "/")}/320x320.jpg`}
@@ -368,20 +368,20 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
                                         loading="lazy"
                                      />
                                 ) : (
-                                    <Music2 className="w-4 h-4 text-white/20 m-auto" />
+                                    <Music2 className="w-4 h-4 text-foreground/20 m-auto" />
                                 )}
                              </div>
 
                              <div className="flex-1 min-w-0">
-                                <div className={`text-sm font-medium truncate transition-colors ${isCurrent ? "text-white" : "text-white/90 group-hover:text-white"}`}>
+                                <div className={`text-sm font-medium truncate transition-colors ${isCurrent ? "text-foreground" : "text-foreground/90 group-hover:text-foreground"}`}>
                                     {getTrackTitle(track)}
                                 </div>
-                                <div className="text-xs text-white/50 truncate">
+                                <div className="text-xs text-foreground/50 truncate">
                                     {getTrackArtists(track)}
                                 </div>
                              </div>
 
-                             <div className="text-[11px] font-mono text-white/40 tabular-nums">
+                             <div className="text-[11px] font-mono text-foreground/40 tabular-nums">
                                 {formatTime(track.duration || 0)}
                              </div>
                           </div>
@@ -403,27 +403,27 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
             </div>
 
             {/* Mobile Tab Content - Brutalist Style */}
-            <div className="lg:hidden mt-6 border-t border-white/10 pt-4">
+            <div className="lg:hidden mt-6 border-t border-foreground/10 pt-4">
                  <div className="flex justify-center">
                     {activeTab === 'lyrics' ? (
                          hasSyncedLyrics && lyrics?.parsed?.[currentLineIndex] ? (
                              <div className="text-center px-4">
-                               <div className="text-[9px] tracking-widest uppercase text-white/40 font-mono mb-2">
+                               <div className="text-[9px] tracking-widest uppercase text-foreground/40 font-mono mb-2">
                                  Current Line
                                </div>
-                               <p className="text-sm text-white/90">
+                               <p className="text-sm text-foreground/90">
                                  {lyrics.parsed[currentLineIndex].text}
                                </p>
                              </div>
                          ) : (
-                           <p className="text-xs text-white/40 font-mono uppercase tracking-wider">No Lyrics Available</p>
+                           <p className="text-xs text-foreground/40 font-mono uppercase tracking-wider">No Lyrics Available</p>
                          )
                     ) : (
                       <div className="text-center">
-                        <div className="text-[9px] tracking-widest uppercase text-white/40 font-mono mb-1">
+                        <div className="text-[9px] tracking-widest uppercase text-foreground/40 font-mono mb-1">
                           Up Next
                         </div>
-                        <p className="text-sm text-white/70 font-mono tabular-nums">
+                        <p className="text-sm text-foreground/70 font-mono tabular-nums">
                           {queue.length - currentQueueIndex - 1} tracks
                         </p>
                       </div>

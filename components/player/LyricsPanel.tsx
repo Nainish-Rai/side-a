@@ -52,13 +52,13 @@ export function LyricsPanel({
 
  return (
   <div id="lyrics-panel" className={cn("lyrics-panel", className)}>
-   <div className="lyrics-header flex items-center justify-between p-4 border-b border-white/10">
-    <h3 className="text-lg font-bold text-white">Lyrics</h3>
+   <div className="lyrics-header flex items-center justify-between p-4 border-b border-foreground/10">
+    <h3 className="text-lg font-bold text-foreground">Lyrics</h3>
     <div className="lyrics-controls flex gap-2">
      {lyrics?.subtitles && track && (
       <button
        onClick={downloadLrc}
-       className="btn-icon p-2 hover:bg-white/10 rounded-full transition-colors text-white/70 hover:text-white"
+       className="btn-icon p-2 hover:bg-foreground/10 rounded-full transition-colors text-foreground/70 hover:text-foreground"
        title="Download LRC"
       >
        <Download size={18} />
@@ -68,7 +68,7 @@ export function LyricsPanel({
       <button
        id="close-lyrics-btn"
        onClick={onClose}
-       className="btn-icon p-2 hover:bg-white/10 rounded-full transition-colors text-white/70 hover:text-white"
+       className="btn-icon p-2 hover:bg-foreground/10 rounded-full transition-colors text-foreground/70 hover:text-foreground"
       >
        <X size={18} />
       </button>
@@ -79,7 +79,7 @@ export function LyricsPanel({
    <div ref={contentRef} className="lyrics-content relative">
     {isLoading ? (
      <div className="flex items-center justify-center h-40">
-      <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-white"></div>
+      <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-foreground"></div>
      </div>
     ) : lyrics?.parsed ? (
      <div className="space-y-4 py-8">
@@ -93,11 +93,11 @@ export function LyricsPanel({
          key={index}
          ref={isActive ? activeLineRef : null}
          className={cn(
-          "lyrics-line synced-line text-base md:text-lg font-medium text-left transition-colors duration-200 cursor-pointer hover:text-white/80",
-          isActive && "active text-white font-semibold",
-          isUpcoming && "upcoming text-white/60",
-          isPast && " text-white/20",
-          !isActive && !isUpcoming && !isPast && "text-white/30",
+          "lyrics-line synced-line text-base md:text-lg font-medium text-left transition-colors duration-200 cursor-pointer hover:text-foreground/80",
+          isActive && "active text-foreground font-semibold",
+          isUpcoming && "upcoming text-foreground/60",
+          isPast && " text-foreground/20",
+          !isActive && !isUpcoming && !isPast && "text-foreground/30",
          )}
          data-index={index}
          data-time={line.time}
@@ -110,7 +110,7 @@ export function LyricsPanel({
       <div className="h-20" /> {/* Spacer */}
      </div>
     ) : (
-     <div className="flex flex-col items-center justify-center h-full text-white/50 p-8 text-center">
+     <div className="flex flex-col items-center justify-center h-full text-foreground/50 p-8 text-center">
       <Music size={48} className="mb-4 opacity-50" />
       <p className="text-lg">No synced lyrics available</p>
       {lyrics?.lyrics && (

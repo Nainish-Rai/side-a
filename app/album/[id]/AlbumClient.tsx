@@ -11,6 +11,7 @@ import {
 import { Play, Pause, ArrowLeft, Music2 } from "lucide-react";
 import { getTrackTitle, getTrackArtists, formatTime } from "@/lib/api/utils";
 import { AudioPlayer } from "@/components/player/AudioPlayer";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 interface AlbumClientProps {
  album: Album;
@@ -67,27 +68,31 @@ export function AlbumClient({ album, tracks }: AlbumClientProps) {
   currentTrack && tracks.some((t) => t.id === currentTrack.id);
 
  return (
-  <div className="relative min-h-screen w-full bg-black">
+  <div className="relative min-h-screen w-full bg-background text-foreground transition-colors duration-300">
    {/* Header Navigation - Brutalist Style */}
-   <header className="sticky top-0 z-30 bg-black border-b border-white/10">
+   <header className="sticky top-0 z-30 bg-background border-b border-foreground/10 transition-colors duration-300">
     <div className="max-w-6xl mx-auto px-6 py-4">
-     <button
-      onClick={() => router.back()}
-      className="flex items-center gap-2 text-white/70 hover:text-white transition-colors"
-     >
-      <ArrowLeft className="w-5 h-5" />
-      <span className="text-xs font-mono uppercase tracking-widest">Back</span>
-     </button>
+     <div className="flex items-center justify-between">
+      <button
+       onClick={() => router.back()}
+       className="flex items-center gap-2 text-foreground/70 hover:text-foreground transition-colors"
+      >
+       <ArrowLeft className="w-5 h-5" />
+       <span className="text-xs font-mono uppercase tracking-widest">Back</span>
+      </button>
+
+      <ThemeToggle />
+     </div>
     </div>
    </header>
 
    {/* Content Container */}
-   <div className="max-w-6xl mx-auto px-6 py-8 text-white">
+   <div className="max-w-6xl mx-auto px-6 py-8">
 
     {/* Album Header Section - Brutalist Layout */}
-    <div className="flex flex-col md:flex-row   gap-8 md:gap-12 mb-12 pb-8 border-b border-white/10">
+    <div className="flex flex-col md:flex-row   gap-8 md:gap-12 mb-12 pb-8 border-b border-foreground/10">
      {/* Album Art - Square with Border */}
-     <div className="relative shrink-0 w-[280px] md:w-[320px] aspect-square border border-white/10 overflow-hidden bg-white/5">
+     <div className="relative shrink-0 w-[280px] md:w-[320px] aspect-square border border-foreground/10 overflow-hidden bg-foreground/5">
       {coverUrl ? (
        <Image
         src={coverUrl}
@@ -100,8 +105,8 @@ export function AlbumClient({ album, tracks }: AlbumClientProps) {
         priority={true}
        />
       ) : (
-       <div className="w-full h-full bg-white/5 flex items-center justify-center">
-        <Music2 className="w-20 h-20 text-white/20" />
+       <div className="w-full h-full bg-foreground/5 flex items-center justify-center">
+        <Music2 className="w-20 h-20 text-foreground/20" />
        </div>
       )}
      </div>
@@ -109,40 +114,40 @@ export function AlbumClient({ album, tracks }: AlbumClientProps) {
      {/* Album Info */}
      <div className="flex-1 min-w-0 space-y-6">
       <div>
-       <div className="text-[9px] tracking-widest uppercase text-white/40 font-mono mb-3">
+       <div className="text-[9px] tracking-widest uppercase text-foreground/40 font-mono mb-3">
         Album
        </div>
-       <h1 className="text-3xl md:text-4xl lg:text-5xl font-medium text-white tracking-tight leading-tight mb-4">
+       <h1 className="text-3xl md:text-4xl lg:text-5xl font-medium text-foreground tracking-tight leading-tight mb-4">
         {album.title}
        </h1>
 
-       <div className="text-base text-white/70 mb-4">{artistName}</div>
+       <div className="text-base text-foreground/70 mb-4">{artistName}</div>
 
        {/* Album Metadata Grid */}
-       <div className="flex items-center gap-6 pt-4 border-t border-white/10">
+       <div className="flex items-center gap-6 pt-4 border-t border-foreground/10">
         {year && (
          <div>
-          <div className="text-[9px] tracking-widest uppercase text-white/40 font-mono mb-1">
+          <div className="text-[9px] tracking-widest uppercase text-foreground/40 font-mono mb-1">
            Year
           </div>
-          <div className="text-sm font-mono tabular-nums text-white/70">
+          <div className="text-sm font-mono tabular-nums text-foreground/70">
            {year}
           </div>
          </div>
         )}
         <div>
-         <div className="text-[9px] tracking-widest uppercase text-white/40 font-mono mb-1">
+         <div className="text-[9px] tracking-widest uppercase text-foreground/40 font-mono mb-1">
           Tracks
          </div>
-         <div className="text-sm font-mono tabular-nums text-white/70">
+         <div className="text-sm font-mono tabular-nums text-foreground/70">
           {tracks.length}
          </div>
         </div>
         <div>
-         <div className="text-[9px] tracking-widest uppercase text-white/40 font-mono mb-1">
+         <div className="text-[9px] tracking-widest uppercase text-foreground/40 font-mono mb-1">
           Duration
          </div>
-         <div className="text-sm font-mono tabular-nums text-white/70">
+         <div className="text-sm font-mono tabular-nums text-foreground/70">
           {formatTotalDuration(totalDuration)}
          </div>
         </div>
@@ -153,7 +158,7 @@ export function AlbumClient({ album, tracks }: AlbumClientProps) {
       <div className="flex items-center gap-4 pt-2">
        <button
         onClick={handlePlayAlbum}
-        className="px-6 py-3 border-2 border-white bg-transparent text-white hover:bg-white hover:text-black transition-all flex items-center gap-2 font-mono uppercase text-xs tracking-widest"
+        className="px-6 py-3 border-2 border-foreground bg-transparent text-foreground hover:bg-foreground hover:text-background transition-all flex items-center gap-2 font-mono uppercase text-xs tracking-widest"
        >
         {isAlbumPlaying && isPlaying ? (
          <>
@@ -172,23 +177,23 @@ export function AlbumClient({ album, tracks }: AlbumClientProps) {
     </div>
 
     {/* Track List - Brutalist Table */}
-    <div className="border-t border-white/10">
+    <div className="border-t border-foreground/10">
      {/* Table Header */}
-     <div className="sticky top-0 z-20 bg-black/95 backdrop-blur-xl border-b border-white/10">
+     <div className="sticky top-[73px] z-20 bg-background/95 backdrop-blur-xl border-b border-foreground/10">
       <div className="grid grid-cols-[50px_1fr_120px_80px] md:grid-cols-[50px_1fr_180px_120px_80px] gap-4 px-6 py-3">
-       <span className="text-[10px] font-mono uppercase tracking-widest text-white/40">
+       <span className="text-[10px] font-mono uppercase tracking-widest text-foreground/40">
         #
        </span>
-       <span className="text-[10px] font-mono uppercase tracking-widest text-white/40">
+       <span className="text-[10px] font-mono uppercase tracking-widest text-foreground/40">
         Title
        </span>
-       <span className="hidden md:block text-[10px] font-mono uppercase tracking-widest text-white/40 text-right">
+       <span className="hidden md:block text-[10px] font-mono uppercase tracking-widest text-foreground/40 text-right">
         Album
        </span>
-       <span className="text-[10px] font-mono uppercase tracking-widest text-white/40 text-right">
+       <span className="text-[10px] font-mono uppercase tracking-widest text-foreground/40 text-right">
         Plays
        </span>
-       <span className="text-[10px] font-mono uppercase tracking-widest text-white/40 text-right">
+       <span className="text-[10px] font-mono uppercase tracking-widest text-foreground/40 text-right">
         Time
        </span>
       </div>
@@ -203,16 +208,16 @@ export function AlbumClient({ album, tracks }: AlbumClientProps) {
         <div
          key={track.id}
          onClick={() => handlePlayTrack(track, index)}
-         className={`grid grid-cols-[50px_1fr_120px_80px] md:grid-cols-[50px_1fr_180px_120px_80px] gap-4 items-center px-6 py-3 border-b border-white/10 cursor-pointer transition-all duration-200 hover:bg-white/[0.02] ${
+         className={`grid grid-cols-[50px_1fr_120px_80px] md:grid-cols-[50px_1fr_180px_120px_80px] gap-4 items-center px-6 py-3 border-b border-foreground/10 cursor-pointer transition-all duration-200 hover:bg-foreground/[0.02] ${
           isCurrent
-           ? "border-l-[3px] border-l-white pl-[21px]"
+           ? "border-l-[3px] border-l-foreground pl-[21px]"
            : "border-l-[3px] border-l-transparent"
          }`}
         >
          {/* Track Number */}
          <div className="text-center">
           <span
-           className={`text-sm font-mono ${isCurrent ? "text-white" : "text-white/40"}`}
+           className={`text-sm font-mono ${isCurrent ? "text-foreground" : "text-foreground/40"}`}
           >
            {String(index + 1).padStart(2, "0")}
           </span>
@@ -221,12 +226,12 @@ export function AlbumClient({ album, tracks }: AlbumClientProps) {
          {/* Title & Artist */}
          <div className="min-w-0">
           <h3
-           className={`font-medium text-[15px] truncate transition-colors ${isCurrent ? "text-white" : "text-white/90 hover:text-white"}`}
+           className={`font-medium text-[15px] truncate transition-colors ${isCurrent ? "text-foreground" : "text-foreground/90 hover:text-foreground"}`}
           >
            {getTrackTitle(track)}
           </h3>
           <p
-           className={`text-[13px] truncate transition-colors ${isCurrent ? "text-white/70" : "text-white/50 hover:text-white/70"}`}
+           className={`text-[13px] truncate transition-colors ${isCurrent ? "text-foreground/70" : "text-foreground/50 hover:text-foreground/70"}`}
           >
            {getTrackArtists(track)}
           </p>
@@ -234,21 +239,21 @@ export function AlbumClient({ album, tracks }: AlbumClientProps) {
 
          {/* Album - Hidden on mobile */}
          <div className="hidden md:block min-w-0">
-          <span className="text-[13px] text-white/30 italic truncate">
+          <span className="text-[13px] text-foreground/30 italic truncate">
            {album.title}
           </span>
          </div>
 
          {/* Popularity */}
          <div className="text-right">
-          <span className="text-[12px] font-mono text-white/40 tabular-nums">
+          <span className="text-[12px] font-mono text-foreground/40 tabular-nums">
            {track.popularity || "-"}
           </span>
          </div>
 
          {/* Duration */}
          <div className="text-right">
-          <span className="text-[12px] font-mono text-white/40 tabular-nums">
+          <span className="text-[12px] font-mono text-foreground/40 tabular-nums">
            {formatTime(track.duration)}
           </span>
          </div>
