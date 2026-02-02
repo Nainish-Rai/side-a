@@ -163,7 +163,9 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
 
   // Swipe gesture controls
   const controls = useAnimation();
+  const albumArtControls = useAnimation();
   const SWIPE_THRESHOLD = 100;
+  const HORIZONTAL_SWIPE_THRESHOLD = 80;
 
   const handleSwipeEnd = useCallback(
     (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
@@ -178,12 +180,40 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
     [controls, onClose]
   );
 
+  // Handle horizontal swipe on album art for prev/next track
+  const handleAlbumArtSwipeEnd = useCallback(
+    async (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+      const { offset, velocity } = info;
+
+      if (Math.abs(offset.x) > HORIZONTAL_SWIPE_THRESHOLD || Math.abs(velocity.x) > 500) {
+        if (offset.x > 0) {
+          // Swipe right = previous track
+          await albumArtControls.start({ x: 300, opacity: 0 });
+          playPrev();
+          albumArtControls.set({ x: -300, opacity: 0 });
+          await albumArtControls.start({ x: 0, opacity: 1 });
+        } else {
+          // Swipe left = next track
+          await albumArtControls.start({ x: -300, opacity: 0 });
+          playNext();
+          albumArtControls.set({ x: 300, opacity: 0 });
+          await albumArtControls.start({ x: 0, opacity: 1 });
+        }
+      } else {
+        // Snap back
+        albumArtControls.start({ x: 0 });
+      }
+    },
+    [albumArtControls, playPrev, playNext]
+  );
+
   // Reset animation when opening
   useEffect(() => {
     if (isOpen) {
       controls.set({ y: 0, opacity: 1 });
+      albumArtControls.set({ x: 0, opacity: 1 });
     }
-  }, [isOpen, controls]);
+  }, [isOpen, controls, albumArtControls]);
 
   // Create unique IDs for sortable items (track.id + index to handle duplicates)
   const sortableIds = useMemo(() =>
@@ -383,24 +413,39 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
             <div className="flex flex-col items-center justify-center w-full lg:w-1/2 lg:sticky lg:top-0 lg:h-[calc(100vh-12rem)]">
               <div className="flex flex-col items-center space-y-6 lg:space-y-8 w-full max-w-[400px]">
 
-                {/* Album Art Container - Square with Border */}
-                <div className="relative aspect-square w-full max-w-[280px] md:max-w-[360px] border border-foreground/10 overflow-hidden bg-foreground/5">
-                {coverUrl ? (
-                  <Image
-                    src={coverUrl}
-                    alt={getTrackTitle(currentTrack)}
-                    fill
-                    sizes="(max-width: 768px) 80vw, 420px"
-                    quality={90}
-                    className="object-cover"
-                    priority={true}
-                  />
-                ) : (
-                  <div className="w-full h-full bg-foreground/5 flex items-center justify-center">
-                    <Music2 className="w-24 h-24 text-foreground/20" />
+                {/* Album Art Container - Swipeable for prev/next on mobile */}
+                <motion.div
+                  className="relative aspect-square w-full max-w-[280px] md:max-w-[360px] border border-foreground/10 overflow-hidden bg-foreground/5 cursor-grab active:cursor-grabbing touch-pan-y"
+                  drag="x"
+                  dragConstraints={{ left: 0, right: 0 }}
+                  dragElastic={0.2}
+                  onDragEnd={handleAlbumArtSwipeEnd}
+                  animate={albumArtControls}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  {coverUrl ? (
+                    <Image
+                      src={coverUrl}
+                      alt={getTrackTitle(currentTrack)}
+                      fill
+                      sizes="(max-width: 768px) 80vw, 420px"
+                      quality={90}
+                      className="object-cover pointer-events-none"
+                      priority={true}
+                      draggable={false}
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-foreground/5 flex items-center justify-center">
+                      <Music2 className="w-24 h-24 text-foreground/20" />
+                    </div>
+                  )}
+                  {/* Swipe hint on mobile */}
+                  <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 lg:hidden">
+                    <div className="w-1 h-1 bg-foreground/30 rounded-full" />
+                    <div className="w-1 h-1 bg-foreground/30 rounded-full" />
+                    <div className="w-1 h-1 bg-foreground/30 rounded-full" />
                   </div>
-                )}
-                </div>
+                </motion.div>
 
                 {/* Track Info & Progress */}
                 <div className="space-y-4 lg:space-y-6 w-full">
@@ -417,19 +462,44 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
                   </p>
                 </div>
 
-                {/* Progress Bar - Sharp Corners */}
+                {/* Progress Bar - Touch-friendly with 48px touch area */}
                 <div className="space-y-2">
                   <div
                     ref={seekBarRef}
-                    className="h-2 bg-foreground/20 cursor-pointer relative overflow-hidden group"
+                    className="relative py-5 -my-4 cursor-pointer group"
                     onClick={handleSeekClick}
                     onMouseDown={handleSeekMouseDown}
                     onMouseMove={handleSeekMouseMove}
                     onMouseUp={handleSeekMouseUp}
+                    onTouchStart={(e) => {
+                      const touch = e.touches[0];
+                      const rect = seekBarRef.current?.getBoundingClientRect();
+                      if (rect && duration > 0) {
+                        const x = touch.clientX - rect.left;
+                        const percentage = Math.max(0, Math.min(1, x / rect.width));
+                        seek(percentage * duration);
+                      }
+                    }}
+                    onTouchMove={(e) => {
+                      const touch = e.touches[0];
+                      const rect = seekBarRef.current?.getBoundingClientRect();
+                      if (rect && duration > 0) {
+                        const x = touch.clientX - rect.left;
+                        const percentage = Math.max(0, Math.min(1, x / rect.width));
+                        seek(percentage * duration);
+                      }
+                    }}
                   >
+                    <div className="h-2 bg-foreground/20 relative overflow-hidden">
+                      <div
+                        className="h-full bg-foreground relative"
+                        style={{ width: `${progressPercentage}%` }}
+                      />
+                    </div>
+                    {/* Thumb indicator */}
                     <div
-                      className="h-full bg-foreground relative"
-                      style={{ width: `${progressPercentage}%` }}
+                      className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-foreground opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity"
+                      style={{ left: `calc(${progressPercentage}% - 8px)` }}
                     />
                   </div>
                   <div className="flex justify-between text-[11px] text-foreground/40 font-mono tabular-nums">
@@ -438,47 +508,52 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
                   </div>
                 </div>
 
-                {/* Main Controls - Minimal Brutalist Style */}
-                <div className="flex items-center justify-center gap-8 pt-4">
+                {/* Main Controls - Touch-optimized with 48px targets */}
+                <div className="flex items-center justify-center gap-4 md:gap-8 pt-4">
                   <button
                     onClick={toggleShuffle}
-                    className={`p-2 transition-colors ${
+                    className={`w-12 h-12 flex items-center justify-center transition-colors active:scale-95 ${
                       shuffleActive ? "text-foreground" : "text-foreground/40 hover:text-foreground/70"
                     }`}
+                    aria-label={shuffleActive ? "Disable shuffle" : "Enable shuffle"}
                   >
                     <Shuffle className="w-5 h-5" />
                   </button>
 
                   <button
                     onClick={playPrev}
-                    className="p-2 text-foreground/70 hover:text-foreground transition-colors"
+                    className="w-12 h-12 flex items-center justify-center text-foreground/70 hover:text-foreground active:scale-95 transition-all"
+                    aria-label="Previous track"
                   >
                     <SkipBack className="w-7 h-7 fill-current" />
                   </button>
 
                   <button
                     onClick={togglePlayPause}
-                    className="w-14 h-14 flex items-center justify-center border-2 border-foreground bg-transparent text-foreground hover:bg-foreground hover:text-background transition-all"
+                    className="w-16 h-16 flex items-center justify-center border-2 border-foreground bg-transparent text-foreground hover:bg-foreground hover:text-background active:scale-95 transition-all"
+                    aria-label={isPlaying ? "Pause" : "Play"}
                   >
                     {isPlaying ? (
-                      <Pause className="w-6 h-6 fill-current" />
+                      <Pause className="w-7 h-7 fill-current" />
                     ) : (
-                      <Play className="w-6 h-6 ml-0.5 fill-current" />
+                      <Play className="w-7 h-7 ml-0.5 fill-current" />
                     )}
                   </button>
 
                   <button
                     onClick={playNext}
-                    className="p-2 text-foreground/70 hover:text-foreground transition-colors"
+                    className="w-12 h-12 flex items-center justify-center text-foreground/70 hover:text-foreground active:scale-95 transition-all"
+                    aria-label="Next track"
                   >
                     <SkipForward className="w-7 h-7 fill-current" />
                   </button>
 
                   <button
                     onClick={toggleRepeat}
-                    className={`p-2 transition-colors ${
+                    className={`w-12 h-12 flex items-center justify-center transition-colors active:scale-95 ${
                       repeatMode !== 'off' ? "text-foreground" : "text-foreground/40 hover:text-foreground/70"
                     }`}
+                    aria-label={repeatMode === 'off' ? "Enable repeat" : repeatMode === 'all' ? "Repeat one" : "Disable repeat"}
                   >
                     {repeatMode === 'one' ? <Repeat1 className="w-5 h-5" /> : <Repeat className="w-5 h-5" />}
                   </button>
