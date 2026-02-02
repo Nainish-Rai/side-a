@@ -6,6 +6,7 @@ import dynamic from "next/dynamic";
 import { Music2, Search, TrendingUp } from "lucide-react";
 import { MobileNav } from "@/components/mobile/MobileNav";
 import { MiniPlayer } from "@/components/mobile/MiniPlayer";
+import { InstallPrompt } from "@/components/mobile/InstallPrompt";
 import { useQueue } from "@/contexts/AudioPlayerContext";
 
 // Dynamic import for desktop audio player
@@ -109,6 +110,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
       {/* Mobile Bottom Navigation */}
       <MobileNav />
+
+      {/* PWA Install Prompt */}
+      <InstallPrompt />
 
       {/* Fullscreen Player - used by both desktop and mobile */}
       <FullscreenPlayer
