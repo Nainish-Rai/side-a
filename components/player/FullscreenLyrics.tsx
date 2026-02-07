@@ -79,7 +79,7 @@ export function FullscreenLyrics({
        priority
       />
       {/* Gradient overlay: adapts to light/dark mode */}
-      <div className="absolute inset-0 bg-gradient-to-tl from-background via-background to-background/30" />
+      <div className="absolute inset-0 bg-gradient-to-t from-background via-background to-background/30" />
      </div>
     )}
    </div>
