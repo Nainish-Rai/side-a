@@ -58,35 +58,30 @@ export function HomeContent() {
      />
     )}
 
-    {/* Desktop Header - Brutalist Minimal */}
-    <header className="sticky top-0 z-30 bg-background border-b border-foreground/10 transition-colors duration-300 hidden lg:block">
+    {/* Desktop Header */}
+    <header className="sticky top-0 z-30 bg-background border-b border-foreground/10 hidden lg:block">
      <div className="max-w-6xl mx-auto px-6 py-4">
-      {/* Logo + Search Bar + Theme Toggle in single flexbox */}
-      <div className="flex items-center gap-4 md:gap-8">
-       <div className="flex-shrink-0 flex pt-3 gap-3">
-        {/* VHS Cassette Logo */}
-        <div className="flex flex-col mt-1 gap-[2px]">
+      <div className="flex items-center gap-8">
+       <div className="flex-shrink-0 flex items-center gap-3">
+        <div className="flex flex-col gap-[2px]">
          <div className="w-3 h-[2px] bg-[#FF9FCF]" />
          <div className="w-3 h-[2px] bg-[#9AC0FF]" />
          <div className="w-3 h-[2px] bg-[#7FEDD0]" />
         </div>
-
         <div>
-         <h1 className="text-base font-medium uppercase tracking-widest text-foreground leading-tight">
+         <h1 className="text-base font-mono uppercase tracking-widest text-foreground leading-tight">
           SIDE A
          </h1>
-         <p className="text-[9px] uppercase tracking-widest text-foreground/40">
+         <p className="text-[9px] font-mono uppercase tracking-widest text-foreground/40">
           HI-FI SEARCH
          </p>
         </div>
        </div>
 
-       {/* Search Bar */}
        <div className="flex-1">
         <SearchBar onSearch={handleSearchWithTracking} isLoading={isLoading} />
        </div>
 
-       {/* Theme Toggle */}
        <div className="flex-shrink-0">
         <ThemeToggle />
        </div>

@@ -2,8 +2,10 @@
 
 import { useAudioPlayer, useQueue } from "@/contexts/AudioPlayerContext";
 import { getTrackTitle, getTrackArtists, formatTime } from "@/lib/api/utils";
-import { X, Music, GripVertical } from "lucide-react";
-import { useMemo, useCallback } from "react";
+import { X, Music2, GripVertical } from "lucide-react";
+import { useMemo, useCallback, useEffect } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import type { Track } from "@/lib/api/types";
 import {
@@ -29,7 +31,6 @@ interface QueueProps {
   onClose: () => void;
 }
 
-// Sortable item component
 interface SortableQueueItemProps {
   id: string;
   track: Track;
@@ -39,7 +40,14 @@ interface SortableQueueItemProps {
   onRemove: () => void;
 }
 
-function SortableQueueItem({ id, track, index, isCurrent, onPlay, onRemove }: SortableQueueItemProps) {
+function SortableQueueItem({
+  id,
+  track,
+  index,
+  isCurrent,
+  onPlay,
+  onRemove,
+}: SortableQueueItemProps) {
   const {
     attributes,
     listeners,
@@ -54,109 +62,90 @@ function SortableQueueItem({ id, track, index, isCurrent, onPlay, onRemove }: So
     transition,
   };
 
-  const getCoverUrl = () => {
+  const coverUrl = useMemo(() => {
     const coverId = track?.album?.cover || track?.album?.id;
     if (!coverId) return null;
     const formattedId = String(coverId).replace(/-/g, "/");
     return `https://resources.tidal.com/images/${formattedId}/160x160.jpg`;
-  };
-
-  const coverUrl = getCoverUrl();
+  }, [track?.album?.cover, track?.album?.id]);
 
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className={`group relative p-3 bg-background border transition-all duration-150 ${
+      className={`group flex items-center gap-3 p-3 border-b border-foreground/10 bg-background ${
         isCurrent
-          ? "border-foreground border-2"
-          : "border-foreground/20 hover:border-foreground/40 hover:bg-foreground/5"
+          ? "border-l-[3px] border-l-foreground pl-[9px] bg-foreground/[0.03]"
+          : "hover:bg-foreground/[0.02] border-l-[3px] border-l-transparent"
       } ${isDragging ? "opacity-50 z-50" : ""}`}
     >
-      <div className="flex items-center gap-3">
-        {/* Drag Handle */}
-        <button
-          {...attributes}
-          {...listeners}
-          className="touch-none p-1 text-foreground/30 hover:text-foreground/60 cursor-grab active:cursor-grabbing flex-shrink-0"
-        >
-          <GripVertical className="w-4 h-4" />
-        </button>
+      <button
+        {...attributes}
+        {...listeners}
+        className="touch-none p-1 text-foreground/30 hover:text-foreground/60 cursor-grab active:cursor-grabbing"
+      >
+        <GripVertical className="w-4 h-4" />
+      </button>
 
-        {/* Track Number / Playing Indicator */}
-        <div className="flex-shrink-0 w-6 text-xs font-mono text-foreground/40">
-          {isCurrent ? (
-            <div className="w-3 h-3 bg-foreground animate-pulse" />
-          ) : (
-            <span>{index + 1}</span>
-          )}
-        </div>
-
-        {/* Cover Art */}
-        {coverUrl && (
-          <div
-            onClick={onPlay}
-            className="relative w-10 h-10 flex-shrink-0 overflow-hidden bg-foreground/5 cursor-pointer"
-          >
-            <Image
-              src={coverUrl}
-              alt=""
-              fill
-              sizes="40px"
-              quality={75}
-              className="object-cover"
-              loading="lazy"
-            />
-          </div>
-        )}
-
-        {/* Track Info */}
-        <div className="flex-1 min-w-0 cursor-pointer" onClick={onPlay}>
-          <div
-            className={`text-sm font-mono truncate ${
-              isCurrent ? "text-foreground font-bold" : "text-foreground"
-            }`}
-          >
-            {getTrackTitle(track)}
-          </div>
-          <div className="text-xs text-foreground/60 truncate font-mono mt-0.5">
-            {getTrackArtists(track)}
-          </div>
-        </div>
-
-        {/* Duration */}
-        <div className="text-[11px] font-mono text-foreground/40 tabular-nums flex-shrink-0">
-          {formatTime(track.duration || 0)}
-        </div>
-
-        {/* Remove Button */}
-        {!isCurrent && (
-          <button
-            onClick={onRemove}
-            className="flex-shrink-0 w-6 h-6 flex items-center justify-center
-                       opacity-0 group-hover:opacity-100 hover:bg-foreground/10
-                       transition-all duration-150"
-            aria-label="Remove from queue"
-          >
-            <X className="w-4 h-4 text-foreground/50 hover:text-foreground" />
-          </button>
+      <div
+        onClick={onPlay}
+        className="relative w-10 h-10 shrink-0 bg-foreground/5 border border-foreground/10 overflow-hidden cursor-pointer"
+      >
+        {coverUrl ? (
+          <Image
+            src={coverUrl}
+            alt=""
+            fill
+            sizes="40px"
+            quality={75}
+            className="object-cover"
+            loading="lazy"
+          />
+        ) : (
+          <Music2 className="w-4 h-4 text-foreground/20 m-auto" />
         )}
       </div>
+
+      <div className="flex-1 min-w-0 cursor-pointer" onClick={onPlay}>
+        <div
+          className={`text-sm font-medium truncate ${
+            isCurrent ? "text-foreground" : "text-foreground/90"
+          }`}
+        >
+          {getTrackTitle(track)}
+        </div>
+        <div className="text-xs text-foreground/50 truncate">
+          {getTrackArtists(track)}
+        </div>
+      </div>
+
+      <div className="text-[11px] font-mono text-foreground/40 tabular-nums">
+        {formatTime(track.duration || 0)}
+      </div>
+
+      {!isCurrent && (
+        <button
+          onClick={onRemove}
+          className="flex-shrink-0 w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+          aria-label="Remove from queue"
+        >
+          <X className="w-3.5 h-3.5 text-foreground/40 hover:text-foreground" />
+        </button>
+      )}
     </div>
   );
 }
 
 export function Queue({ isOpen, onClose }: QueueProps) {
   const { queue, currentQueueIndex } = useQueue();
-  const { removeFromQueue, clearQueue, reorderQueue, setQueue } = useAudioPlayer();
+  const { removeFromQueue, clearQueue, reorderQueue, setQueue } =
+    useAudioPlayer();
 
-  // Create unique IDs for sortable items (track.id + index to handle duplicates)
-  const sortableIds = useMemo(() =>
-    queue.map((track, index) => `${track.id}-${index}`),
-    [queue]
+  const sortableIds = useMemo(
+    () => queue.map((track, index) => `${track.id}-${index}`),
+    [queue],
   );
 
-  // DnD sensors
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -165,101 +154,150 @@ export function Queue({ isOpen, onClose }: QueueProps) {
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
 
-  // Handle drag end
-  const handleDragEnd = useCallback((event: DragEndEvent) => {
-    const { active, over } = event;
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
 
-    if (over && active.id !== over.id) {
-      const oldIndex = sortableIds.indexOf(active.id as string);
-      const newIndex = sortableIds.indexOf(over.id as string);
+      if (over && active.id !== over.id) {
+        const oldIndex = sortableIds.indexOf(active.id as string);
+        const newIndex = sortableIds.indexOf(over.id as string);
 
-      if (oldIndex !== -1 && newIndex !== -1) {
-        const newQueue = arrayMove([...queue], oldIndex, newIndex);
+        if (oldIndex !== -1 && newIndex !== -1) {
+          const newQueue = arrayMove([...queue], oldIndex, newIndex);
 
-        // Calculate new current index
-        let newCurrentIndex = currentQueueIndex;
-        if (oldIndex === currentQueueIndex) {
-          newCurrentIndex = newIndex;
-        } else if (oldIndex < currentQueueIndex && newIndex >= currentQueueIndex) {
-          newCurrentIndex = currentQueueIndex - 1;
-        } else if (oldIndex > currentQueueIndex && newIndex <= currentQueueIndex) {
-          newCurrentIndex = currentQueueIndex + 1;
+          let newCurrentIndex = currentQueueIndex;
+          if (oldIndex === currentQueueIndex) {
+            newCurrentIndex = newIndex;
+          } else if (
+            oldIndex < currentQueueIndex &&
+            newIndex >= currentQueueIndex
+          ) {
+            newCurrentIndex = currentQueueIndex - 1;
+          } else if (
+            oldIndex > currentQueueIndex &&
+            newIndex <= currentQueueIndex
+          ) {
+            newCurrentIndex = currentQueueIndex + 1;
+          }
+
+          reorderQueue(newQueue, newCurrentIndex);
         }
-
-        // Use reorderQueue to avoid interrupting playback
-        reorderQueue(newQueue, newCurrentIndex);
       }
+    },
+    [queue, sortableIds, currentQueueIndex, reorderQueue],
+  );
+
+  // Lock body scroll when open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
     }
-  }, [queue, sortableIds, currentQueueIndex, reorderQueue]);
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
 
-  if (!isOpen) return null;
+  const upNextCount = queue.length - currentQueueIndex - 1;
 
-  return (
-    <div className="fixed inset-0 bg-foreground/50 z-50 flex items-end justify-end">
-      <div
-        className="absolute inset-0"
-        onClick={onClose}
-        aria-label="Close queue"
-      />
+  const content = (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[90] bg-black/50"
+            onClick={onClose}
+          />
 
-      <div className="relative bg-background border-l border-foreground w-full max-w-md h-full md:h-[600px] shadow-2xl animate-slide-in">
-        {/* Header */}
-        <div className="border-b border-foreground p-4 bg-background">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-mono font-bold text-foreground tracking-tight">
-                QUEUE
-              </h2>
-              <p className="text-xs font-mono text-foreground/50 mt-1">
-                {queue.length} {queue.length === 1 ? "track" : "tracks"} · Drag to reorder
-              </p>
+          {/* Panel */}
+          <motion.div
+            initial={{ x: "100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "100%" }}
+            transition={{ type: "spring", damping: 30, stiffness: 300 }}
+            className="fixed right-0 top-0 bottom-0 z-[91] w-full max-w-md bg-background border-l border-foreground/10 flex flex-col"
+          >
+            {/* Header */}
+            <div className="border-b border-foreground/10 px-6 py-4 flex-shrink-0">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-[10px] font-mono uppercase tracking-widest text-foreground/40">
+                    Queue
+                  </div>
+                  <div className="text-xs font-mono text-foreground/50 mt-1">
+                    {queue.length}{" "}
+                    {queue.length === 1 ? "track" : "tracks"}
+                    {upNextCount > 0 && (
+                      <span className="text-foreground/30">
+                        {" "}
+                        · {upNextCount} up next
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {queue.length > 0 && (
+                    <button
+                      onClick={clearQueue}
+                      className="px-3 py-1.5 text-[10px] font-mono uppercase tracking-widest border border-foreground/20 text-foreground/60 hover:text-foreground hover:border-foreground transition-colors duration-200"
+                    >
+                      Clear
+                    </button>
+                  )}
+                  <button
+                    onClick={onClose}
+                    className="w-8 h-8 flex items-center justify-center text-foreground/50 hover:text-foreground transition-colors duration-200"
+                    aria-label="Close"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
             </div>
-            <button
-              onClick={onClose}
-              className="w-8 h-8 flex items-center justify-center hover:bg-foreground/5
-                         transition-colors duration-150"
-              aria-label="Close"
-            >
-              <X className="w-5 h-5 text-foreground" />
-            </button>
-          </div>
 
-          {queue.length > 0 && (
-            <button
-              onClick={clearQueue}
-              className="mt-3 px-4 py-1.5 text-xs font-mono tracking-wide
-                         bg-foreground text-background hover:opacity-80
-                         transition-opacity duration-200"
-            >
-              CLEAR QUEUE
-            </button>
-          )}
-        </div>
+            {/* Reorder hint */}
+            {queue.length > 1 && (
+              <div className="px-6 py-2 border-b border-foreground/10 flex-shrink-0">
+                <span className="text-[9px] font-mono uppercase tracking-widest text-foreground/30">
+                  Drag to reorder
+                </span>
+              </div>
+            )}
 
-        {/* Queue List */}
-        <div className="overflow-y-auto h-[calc(100%-120px)]">
-          {queue.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-              <Music className="w-12 h-12 text-foreground/20 mb-3" />
-              <p className="text-sm font-mono text-foreground/50">
-                Queue is empty
-              </p>
-              <p className="text-xs font-mono text-foreground/40 mt-1">
-                Add tracks to start playing
-              </p>
-            </div>
-          ) : (
-            <div className="p-4">
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={handleDragEnd}
-              >
-                <SortableContext items={sortableIds} strategy={verticalListSortingStrategy}>
-                  <div className="space-y-2">
+            {/* Queue List */}
+            <div className="flex-1 overflow-y-auto">
+              {queue.length === 0 ? (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center border border-foreground/10 px-12 py-16">
+                    <Music2 className="w-10 h-10 text-foreground/20 mx-auto mb-6" />
+                    <h3 className="text-sm font-mono uppercase tracking-widest text-foreground/90 mb-2">
+                      No Tracks
+                    </h3>
+                    <p className="text-[11px] font-mono uppercase tracking-wider text-foreground/40">
+                      Add tracks to start playing
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
+                >
+                  <SortableContext
+                    items={sortableIds}
+                    strategy={verticalListSortingStrategy}
+                  >
                     {queue.map((track, index) => (
                       <SortableQueueItem
                         key={sortableIds[index]}
@@ -267,17 +305,24 @@ export function Queue({ isOpen, onClose }: QueueProps) {
                         track={track}
                         index={index}
                         isCurrent={index === currentQueueIndex}
-                        onPlay={() => index !== currentQueueIndex && setQueue(queue, index)}
+                        onPlay={() =>
+                          index !== currentQueueIndex &&
+                          setQueue(queue, index)
+                        }
                         onRemove={() => removeFromQueue(index)}
                       />
                     ))}
-                  </div>
-                </SortableContext>
-              </DndContext>
+                  </SortableContext>
+                </DndContext>
+              )}
             </div>
-          )}
-        </div>
-      </div>
-    </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
   );
+
+  return typeof window !== "undefined"
+    ? createPortal(content, document.body)
+    : null;
 }
