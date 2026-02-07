@@ -96,14 +96,14 @@ export function SearchResults({
  // Check if mobile (< 1024px)
  const isMobile = windowDimensions.width > 0 && windowDimensions.width < 1024;
 
- // Infinite scroll observer
- const observerTarget = React.useRef<HTMLDivElement>(null);
+ // DISABLED: Infinite scroll observer
+ // const observerTarget = React.useRef<HTMLDivElement>(null);
 
- // Use ref to avoid recreating observer when onLoadMore changes
- const onLoadMoreRef = React.useRef(onLoadMore);
- React.useEffect(() => {
-  onLoadMoreRef.current = onLoadMore;
- }, [onLoadMore]);
+ // // Use ref to avoid recreating observer when onLoadMore changes
+ // const onLoadMoreRef = React.useRef(onLoadMore);
+ // React.useEffect(() => {
+ //  onLoadMoreRef.current = onLoadMore;
+ // }, [onLoadMore]);
 
  // Track window dimensions for virtual scrolling with debounce
  React.useEffect(() => {
@@ -129,34 +129,35 @@ export function SearchResults({
   };
  }, []);
 
- React.useEffect(() => {
-  const observer = new IntersectionObserver(
-   (entries) => {
-    if (
-     entries[0].isIntersecting &&
-     hasNextPage &&
-     !isFetchingMore &&
-     onLoadMoreRef.current
-    ) {
-     onLoadMoreRef.current();
-    }
-   },
-   { threshold: 0.1, rootMargin: "100px" },
-  );
+ // DISABLED: Infinite scroll IntersectionObserver
+ // React.useEffect(() => {
+ //  const observer = new IntersectionObserver(
+ //   (entries) => {
+ //    if (
+ //     entries[0].isIntersecting &&
+ //     hasNextPage &&
+ //     !isFetchingMore &&
+ //     onLoadMoreRef.current
+ //    ) {
+ //     onLoadMoreRef.current();
+ //    }
+ //   },
+ //   { threshold: 0.1, rootMargin: "100px" },
+ //  );
 
-  const currentTarget = observerTarget.current;
-  if (currentTarget) {
-   observer.observe(currentTarget);
-  }
+ //  const currentTarget = observerTarget.current;
+ //  if (currentTarget) {
+ //   observer.observe(currentTarget);
+ //  }
 
-  return () => {
-   if (currentTarget) {
-    observer.unobserve(currentTarget);
-   }
-  };
- }, [hasNextPage, isFetchingMore]); // Removed onLoadMore from deps
+ //  return () => {
+ //   if (currentTarget) {
+ //    observer.unobserve(currentTarget);
+ //   }
+ //  };
+ // }, [hasNextPage, isFetchingMore]); // Removed onLoadMore from deps
 
- // Filter tabs to only show those with results
+ // Define all available tabs
  const allTabs: { id: SearchContentType; label: string; icon: any }[] = [
   { id: "tracks", label: "Songs", icon: Music2 },
   { id: "albums", label: "Albums", icon: Disc },
@@ -164,21 +165,10 @@ export function SearchResults({
   { id: "playlists", label: "Playlists", icon: ListMusic },
  ];
 
- const tabs = allTabs.filter((tab) => {
-  if (tab.id === "tracks") return tracks && tracks.length > 0;
-  if (tab.id === "albums") return albums && albums.length > 0;
-  if (tab.id === "artists") return artists && artists.length > 0;
-  if (tab.id === "playlists") return playlists && playlists.length > 0;
-  return false;
- });
+ // Show all implemented tabs (lazy load content when tab is clicked)
+ // Filter out playlists until backend support is added
+ const tabs = allTabs.filter((tab) => tab.id !== "playlists");
 
- // Auto-switch to first available tab if current tab has no results
- React.useEffect(() => {
-  const currentTabHasResults = tabs.some((tab) => tab.id === contentType);
-  if (!currentTabHasResults && tabs.length > 0 && onTabChange) {
-   onTabChange(tabs[0].id);
-  }
- }, [tabs, contentType, onTabChange]);
 
  const handleTrackClick = async (track: Track, index: number) => {
   if (loadingTrackId === track.id) return;
@@ -400,8 +390,8 @@ export function SearchResults({
     )}
    </motion.div>
 
-   {/* Infinite Scroll Loading Indicator */}
-   {isFetchingMore && (
+   {/* DISABLED: Infinite Scroll Loading Indicator */}
+   {/* {isFetchingMore && (
     <motion.div
      initial={{ opacity: 0 }}
      animate={{ opacity: 1 }}
@@ -412,10 +402,10 @@ export function SearchResults({
       <span className="text-sm font-medium">Loading more...</span>
      </div>
     </motion.div>
-   )}
+   )} */}
 
-   {/* Intersection Observer Target */}
-   <div ref={observerTarget} className="h-4" />
+   {/* DISABLED: Intersection Observer Target */}
+   {/* <div ref={observerTarget} className="h-4" /> */}
   </div>
  );
 }

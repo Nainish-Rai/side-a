@@ -4,7 +4,6 @@ import { ReactNode, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { Music2, Search, TrendingUp } from "lucide-react";
-import { MobileNav } from "@/components/mobile/MobileNav";
 import { MiniPlayer } from "@/components/mobile/MiniPlayer";
 import { InstallPrompt } from "@/components/mobile/InstallPrompt";
 import { useQueue } from "@/contexts/AudioPlayerContext";
@@ -83,13 +82,13 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
       {/* Main Content */}
       {/* Desktop: margin for sidebar + padding for audio player */}
-      {/* Mobile: padding for mini player + bottom nav */}
+      {/* Mobile: padding for mini player */}
       <main
         className="min-h-screen lg:ml-64"
         style={{
           paddingBottom: currentTrack
-            ? "calc(64px + 56px + env(safe-area-inset-bottom))" // Mini player + nav + safe area
-            : "calc(56px + env(safe-area-inset-bottom))", // Nav + safe area only
+            ? "calc(64px + env(safe-area-inset-bottom))" // Mini player + safe area
+            : "env(safe-area-inset-bottom)", // Safe area only
         }}
       >
         <div className="lg:pb-24">{children}</div>
@@ -100,16 +99,13 @@ export default function AppLayout({ children }: AppLayoutProps) {
         <AudioPlayer />
       </div>
 
-      {/* Mobile Mini Player - positioned above bottom nav */}
+      {/* Mobile Mini Player - positioned at bottom */}
       <div
         className="fixed left-0 right-0 z-40 lg:hidden"
-        style={{ bottom: "calc(56px + env(safe-area-inset-bottom))" }}
+        style={{ bottom: "env(safe-area-inset-bottom)" }}
       >
         <MiniPlayer onExpand={handleExpandPlayer} />
       </div>
-
-      {/* Mobile Bottom Navigation */}
-      <MobileNav />
 
       {/* PWA Install Prompt */}
       <InstallPrompt />

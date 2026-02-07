@@ -2,7 +2,7 @@
 
 import { usePlaybackState, useQueue, useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { getTrackTitle, getTrackArtists } from "@/lib/api/utils";
-import { Play, Pause, SkipForward } from "lucide-react";
+import { Play, Pause, SkipForward, SkipBack, Volume2, Repeat, Maximize2 } from "lucide-react";
 import { motion, PanInfo, useAnimation } from "motion/react";
 import Image from "next/image";
 import { useCallback, useMemo } from "react";
@@ -16,13 +16,19 @@ const SWIPE_UP_THRESHOLD = -50; // Negative because up is negative Y
 export function MiniPlayer({ onExpand }: MiniPlayerProps) {
   const { isPlaying, currentTime, duration } = usePlaybackState();
   const { currentTrack } = useQueue();
-  const { togglePlayPause, playNext } = useAudioPlayer();
+  const { togglePlayPause, playNext, playPrevious } = useAudioPlayer();
   const controls = useAnimation();
 
   const progress = useMemo(() => {
     if (duration === 0) return 0;
     return (currentTime / duration) * 100;
   }, [currentTime, duration]);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   const getCoverUrl = useCallback(() => {
     const coverId = currentTrack?.album?.cover || currentTrack?.album?.id;
@@ -45,6 +51,14 @@ export function MiniPlayer({ onExpand }: MiniPlayerProps) {
       playNext();
     },
     [playNext]
+  );
+
+  const handleSkipPrevious = useCallback(
+    (e: React.MouseEvent | React.TouchEvent) => {
+      e.stopPropagation();
+      playPrevious();
+    },
+    [playPrevious]
   );
 
   const handleDragEnd = useCallback(
@@ -70,90 +84,103 @@ export function MiniPlayer({ onExpand }: MiniPlayerProps) {
 
   return (
     <motion.div
-      className="bg-black border-t border-white/10 cursor-pointer lg:hidden touch-pan-x"
-      onClick={onExpand}
-      role="button"
-      tabIndex={0}
-      aria-label="Expand player"
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          onExpand();
-        }
-      }}
+      className="bg-background border-t border-foreground/10 lg:hidden relative"
       drag="y"
       dragConstraints={{ top: 0, bottom: 0 }}
       dragElastic={{ top: 0.5, bottom: 0 }}
       onDragEnd={handleDragEnd}
       animate={controls}
     >
-      {/* Progress bar */}
-      <div className="h-[2px] bg-white/10 w-full">
-        <div
-          className="h-full bg-white transition-[width] duration-200"
-          style={{ width: `${progress}%` }}
-        />
-      </div>
-
-      {/* Player content */}
-      <div className="flex items-center gap-3 px-4 py-3">
+      {/* Single row layout matching screenshot */}
+      <div className="flex items-center gap-2 px-2 py-2">
         {/* Cover art */}
         {coverUrl ? (
-          <div className="relative w-10 h-10 flex-shrink-0 bg-white/5 border border-white/10 overflow-hidden">
+          <button
+            onClick={onExpand}
+            className="relative w-12 h-12 flex-shrink-0 bg-foreground/5 overflow-hidden"
+          >
             <Image
               src={coverUrl}
               alt={getTrackTitle(currentTrack)}
               fill
-              sizes="40px"
+              sizes="48px"
               className="object-cover"
             />
-          </div>
+          </button>
         ) : (
-          <div className="w-10 h-10 flex-shrink-0 bg-white/5 border border-white/10" />
+          <button
+            onClick={onExpand}
+            className="w-12 h-12 flex-shrink-0 bg-foreground/5"
+          />
         )}
 
-        {/* Track info */}
-        <div className="flex-1 min-w-0">
-          <div className="text-sm font-medium text-white/90 truncate">
-            {getTrackTitle(currentTrack)}
-          </div>
-          <div className="text-xs text-white/50 truncate">
-            {getTrackArtists(currentTrack)}
-          </div>
+        {/* Volume */}
+        <button
+          onClick={(e) => e.stopPropagation()}
+          className="w-8 h-8 flex items-center justify-center text-foreground/40"
+          aria-label="Volume"
+        >
+          <Volume2 className="w-4 h-4" />
+        </button>
+
+        {/* Previous */}
+        <button
+          onClick={handleSkipPrevious}
+          onTouchEnd={(e) => e.stopPropagation()}
+          className="w-8 h-8 flex items-center justify-center text-foreground/60"
+          aria-label="Previous track"
+        >
+          <SkipBack className="w-4 h-4 fill-current" />
+        </button>
+
+        {/* Play/Pause - larger */}
+        <button
+          onClick={handlePlayPause}
+          onTouchEnd={(e) => e.stopPropagation()}
+          className="w-10 h-10 flex items-center justify-center bg-foreground text-background rounded-sm"
+          aria-label={isPlaying ? "Pause" : "Play"}
+        >
+          {isPlaying ? (
+            <Pause className="w-5 h-5 fill-current" />
+          ) : (
+            <Play className="w-5 h-5 fill-current ml-0.5" />
+          )}
+        </button>
+
+        {/* Next */}
+        <button
+          onClick={handleSkipNext}
+          onTouchEnd={(e) => e.stopPropagation()}
+          className="w-8 h-8 flex items-center justify-center text-foreground/60"
+          aria-label="Next track"
+        >
+          <SkipForward className="w-4 h-4 fill-current" />
+        </button>
+
+        {/* Repeat */}
+        <button
+          onClick={(e) => e.stopPropagation()}
+          className="w-8 h-8 flex items-center justify-center text-foreground/40"
+          aria-label="Repeat"
+        >
+          <Repeat className="w-4 h-4" />
+        </button>
+
+        {/* Time display */}
+        <div className="flex items-center gap-1 text-[10px] text-foreground/50 font-mono ml-auto">
+          <span>{formatTime(currentTime)}</span>
+          <span>/</span>
+          <span>{formatTime(duration)}</span>
         </div>
 
-        {/* Controls - 44px minimum touch targets */}
-        <div className="flex items-center gap-0">
-          <button
-            onClick={handlePlayPause}
-            onTouchEnd={(e) => {
-              e.stopPropagation();
-            }}
-            className="w-12 h-12 flex items-center justify-center text-white active:bg-white/10 transition-colors"
-            aria-label={isPlaying ? "Pause" : "Play"}
-          >
-            {isPlaying ? (
-              <Pause className="w-6 h-6 fill-current" />
-            ) : (
-              <Play className="w-6 h-6 fill-current ml-0.5" />
-            )}
-          </button>
-
-          <button
-            onClick={handleSkipNext}
-            onTouchEnd={(e) => {
-              e.stopPropagation();
-            }}
-            className="w-12 h-12 flex items-center justify-center text-white/60 active:bg-white/10 transition-colors"
-            aria-label="Next track"
-          >
-            <SkipForward className="w-5 h-5 fill-current" />
-          </button>
-        </div>
-      </div>
-
-      {/* Swipe indicator */}
-      <div className="flex justify-center pb-1">
-        <div className="w-8 h-1 bg-white/20 rounded-full" />
+        {/* Expand */}
+        <button
+          onClick={onExpand}
+          className="w-8 h-8 flex items-center justify-center text-foreground/40"
+          aria-label="Expand player"
+        >
+          <Maximize2 className="w-4 h-4" />
+        </button>
       </div>
     </motion.div>
   );

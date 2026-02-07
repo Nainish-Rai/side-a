@@ -59,7 +59,7 @@ export function MobileSearchHeader({
   }, [isExpanded, handleCollapse]);
 
   return (
-    <header className="sticky top-0 z-30 bg-black border-b border-white/10 lg:hidden">
+    <header className="sticky top-0 z-30 bg-background border-b border-foreground/10 lg:hidden">
       <div className="px-4 py-3">
         <AnimatePresence mode="wait">
           {isExpanded ? (
@@ -76,7 +76,7 @@ export function MobileSearchHeader({
               <button
                 type="button"
                 onClick={handleCollapse}
-                className="w-10 h-10 flex items-center justify-center text-white/70 active:bg-white/10 -ml-2"
+                className="w-10 h-10 flex items-center justify-center text-foreground/70 active:bg-foreground/10 -ml-2"
                 aria-label="Close search"
               >
                 <ArrowLeft className="w-5 h-5" />
@@ -97,8 +97,8 @@ export function MobileSearchHeader({
                   spellCheck={false}
                   enterKeyHint="search"
                   className="w-full py-2 text-base font-mono uppercase tracking-wider
-                           bg-transparent border-b-2 border-white
-                           text-white placeholder-white/30
+                           bg-transparent border-b-2 border-foreground
+                           text-foreground placeholder-foreground/30
                            focus:outline-none
                            disabled:opacity-50"
                 />
@@ -108,7 +108,7 @@ export function MobileSearchHeader({
                   <button
                     type="button"
                     onClick={handleClear}
-                    className="absolute right-0 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center text-white/40"
+                    className="absolute right-0 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center text-foreground/40"
                     aria-label="Clear search"
                   >
                     <X className="w-5 h-5" />
@@ -135,10 +135,10 @@ export function MobileSearchHeader({
                 </div>
 
                 <div>
-                  <h1 className="text-sm font-medium uppercase tracking-widest text-white leading-tight">
+                  <h1 className="text-sm font-medium uppercase tracking-widest text-foreground leading-tight">
                     SIDE A
                   </h1>
-                  <p className="text-[8px] uppercase tracking-widest text-white/40">
+                  <p className="text-[8px] uppercase tracking-widest text-foreground/40">
                     HI-FI SEARCH
                   </p>
                 </div>
@@ -147,7 +147,7 @@ export function MobileSearchHeader({
               {/* Search button */}
               <button
                 onClick={handleExpand}
-                className="w-10 h-10 flex items-center justify-center text-white/60 active:bg-white/10"
+                className="w-10 h-10 flex items-center justify-center text-foreground/60 active:bg-foreground/10"
                 aria-label="Open search"
               >
                 <Search className="w-5 h-5" />
@@ -158,9 +158,9 @@ export function MobileSearchHeader({
 
         {/* Loading indicator */}
         {isLoading && (
-          <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-white/10 overflow-hidden">
+          <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-foreground/10 overflow-hidden">
             <motion.div
-              className="h-full bg-white w-1/3"
+              className="h-full bg-foreground w-1/3"
               animate={{ x: ["-100%", "400%"] }}
               transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
             />

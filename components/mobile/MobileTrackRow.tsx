@@ -135,16 +135,16 @@ function MobileTrackRow({
         className={`
           relative flex items-center gap-3
           px-4 py-3
-          border-b border-white/10
+          border-b border-foreground/10
           cursor-pointer
           transition-colors duration-150
-          active:bg-white/5
-          ${isCurrentTrack ? "border-l-[3px] border-l-white pl-[13px] bg-white/[0.02]" : ""}
+          active:bg-foreground/5
+          ${isCurrentTrack ? "border-l-[3px] border-l-foreground pl-[13px] bg-foreground/[0.02]" : ""}
           ${isLoading ? "opacity-50 pointer-events-none" : ""}
         `}
       >
         {/* Cover Art - 48px for better touch */}
-        <div className="relative w-12 h-12 flex-shrink-0 bg-white/5 border border-white/10 overflow-hidden">
+        <div className="relative w-12 h-12 flex-shrink-0 bg-foreground/5 border border-foreground/10 overflow-hidden">
           {coverUrl ? (
             <Image
               src={coverUrl}
@@ -155,7 +155,7 @@ function MobileTrackRow({
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
-              <Disc className="w-5 h-5 text-white/20" />
+              <Disc className="w-5 h-5 text-foreground/20" />
             </div>
           )}
 
@@ -185,20 +185,20 @@ function MobileTrackRow({
           <div className="flex items-center gap-2 mb-0.5">
             <h3
               className={`font-medium text-[15px] truncate ${
-                isCurrentTrack ? "text-white" : "text-white/90"
+                isCurrentTrack ? "text-foreground" : "text-foreground/90"
               }`}
             >
               {getTrackTitle(track)}
             </h3>
             {track.explicit && (
-              <span className="flex-shrink-0 text-[8px] font-bold px-1 py-0.5 border border-white/20 text-white/50 font-mono">
+              <span className="flex-shrink-0 text-[8px] font-bold px-1 py-0.5 border border-foreground/20 text-foreground/50 font-mono">
                 E
               </span>
             )}
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-[13px] text-white/50 truncate">
+            <span className="text-[13px] text-foreground/50 truncate">
               {displayArtist}
             </span>
           </div>
@@ -206,21 +206,21 @@ function MobileTrackRow({
           {/* Quality badges + Duration row */}
           <div className="flex items-center gap-2 mt-1">
             {hasDolbyAtmos && (
-              <span className="text-[8px] font-bold font-mono px-1 py-0.5 border border-white/20 text-white/50 uppercase">
+              <span className="text-[8px] font-bold font-mono px-1 py-0.5 border border-foreground/20 text-foreground/50 uppercase">
                 ATMOS
               </span>
             )}
             {hasHiRes && (
-              <span className="text-[8px] font-bold font-mono px-1 py-0.5 border border-white/20 text-white/50 uppercase">
+              <span className="text-[8px] font-bold font-mono px-1 py-0.5 border border-foreground/20 text-foreground/50 uppercase">
                 HI-RES
               </span>
             )}
             {track.audioQuality && !hasHiRes && (
-              <span className="text-[8px] font-bold font-mono px-1 py-0.5 border border-white/20 text-white/50 uppercase">
+              <span className="text-[8px] font-bold font-mono px-1 py-0.5 border border-foreground/20 text-foreground/50 uppercase">
                 {track.audioQuality}
               </span>
             )}
-            <span className="text-[11px] font-mono text-white/40 tabular-nums ml-auto">
+            <span className="text-[11px] font-mono text-foreground/40 tabular-nums ml-auto">
               {formatTime(track.duration)}
             </span>
           </div>
@@ -232,7 +232,7 @@ function MobileTrackRow({
             e.stopPropagation();
             setShowContextMenu(true);
           }}
-          className="w-10 h-10 flex items-center justify-center text-white/40 active:bg-white/10 -mr-2"
+          className="w-10 h-10 flex items-center justify-center text-foreground/40 active:bg-foreground/10 -mr-2"
           aria-label="More options"
         >
           <MoreVertical className="w-5 h-5" />

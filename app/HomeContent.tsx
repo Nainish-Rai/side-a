@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { SearchBar } from "@/components/search/SearchBar";
 import { SearchResults } from "@/components/search/SearchResults";
-import { AudioPlayer } from "@/components/player/AudioPlayer";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { MobileSearchHeader } from "@/components/mobile/MobileSearchHeader";
 import { useSearch } from "@/hooks/useSearch";
@@ -48,9 +47,9 @@ export function HomeContent() {
   tracks.length > 0 || albums.length > 0 || artists.length > 0;
 
  return (
-  <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
-   {/* Main Content */}
-   <main className="min-h-screen pb-32">
+  <>
+   {/* Search Content */}
+   <div className="min-h-screen">
     {/* Mobile Header */}
     {isMobile && (
      <MobileSearchHeader
@@ -149,10 +148,7 @@ export function HomeContent() {
       )}
      </AnimatePresence>
     </div>
-   </main>
-
-   {/* Fixed Audio Player */}
-   <AudioPlayer />
-  </div>
+   </div>
+  </>
  );
 }
