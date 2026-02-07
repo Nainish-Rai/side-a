@@ -16,7 +16,7 @@ const SWIPE_UP_THRESHOLD = -50; // Negative because up is negative Y
 export function MiniPlayer({ onExpand }: MiniPlayerProps) {
   const { isPlaying, currentTime, duration } = usePlaybackState();
   const { currentTrack } = useQueue();
-  const { togglePlayPause, playNext, playPrevious } = useAudioPlayer();
+  const { togglePlayPause, playNext, playPrev } = useAudioPlayer();
   const controls = useAnimation();
 
   const progress = useMemo(() => {
@@ -56,9 +56,9 @@ export function MiniPlayer({ onExpand }: MiniPlayerProps) {
   const handleSkipPrevious = useCallback(
     (e: React.MouseEvent | React.TouchEvent) => {
       e.stopPropagation();
-      playPrevious();
+      playPrev();
     },
-    [playPrevious]
+    [playPrev]
   );
 
   const handleDragEnd = useCallback(
