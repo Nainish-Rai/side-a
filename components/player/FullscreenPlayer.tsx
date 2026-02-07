@@ -19,8 +19,6 @@ import {
  Repeat1,
  Music2,
  GripVertical,
- Volume2,
- VolumeX,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import Image from "next/image";
@@ -224,7 +222,7 @@ function MobileSortableQueueItem({
 }
 
 export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
- const { isPlaying, currentTime, duration, volume, isMuted } =
+ const { isPlaying, currentTime, duration } =
   usePlaybackState();
  const { currentTrack, queue, currentQueueIndex, shuffleActive, repeatMode } =
   useQueue();
@@ -233,8 +231,6 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
   playNext,
   playPrev,
   seek,
-  setVolume,
-  toggleMute,
   setQueue,
   reorderQueue,
   toggleShuffle,
@@ -244,7 +240,7 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
  const [activeTab, setActiveTab] = useState<"queue" | "lyrics">("queue");
  const [expandedTab, setExpandedTab] = useState<Tab>(null); // Mobile only
  const [autoPlay, setAutoPlay] = useState(true);
- const seekBarRef = useRef<HTMLDivElement>(null);
+
 
  const {
   lyrics,
@@ -322,8 +318,8 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
 
  const handleSeek = useCallback(
   (e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
-   if (!seekBarRef.current || duration === 0) return;
-   const rect = seekBarRef.current.getBoundingClientRect();
+   if (duration === 0) return;
+   const rect = e.currentTarget.getBoundingClientRect();
    const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
    const x = clientX - rect.left;
    const percentage = Math.max(0, Math.min(1, x / rect.width));
@@ -436,12 +432,12 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
      </div>
 
      {/* Main Content - Desktop Two Column */}
-     <div className="hidden lg:flex relative z-10 flex-1 w-full max-w-[1600px] mx-auto p-6 md:p-8 lg:px-12 gap-8 lg:gap-16 overflow-y-auto">
+     <div className="hidden lg:flex relative z-10 flex-1 w-full min-h-0 overflow-hidden">
       {/* Left: Player */}
-      <div className="flex flex-col items-center justify-center w-full lg:w-1/2 lg:sticky lg:top-0 lg:h-[calc(100vh-12rem)]">
-       <div className="flex flex-col items-center space-y-6 lg:space-y-8 w-full max-w-[400px]">
+      <div className="flex flex-col items-center justify-center w-1/2 h-full px-12">
+       <div className="flex flex-col items-center space-y-6 w-full max-w-[380px]">
         {/* Album Art */}
-        <div className="relative aspect-square w-full max-w-[280px] md:max-w-[360px] border border-foreground/10 overflow-hidden bg-foreground/5">
+        <div className="relative aspect-square w-full border border-foreground/10 overflow-hidden bg-foreground/5">
          {coverUrl ? (
           <Image
            src={coverUrl}
@@ -476,7 +472,7 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
          {/* Progress Bar */}
          <div className="space-y-2">
           <div
-           ref={seekBarRef}
+
            className="relative py-5 -my-4 cursor-pointer group"
            onClick={handleSeek}
           >
@@ -498,7 +494,7 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
          </div>
 
          {/* Controls */}
-         <div className="flex items-center justify-center gap-3 md:gap-8 pt-4">
+         <div className="flex items-center justify-center gap-8">
           <button
            onClick={toggleShuffle}
            className={`w-12 h-12 flex items-center justify-center transition-colors ${
@@ -551,55 +547,20 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
           </button>
          </div>
 
-         {/* Volume */}
-         <div className="flex items-center gap-3 pt-2 border-t border-foreground/10">
-          <div className="text-[9px] tracking-widest uppercase text-foreground/40 font-mono pt-3">
-           Volume
-          </div>
-          <div className="flex-1 flex items-center gap-3 pt-3">
-           <button
-            onClick={toggleMute}
-            className="text-foreground/40 hover:text-foreground/70 transition-colors"
-           >
-            {isMuted ? (
-             <VolumeX className="w-4 h-4" />
-            ) : (
-             <Volume2 className="w-4 h-4" />
-            )}
-           </button>
-           <input
-            type="range"
-            min="0"
-            max="100"
-            value={isMuted ? 0 : volume * 100}
-            onChange={(e) => setVolume(Number(e.target.value) / 100)}
-            className="flex-1 h-1 bg-foreground/20 appearance-none cursor-pointer
-                                 [&::-webkit-slider-thumb]:appearance-none
-                                 [&::-webkit-slider-thumb]:w-3
-                                 [&::-webkit-slider-thumb]:h-3
-                                 [&::-webkit-slider-thumb]:bg-foreground
-                                 [&::-webkit-slider-thumb]:opacity-0
-                                 [&::-webkit-slider-thumb]:hover:opacity-100"
-           />
-           <span className="text-xs font-mono tabular-nums text-foreground/40 w-8 text-right">
-            {Math.round(isMuted ? 0 : volume * 100)}
-           </span>
-          </div>
-         </div>
         </div>
        </div>
       </div>
 
       {/* Right: Queue or Lyrics */}
-      <div className="flex flex-col w-full lg:w-1/2 max-h-[calc(100vh-12rem)] overflow-hidden border-l border-foreground/10 pl-8">
+      <div className="flex flex-col w-1/2 h-full overflow-hidden border-l border-foreground/10">
        {activeTab === "queue" && (
         <DndContext
          sensors={sensors}
          collisionDetection={closestCenter}
          onDragEnd={handleDragEnd}
         >
-         <div className="h-full overflow-y-auto pr-4">
-          <div className="text-[9px] tracking-widest uppercase text-foreground/40 font-mono mb-4 sticky top-0 bg-background pt-2 pb-2 z-10 flex items-center justify-between">
+         <div className="flex-1 overflow-y-auto">
+          <div className="text-[9px] tracking-widest uppercase text-foreground/40 font-mono px-6 sticky top-0 bg-background py-4 z-10 flex items-center justify-between">
            <span>Up Next ({queue.length - currentQueueIndex - 1})</span>
            <span className="text-foreground/30">Drag to reorder</span>
           </div>
@@ -629,7 +590,7 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
          currentLineIndex={currentLineIndex}
          isLoading={lyricsLoading}
          onSeek={seek}
-         className="h-full"
+         className="h-full px-6"
         />
        )}
       </div>
@@ -681,7 +642,7 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
          {/* Progress Bar */}
          <div className="px-6 pb-2 flex-shrink-0">
           <div
-           ref={seekBarRef}
+
            className="relative h-1 bg-foreground/20 rounded-full cursor-pointer"
            onTouchStart={handleSeek}
            onTouchMove={handleSeek}

@@ -2,10 +2,10 @@
 
 import { usePlaybackState, useQueue, useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { getTrackTitle, getTrackArtists } from "@/lib/api/utils";
-import { Play, Pause, SkipForward, SkipBack, Volume2, Repeat, Maximize2 } from "lucide-react";
+import { Play, Pause, SkipForward, ChevronUp } from "lucide-react";
 import { motion, PanInfo, useAnimation } from "motion/react";
 import Image from "next/image";
-import { useCallback, useMemo } from "react";
+import { useCallback } from "react";
 
 interface MiniPlayerProps {
   onExpand: () => void;
@@ -14,21 +14,10 @@ interface MiniPlayerProps {
 const SWIPE_UP_THRESHOLD = -50; // Negative because up is negative Y
 
 export function MiniPlayer({ onExpand }: MiniPlayerProps) {
-  const { isPlaying, currentTime, duration } = usePlaybackState();
+  const { isPlaying } = usePlaybackState();
   const { currentTrack } = useQueue();
-  const { togglePlayPause, playNext, playPrev } = useAudioPlayer();
+  const { togglePlayPause, playNext } = useAudioPlayer();
   const controls = useAnimation();
-
-  const progress = useMemo(() => {
-    if (duration === 0) return 0;
-    return (currentTime / duration) * 100;
-  }, [currentTime, duration]);
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
 
   const getCoverUrl = useCallback(() => {
     const coverId = currentTrack?.album?.cover || currentTrack?.album?.id;
@@ -51,14 +40,6 @@ export function MiniPlayer({ onExpand }: MiniPlayerProps) {
       playNext();
     },
     [playNext]
-  );
-
-  const handleSkipPrevious = useCallback(
-    (e: React.MouseEvent | React.TouchEvent) => {
-      e.stopPropagation();
-      playPrev();
-    },
-    [playPrev]
   );
 
   const handleDragEnd = useCallback(
@@ -91,59 +72,49 @@ export function MiniPlayer({ onExpand }: MiniPlayerProps) {
       onDragEnd={handleDragEnd}
       animate={controls}
     >
-      {/* Single row layout matching screenshot */}
-      <div className="flex items-center gap-2 px-2 py-2">
+      <div className="flex items-center gap-3 px-3 py-2">
         {/* Cover art */}
         {coverUrl ? (
           <button
             onClick={onExpand}
-            className="relative w-12 h-12 flex-shrink-0 bg-foreground/5 overflow-hidden"
+            className="relative w-10 h-10 flex-shrink-0 bg-foreground/5 border border-foreground/10 overflow-hidden"
           >
             <Image
               src={coverUrl}
               alt={getTrackTitle(currentTrack)}
               fill
-              sizes="48px"
+              sizes="40px"
               className="object-cover"
             />
           </button>
         ) : (
           <button
             onClick={onExpand}
-            className="w-12 h-12 flex-shrink-0 bg-foreground/5"
+            className="w-10 h-10 flex-shrink-0 bg-foreground/5 border border-foreground/10"
           />
         )}
 
-        {/* Volume */}
-        <button
-          onClick={(e) => e.stopPropagation()}
-          className="w-8 h-8 flex items-center justify-center text-foreground/40"
-          aria-label="Volume"
-        >
-          <Volume2 className="w-4 h-4" />
+        {/* Title & Artist */}
+        <button onClick={onExpand} className="flex-1 min-w-0 text-left">
+          <p className="text-[13px] font-medium text-foreground/90 truncate leading-tight">
+            {getTrackTitle(currentTrack)}
+          </p>
+          <p className="text-[11px] text-foreground/50 truncate leading-tight">
+            {getTrackArtists(currentTrack)}
+          </p>
         </button>
 
-        {/* Previous */}
-        <button
-          onClick={handleSkipPrevious}
-          onTouchEnd={(e) => e.stopPropagation()}
-          className="w-8 h-8 flex items-center justify-center text-foreground/60"
-          aria-label="Previous track"
-        >
-          <SkipBack className="w-4 h-4 fill-current" />
-        </button>
-
-        {/* Play/Pause - larger */}
+        {/* Play/Pause */}
         <button
           onClick={handlePlayPause}
           onTouchEnd={(e) => e.stopPropagation()}
-          className="w-10 h-10 flex items-center justify-center bg-foreground text-background rounded-sm"
+          className="w-9 h-9 flex-shrink-0 flex items-center justify-center bg-foreground text-background"
           aria-label={isPlaying ? "Pause" : "Play"}
         >
           {isPlaying ? (
-            <Pause className="w-5 h-5 fill-current" />
+            <Pause className="w-4 h-4 fill-current" />
           ) : (
-            <Play className="w-5 h-5 fill-current ml-0.5" />
+            <Play className="w-4 h-4 fill-current ml-0.5" />
           )}
         </button>
 
@@ -151,35 +122,19 @@ export function MiniPlayer({ onExpand }: MiniPlayerProps) {
         <button
           onClick={handleSkipNext}
           onTouchEnd={(e) => e.stopPropagation()}
-          className="w-8 h-8 flex items-center justify-center text-foreground/60"
+          className="w-8 h-8 flex-shrink-0 flex items-center justify-center text-foreground/60"
           aria-label="Next track"
         >
           <SkipForward className="w-4 h-4 fill-current" />
         </button>
 
-        {/* Repeat */}
-        <button
-          onClick={(e) => e.stopPropagation()}
-          className="w-8 h-8 flex items-center justify-center text-foreground/40"
-          aria-label="Repeat"
-        >
-          <Repeat className="w-4 h-4" />
-        </button>
-
-        {/* Time display */}
-        <div className="flex items-center gap-1 text-[10px] text-foreground/50 font-mono ml-auto">
-          <span>{formatTime(currentTime)}</span>
-          <span>/</span>
-          <span>{formatTime(duration)}</span>
-        </div>
-
         {/* Expand */}
         <button
           onClick={onExpand}
-          className="w-8 h-8 flex items-center justify-center text-foreground/40"
+          className="w-8 h-8 flex-shrink-0 flex items-center justify-center text-foreground/40"
           aria-label="Expand player"
         >
-          <Maximize2 className="w-4 h-4" />
+          <ChevronUp className="w-4 h-4" />
         </button>
       </div>
     </motion.div>

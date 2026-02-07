@@ -74,12 +74,12 @@ export function FullscreenLyrics({
        src={coverUrl}
        alt=""
        fill
-       className="object-cover opacity-40 dark:opacity-50 blur-[100px] scale-125"
+       className="object-cover opacity-40 dark:opacity-40 blur-[100px] scale-125"
        unoptimized
        priority
       />
       {/* Gradient overlay: adapts to light/dark mode */}
-      <div className="absolute inset-0 bg-gradient-to-t from-background via-background to-background/30" />
+      <div className="absolute inset-0 bg-gradient-to-t from-background via-background to-transparent" />
      </div>
     )}
    </div>
