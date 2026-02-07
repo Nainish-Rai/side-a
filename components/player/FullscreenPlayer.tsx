@@ -423,12 +423,6 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
       >
        <ChevronDown className="w-6 h-6" />
       </button>
-      <button
-       className="w-10 h-10 flex items-center justify-center text-foreground"
-       aria-label="More options"
-      >
-       <MoreVertical className="w-5 h-5" />
-      </button>
      </div>
 
      {/* Main Content - Desktop Two Column */}
@@ -736,46 +730,7 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
          transition={{ duration: 0.2 }}
          className="h-full flex flex-col bg-background"
         >
-         <div className="px-4 py-4 border-b border-foreground/10 flex-shrink-0">
-          <div className="flex items-center justify-between mb-4">
-           <h2 className="text-lg font-medium text-foreground">Up next</h2>
-           <button
-            onClick={playNext}
-            className="w-10 h-10 flex items-center justify-center text-foreground"
-           >
-            <SkipForward className="w-5 h-5" />
-           </button>
-          </div>
-          <div className="text-xs text-foreground/50 mb-2">Playing from</div>
-          <div className="text-sm font-medium text-foreground">
-           {currentTrack.album?.title || "Unknown Album"}
-          </div>
-         </div>
-
-         <div className="px-4 py-3 border-b border-foreground/10 flex-shrink-0">
-          <div className="flex items-center justify-between">
-           <div>
-            <div className="text-sm font-medium text-foreground">Auto-play</div>
-            <div className="text-xs text-foreground/50">
-             Add similar content to queue
-            </div>
-           </div>
-           <button
-            onClick={() => setAutoPlay(!autoPlay)}
-            className={`relative w-12 h-6 rounded-full transition-colors ${
-             autoPlay ? "bg-blue-500" : "bg-foreground/30"
-            }`}
-           >
-            <motion.div
-             animate={{ x: autoPlay ? 24 : 2 }}
-             transition={{ type: "spring", stiffness: 500, damping: 30 }}
-             className="absolute top-0.5 w-5 h-5 rounded-full bg-white"
-            />
-           </button>
-          </div>
-         </div>
-
-         <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto pt-2">
           <DndContext
            sensors={sensors}
            collisionDetection={closestCenter}
@@ -809,14 +764,7 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
          transition={{ duration: 0.2 }}
          className="h-full flex flex-col bg-background"
         >
-         <div className="px-6 py-4 border-b border-foreground/10 flex-shrink-0">
-          <h2 className="text-lg font-medium text-foreground">Lyrics</h2>
-          <p className="text-sm text-foreground/50 mt-1">
-           {getTrackTitle(currentTrack)}
-          </p>
-         </div>
-
-         <div className="flex-1 overflow-y-auto px-6 py-8">
+         <div className="flex-1 overflow-y-auto px-6 pt-4 py-8">
           {hasLyrics && lyrics?.parsed ? (
            <div className="space-y-6 max-w-2xl mx-auto">
             {lyrics.parsed.map((line, idx) => (
