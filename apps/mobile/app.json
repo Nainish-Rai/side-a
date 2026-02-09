@@ -1,0 +1,38 @@
+{
+  "expo": {
+    "name": "Side A",
+    "slug": "side-a",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "scheme": "side-a",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#101010"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.sidea.app",
+      "infoPlist": {
+        "UIBackgroundModes": ["audio"]
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#101010"
+      },
+      "edgeToEdgeEnabled": true,
+      "package": "com.sidea.app",
+      "permissions": ["FOREGROUND_SERVICE"]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-audio",
+      "expo-sqlite"
+    ]
+  }
+}
