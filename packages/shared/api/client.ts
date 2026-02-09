@@ -421,16 +421,11 @@ export class LosslessAPI {
       );
       const data = await response.json();
 
-      console.log("Album API Response:", JSON.stringify(data, null, 2));
-
-      // Parse album and tracks from response
       let album: Album | undefined;
       let tracks: Track[] = [];
 
-      // Check for nested data structure (v2.0 API response)
       const responseData = data.data || data;
 
-      // Extract album info - try multiple possible locations
       if (data.album) {
         album = this.prepareAlbum(data.album);
       } else if (
@@ -438,7 +433,6 @@ export class LosslessAPI {
         Array.isArray(responseData.items) &&
         responseData.items.length > 0
       ) {
-        // Try to get album info from first track
         const firstItem = responseData.items[0];
         const firstTrack = firstItem.item || firstItem;
         if (firstTrack.album) {
@@ -446,14 +440,11 @@ export class LosslessAPI {
         }
       }
 
-      // Extract tracks from various possible structures
       if (Array.isArray(data.tracks)) {
         tracks = data.tracks.map((t: Track) => this.prepareTrack(t));
       } else if (Array.isArray(responseData.items)) {
-        // Handle nested structure: items[].item or items[].track
         tracks = responseData.items
           .map((item: { item?: Track; track?: Track } | Track) => {
-            // Extract the actual track object
             if ("item" in item) return item.item;
             if ("track" in item) return item.track;
             return item;
@@ -461,7 +452,7 @@ export class LosslessAPI {
           .filter(
             (track: Track | undefined): track is Track =>
               track !== undefined && "id" in track
-          ) // Filter out invalid entries
+          )
           .map((track: Track) => this.prepareTrack(track));
       }
 
@@ -528,18 +519,15 @@ export class LosslessAPI {
     }
 
     const formattedId = String(id).replace(/-/g, "/");
-    // Direct TIDAL CDN URL (no proxy)
     return `https://resources.tidal.com/images/${formattedId}/${size}x${size}.jpg`;
   }
 
   async fetchLyrics(track: Track): Promise<LyricsData | null> {
-    // Check cache first
     if (this.lyricsCache.has(track.id)) {
       return this.lyricsCache.get(track.id)!;
     }
 
     try {
-      // Build query parameters for LyricsPlus API
       const title = encodeURIComponent(track.title);
       const artist = encodeURIComponent(
         track.artist?.name || track.artists?.[0]?.name || ""
@@ -553,7 +541,6 @@ export class LosslessAPI {
       const response = await fetch(lyricsUrl);
 
       if (!response.ok) {
-        console.warn(`Lyrics API returned ${response.status}`);
         return null;
       }
 
@@ -562,7 +549,6 @@ export class LosslessAPI {
       if (data && data.lyrics && data.lyrics.length > 0) {
         const lyricsData: LyricsData = {
           lyricsPlus: data,
-          // Convert to legacy format for compatibility
           parsed: this.convertLyricsPlusToSynced(data.lyrics),
         };
 
@@ -579,7 +565,7 @@ export class LosslessAPI {
     if (!lyrics || lyrics.length === 0) return [];
 
     return lyrics.map((line) => ({
-      time: line.time / 1000, // Convert milliseconds to seconds
+      time: line.time / 1000,
       text: line.text,
     }));
   }
@@ -590,11 +576,9 @@ export class LosslessAPI {
     const lines = subtitles.split("\n").filter((line) => line.trim());
     return lines
       .map((line) => {
-        // Regex looks for [minutes:seconds.centiseconds]
         const match = line.match(/\[(\d+):(\d+)\.(\d+)\]\s*(.+)/);
         if (match) {
           const [, minutes, seconds, centiseconds, text] = match;
-          // Convert everything to total seconds for easy comparison with audioPlayer.currentTime
           const timeInSeconds =
             parseInt(minutes) * 60 +
             parseInt(seconds) +

@@ -9,10 +9,6 @@ export class APICache {
     this.ttl = options.ttl;
   }
 
-  private getKey(type: string, id: string): string {
-    return `${type}:${id}`;
-  }
-
   async get(type: string, id: string): Promise<unknown | null> {
     if (!this.cache.has(type)) {
       return null;

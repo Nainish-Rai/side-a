@@ -1,4 +1,4 @@
-import { LosslessAPI } from "@/lib/api/client";
+import { LosslessAPI } from "@side-a/shared/api";
 import instances from "@/instances.json";
 
 const settings = {

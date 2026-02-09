@@ -15,8 +15,8 @@ export interface Album {
   artists?: Artist[];
   type?: string;
   explicit?: boolean;
-  cover?: string; // UUID for cover image
-  imageCover?: string[]; // Alternative cover field
+  cover?: string;
+  imageCover?: string[];
   mediaMetadata?: {
     tags?: string[];
   };
@@ -41,7 +41,6 @@ export interface Track {
   mediaMetadata?: {
     tags?: string[];
   };
-  // Additional metadata from TIDAL API
   replayGain?: number;
   peak?: number;
   allowStreaming?: boolean;
@@ -124,16 +123,15 @@ export interface APISettings {
   getInstances: () => Promise<string[]>;
 }
 
-// New LyricsPlus API types
 export interface WordSyllabus {
-  time: number; // milliseconds
+  time: number;
   duration: number;
   text: string;
   isBackground?: boolean;
 }
 
 export interface LyricLine {
-  time: number; // milliseconds
+  time: number;
   duration: number;
   text: string;
   syllabus: WordSyllabus[];
@@ -153,7 +151,7 @@ export interface LyricsMetadata {
 }
 
 export interface LyricsPlusResponse {
-  type: string; // "Word"
+  type: string;
   metadata: LyricsMetadata;
   lyrics: LyricLine[];
   cached?: string;
@@ -163,17 +161,15 @@ export interface LyricsPlusResponse {
   };
 }
 
-// Legacy types for backward compatibility
 export interface SyncedLyric {
-  time: number; // Time in seconds
+  time: number;
   text: string;
 }
 
 export interface LyricsData {
-  lyrics?: string; // Static/plain text lyrics
-  subtitles?: string; // LRC format synchronized lyrics
-  parsed?: SyncedLyric[]; // Parsed synced lyrics (converted to seconds)
-  // New format support
+  lyrics?: string;
+  subtitles?: string;
+  parsed?: SyncedLyric[];
   lyricsPlus?: LyricsPlusResponse;
 }
 
