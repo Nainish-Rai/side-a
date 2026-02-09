@@ -353,16 +353,16 @@ The AudioContext mirrors the web AudioPlayerContext API — same method names, s
 
 ## 6. Implementation Order
 
-1. **Monorepo setup** — Turborepo config, move web app to apps/web/, create packages/shared/
-2. **Extract shared code** — Move API client, types, cache, utils to packages/shared/
-3. **Verify web still works** — Update imports, test web app builds
-4. **Scaffold Expo app** — Create apps/mobile/ with Expo Router, NativeTabs, basic navigation
-5. **NativeWind setup** — Install Tailwind v4 + NativeWind v5, metro/postcss config, CSS-wrapped primitives in src/tw/, global.css with theme vars and platform fonts
+1. ~~**Monorepo setup** — Turborepo config, move web app to apps/web/, create packages/shared/~~ DONE
+2. ~~**Extract shared code** — Move API client, types, cache, utils to packages/shared/~~ DONE
+3. ~~**Verify web still works** — Update imports, test web app builds~~ DONE
+4. ~~**Scaffold Expo app** — Create apps/mobile/ with Expo Router, NativeTabs, basic navigation~~ DONE
+5. ~~**NativeWind setup** — Install Tailwind v4 + NativeWind v5, metro/postcss config, CSS-wrapped primitives in src/tw/, global.css with theme vars and platform fonts~~ DONE
 6. **Search screen** — Connect shared API, FlashList results, headerSearchBarOptions
-6. **Album detail screen** — Album header, track list, play album
-7. **Audio playback** — expo-audio context, mini player, fullscreen player
-8. **Queue management** — Queue list, reorder, add/remove
-9. **Lyrics** — Synced lyrics view with formSheet presentation
-10. **Library** — Favorites + recently played with expo-sqlite persistence
-11. **Settings** — Audio quality, theme, about
-12. **Polish** — Animations, haptics, context menus, link previews
+7. **Album detail screen** — Album header, track list, play album
+8. **Audio playback** — expo-audio context, mini player, fullscreen player
+9. **Queue management** — Queue list, reorder, add/remove
+10. **Lyrics** — Synced lyrics view with formSheet presentation
+11. **Library** — Favorites + recently played with expo-sqlite persistence
+12. **Settings** — Audio quality, theme, about
+13. **Polish** — Animations, haptics, context menus, link previews
