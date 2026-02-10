@@ -1,5 +1,6 @@
 import { create } from "zustand";
-import { Audio, AVPlaybackStatus } from "expo-av";
+import { createAudioPlayer, setAudioModeAsync } from "expo-audio";
+import type { AudioPlayer, AudioStatus } from "expo-audio";
 import { api } from "@/lib/api";
 import { addRecentlyPlayed } from "@/lib/database";
 import type { Track } from "@side-a/shared/api/types";
@@ -19,7 +20,7 @@ interface PlayerState {
 interface PlayerActions {
   setupPlayer: () => Promise<void>;
   playTrack: (track: Track, context: Track[]) => Promise<void>;
-  togglePlayback: () => Promise<void>;
+  togglePlayback: () => void;
   skipNext: () => Promise<void>;
   skipPrev: () => Promise<void>;
   seekTo: (position: number) => Promise<void>;
@@ -28,20 +29,18 @@ interface PlayerActions {
 
 type PlayerStore = PlayerState & PlayerActions;
 
-let soundInstance: Audio.Sound | null = null;
+let player: AudioPlayer | null = null;
 
 async function resolveTrackUrl(track: Track): Promise<string | null> {
   return api.getStreamUrl(track.id, track.audioQuality ?? "LOSSLESS");
 }
 
-function handleStatus(status: AVPlaybackStatus, get: () => PlayerStore, set: (s: Partial<PlayerState>) => void) {
-  if (!status.isLoaded) return;
-
+function handleStatus(status: AudioStatus, get: () => PlayerStore, set: (s: Partial<PlayerState>) => void) {
   set({
-    isPlaying: status.isPlaying,
+    isPlaying: status.playing,
     isBuffering: status.isBuffering,
-    position: status.positionMillis / 1000,
-    duration: (status.durationMillis ?? 0) / 1000,
+    position: status.currentTime,
+    duration: status.duration,
   });
 
   if (status.didJustFinish) {
@@ -61,17 +60,16 @@ async function loadAndPlay(track: Track, get: () => PlayerStore, set: (s: Partia
   const url = await resolveTrackUrl(track);
   if (!url) return;
 
-  if (soundInstance) {
-    await soundInstance.unloadAsync();
+  if (player) {
+    player.replace({ uri: url });
+  } else {
+    player = createAudioPlayer({ uri: url }, { updateInterval: 200 });
+    player.addListener("playbackStatusUpdate", (status) =>
+      handleStatus(status, get, set)
+    );
   }
 
-  const { sound } = await Audio.Sound.createAsync(
-    { uri: url },
-    { shouldPlay: true, progressUpdateIntervalMillis: 200 },
-    (status) => handleStatus(status, get, set)
-  );
-
-  soundInstance = sound;
+  player.play();
   addRecentlyPlayed(track);
 }
 
@@ -88,9 +86,9 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
 
   setupPlayer: async () => {
     try {
-      await Audio.setAudioModeAsync({
-        playsInSilentModeIOS: true,
-        staysActiveInBackground: false,
+      await setAudioModeAsync({
+        playsInSilentMode: true,
+        shouldPlayInBackground: false,
       });
       set({ isPlayerReady: true });
     } catch {
@@ -107,15 +105,12 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
     await loadAndPlay(track, get, set);
   },
 
-  togglePlayback: async () => {
-    if (!soundInstance) return;
-    const status = await soundInstance.getStatusAsync();
-    if (!status.isLoaded) return;
-
-    if (status.isPlaying) {
-      await soundInstance.pauseAsync();
+  togglePlayback: () => {
+    if (!player) return;
+    if (player.playing) {
+      player.pause();
     } else {
-      await soundInstance.playAsync();
+      player.play();
     }
   },
 
@@ -133,13 +128,13 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
     const state = get();
 
     if (state.position > 3) {
-      await soundInstance?.setPositionAsync(0);
+      await player?.seekTo(0);
       return;
     }
 
     const prevIndex = state.queueIndex - 1;
     if (prevIndex < 0) {
-      await soundInstance?.setPositionAsync(0);
+      await player?.seekTo(0);
       return;
     }
 
@@ -149,8 +144,8 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
   },
 
   seekTo: async (position) => {
-    if (!soundInstance) return;
-    await soundInstance.setPositionAsync(position * 1000);
+    if (!player) return;
+    await player.seekTo(position);
   },
 
   toggleLyrics: () => {

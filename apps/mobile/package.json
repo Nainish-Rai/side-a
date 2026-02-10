@@ -15,7 +15,7 @@
     "axios": "^1.13.5",
     "clsx": "^2.1.1",
     "expo": "~54.0.33",
-    "expo-av": "^16.0.8",
+    "expo-audio": "^1.1.1",
     "expo-constants": "~18.0.13",
     "expo-haptics": "~15.0.8",
     "expo-image": "~3.0.11",
