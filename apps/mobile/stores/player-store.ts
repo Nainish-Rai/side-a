@@ -110,7 +110,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
     try {
       await setAudioModeAsync({
         playsInSilentMode: true,
-        shouldPlayInBackground: false,
+        shouldPlayInBackground: true,
       });
       set({ isPlayerReady: true });
     } catch {
