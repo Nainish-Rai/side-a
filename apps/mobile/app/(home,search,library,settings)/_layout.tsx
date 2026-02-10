@@ -22,13 +22,20 @@ export default function SharedLayout({
         headerLargeTitleShadowVisible: false,
         headerLargeStyle: { backgroundColor: "transparent" },
         headerLargeTitle: true,
-        headerBlurEffect: "none",
+        headerBlurEffect: "dark",
         headerBackButtonDisplayMode: "minimal",
       }}
     >
       <Stack.Screen name={screen} options={{ title: TITLES[screen] }} />
       <Stack.Screen name="album/[id]" options={{ headerLargeTitle: false }} />
-      <Stack.Screen name="player" options={{ presentation: "modal" }} />
+      <Stack.Screen
+        name="player"
+        options={{
+          presentation: "modal",
+          headerShown: false,
+          contentStyle: { backgroundColor: "#000" },
+        }}
+      />
     </Stack>
   );
 }

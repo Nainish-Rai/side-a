@@ -15,6 +15,7 @@ interface AudioState {
   isBuffering: boolean;
   repeatMode: RepeatMode;
   shuffleActive: boolean;
+  volume: number;
 }
 
 interface AudioContextValue extends AudioState {
@@ -32,6 +33,7 @@ interface AudioContextValue extends AudioState {
   setRepeatMode: (mode: RepeatMode) => void;
   toggleShuffle: () => void;
   clearQueue: () => void;
+  setVolume: (volume: number) => void;
 }
 
 const AudioContext = createContext<AudioContextValue | null>(null);
@@ -46,6 +48,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
   const [repeatMode, setRepeatMode] = useState<RepeatMode>("off");
   const [shuffleActive, setShuffleActive] = useState(false);
   const [isLoadingStream, setIsLoadingStream] = useState(false);
+  const [volume, setVolumeState] = useState(1);
 
   const queueRef = useRef(queue);
   const queueIndexRef = useRef(queueIndex);
@@ -202,6 +205,15 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
     setCurrentTrack(null);
   }, [player]);
 
+  const setVolume = useCallback(
+    (v: number) => {
+      const clamped = Math.max(0, Math.min(1, v));
+      player.volume = clamped;
+      setVolumeState(clamped);
+    },
+    [player]
+  );
+
   useEffect(() => {
     if (status?.didJustFinish) {
       skipNext();
@@ -219,6 +231,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
       isBuffering: isBuffering || isLoadingStream,
       repeatMode,
       shuffleActive,
+      volume,
       playTrack,
       playAlbum,
       pause,
@@ -233,13 +246,14 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
       setRepeatMode,
       toggleShuffle,
       clearQueue,
+      setVolume,
     }),
     [
       currentTrack, queue, queueIndex, isPlaying, position, duration,
-      isBuffering, isLoadingStream, repeatMode, shuffleActive,
+      isBuffering, isLoadingStream, repeatMode, shuffleActive, volume,
       playTrack, playAlbum, pause, resume, togglePlayPause,
       skipNext, skipPrevious, seekTo, addToQueue, removeFromQueue,
-      reorderQueue, toggleShuffle, clearQueue,
+      reorderQueue, toggleShuffle, clearQueue, setVolume,
     ]
   );
 

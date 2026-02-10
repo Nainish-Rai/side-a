@@ -52,7 +52,7 @@ export default function HomeScreen() {
   return (
     <ScrollView contentInsetAdjustmentBehavior="automatic">
       <View className="px-4 pt-4 pb-2">
-        <Text className="text-[11px] uppercase tracking-widest text-sf-text-2">
+        <Text className="text-[11px] uppercase text-red-300 tracking-widest ">
           Recently Played
         </Text>
       </View>
