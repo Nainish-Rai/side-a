@@ -39,6 +39,13 @@ export default function SharedLayout({
           title: "",
         }}
       />
+      <Stack.Screen
+        name="artist/[id]"
+        options={{
+          headerLargeTitle: false,
+          title: "",
+        }}
+      />
     </Stack>
   );
 }

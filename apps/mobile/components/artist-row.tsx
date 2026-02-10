@@ -14,7 +14,7 @@ export function ArtistRow({ artist }: ArtistRowProps) {
 
   return (
     <Pressable
-      onPress={() => router.push(`/artist/${artist.id}`)}
+      onPress={() => router.push(`/artist/${artist.id}?name=${encodeURIComponent(artist.name)}&picture=${encodeURIComponent(artist.picture ?? "")}`)}
       style={({ pressed }) => ({
         flexDirection: "row",
         alignItems: "center",
