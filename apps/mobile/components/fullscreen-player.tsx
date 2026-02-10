@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { View, Text, Pressable, useWindowDimensions } from "react-native";
 import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -15,6 +15,7 @@ import { getTrackTitle, getTrackArtists } from "@side-a/shared";
 import { SeekBar } from "@/components/seek-bar";
 import { VolumeSlider } from "@/components/volume-slider";
 import { LyricsView } from "@/components/lyrics-view";
+import { QueueView } from "@/components/queue-view";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -58,6 +59,7 @@ export function FullscreenPlayer({ onCollapse }: FullscreenPlayerProps) {
   const cycleRepeatMode = usePlayerStore((s) => s.cycleRepeatMode);
   const showLyrics = usePlayerStore((s) => s.showLyrics);
   const toggleLyrics = usePlayerStore((s) => s.toggleLyrics);
+  const [showQueue, setShowQueue] = useState(false);
 
   const isFav = useFavoritesStore((s) => currentTrack ? s.isFavorite(currentTrack.id) : false);
   const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
@@ -119,23 +121,49 @@ export function FullscreenPlayer({ onCollapse }: FullscreenPlayerProps) {
         >
           NOW PLAYING
         </Text>
-        <Pressable
-          onPress={() => {
-            haptic();
-            toggleLyrics();
-          }}
-          hitSlop={12}
-          style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}
-        >
-          <Image
-            source="sf:quote.bubble"
-            style={{ width: 22, height: 22 }}
-            tintColor={showLyrics ? "#fff" : "rgba(255,255,255,0.7)"}
-          />
-        </Pressable>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
+          <Pressable
+            onPress={() => {
+              haptic();
+              if (!showQueue) {
+                if (showLyrics) toggleLyrics();
+              }
+              setShowQueue((v) => !v);
+            }}
+            hitSlop={12}
+            style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}
+          >
+            <Image
+              source="sf:list.bullet"
+              style={{ width: 22, height: 22 }}
+              tintColor={showQueue ? "#fff" : "rgba(255,255,255,0.7)"}
+            />
+          </Pressable>
+          <Pressable
+            onPress={() => {
+              haptic();
+              if (!showLyrics) {
+                setShowQueue(false);
+              }
+              toggleLyrics();
+            }}
+            hitSlop={12}
+            style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}
+          >
+            <Image
+              source="sf:quote.bubble"
+              style={{ width: 22, height: 22 }}
+              tintColor={showLyrics ? "#fff" : "rgba(255,255,255,0.7)"}
+            />
+          </Pressable>
+        </View>
       </View>
 
-      {showLyrics ? (
+      {showQueue ? (
+        <View style={{ flex: 1 }}>
+          <QueueView />
+        </View>
+      ) : showLyrics ? (
         <View style={{ flex: 1 }}>
           <LyricsView />
         </View>
