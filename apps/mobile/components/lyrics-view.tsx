@@ -1,7 +1,6 @@
-import { useState, useEffect, useRef, useCallback } from "react";
-import { ScrollView as RNScrollView, ActivityIndicator } from "react-native";
-import { View, Text, ScrollView } from "@/src/tw";
-import { Image } from "@/src/tw/image";
+import { useState, useEffect, useRef } from "react";
+import { View, Text, ScrollView, ActivityIndicator } from "react-native";
+import { Image } from "expo-image";
 import { usePlayerStore } from "@/stores/player-store";
 import { api } from "@/lib/api";
 import { getTrackTitle, getTrackArtists } from "@side-a/shared";
@@ -14,7 +13,7 @@ export function LyricsView() {
   const position = usePlayerStore((s) => s.position);
   const [lyrics, setLyrics] = useState<SyncedLyric[]>([]);
   const [loading, setLoading] = useState(false);
-  const scrollViewRef = useRef<RNScrollView>(null);
+  const scrollViewRef = useRef<ScrollView>(null);
   const activeIndexRef = useRef(-1);
 
   useEffect(() => {
@@ -61,53 +60,99 @@ export function LyricsView() {
     : null;
 
   return (
-    <View className="flex-1">
-      <View className="flex-row items-center gap-3 px-4 py-3">
-        <View className="w-12 h-12 overflow-hidden bg-white/5">
+    <View style={{ flex: 1 }}>
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 12,
+          paddingHorizontal: 16,
+          paddingVertical: 12,
+        }}
+      >
+        <View
+          style={{
+            width: 48,
+            height: 48,
+            overflow: "hidden",
+            backgroundColor: "rgba(255,255,255,0.05)",
+          }}
+        >
           {coverUrl ? (
             <Image
               source={{ uri: coverUrl }}
-              className="w-full h-full object-cover"
+              style={{ width: "100%", height: "100%" }}
+              contentFit="cover"
               transition={200}
             />
           ) : (
-            <View className="flex-1 items-center justify-center">
+            <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
               <Image
                 source="sf:music.note"
-                className="w-6 h-6"
+                style={{ width: 24, height: 24 }}
                 tintColor="rgba(255,255,255,0.2)"
               />
             </View>
           )}
         </View>
-        <View className="flex-1">
-          <Text className="text-white text-[14px] font-semibold" numberOfLines={1}>
+        <View style={{ flex: 1 }}>
+          <Text
+            style={{ color: "#fff", fontSize: 14, fontWeight: "600" }}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
             {title}
           </Text>
-          <Text className="text-white/50 text-[12px]" numberOfLines={1}>
+          <Text
+            style={{ color: "rgba(255,255,255,0.5)", fontSize: 12 }}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
             {artists}
           </Text>
         </View>
       </View>
 
-      <ScrollView ref={scrollViewRef} className="flex-1" showsVerticalScrollIndicator={false}>
+      <ScrollView
+        ref={scrollViewRef}
+        style={{ flex: 1 }}
+        showsVerticalScrollIndicator={false}
+      >
         {loading ? (
-          <View className="flex-1 items-center justify-center pt-20">
+          <View
+            style={{
+              flex: 1,
+              alignItems: "center",
+              justifyContent: "center",
+              paddingTop: 80,
+            }}
+          >
             <ActivityIndicator color="rgba(255,255,255,0.5)" />
           </View>
         ) : lyrics.length === 0 ? (
-          <View className="flex-1 items-center justify-center pt-20">
-            <Text className="text-white/30 text-base">No lyrics available</Text>
+          <View
+            style={{
+              flex: 1,
+              alignItems: "center",
+              justifyContent: "center",
+              paddingTop: 80,
+            }}
+          >
+            <Text style={{ color: "rgba(255,255,255,0.3)", fontSize: 16 }}>
+              No lyrics available
+            </Text>
           </View>
         ) : (
           lyrics.map((line, i) => (
             <Text
               key={i}
-              className={
-                i === activeIndex
-                  ? "text-white text-lg font-bold py-1 px-6"
-                  : "text-white/30 text-base py-1 px-6"
-              }
+              style={{
+                lineHeight: LINE_HEIGHT,
+                paddingHorizontal: 24,
+                color: i === activeIndex ? "#fff" : "rgba(255,255,255,0.3)",
+                fontSize: i === activeIndex ? 18 : 16,
+                fontWeight: i === activeIndex ? "700" : "400",
+              }}
             >
               {line.text || "\u00A0"}
             </Text>

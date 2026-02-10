@@ -1,10 +1,11 @@
-import { ActivityIndicator } from "react-native";
-import { View, Text, ScrollView } from "@/src/tw";
-import { Image } from "@/src/tw/image";
+import { View, Text, ScrollView, ActivityIndicator } from "react-native";
+import { Image } from "expo-image";
 import { TrackRow } from "@/components/track-row";
 import { useRecentlyPlayed } from "@/hooks/use-recently-played";
 import { usePlayerStore } from "@/stores/player-store";
 import type { Track } from "@side-a/shared/api/types";
+
+const MONO_FONT = process.env.EXPO_OS === "ios" ? "ui-monospace" : "monospace";
 
 export default function HomeScreen() {
   const {
@@ -20,8 +21,8 @@ export default function HomeScreen() {
   return (
     <ScrollView
       contentInsetAdjustmentBehavior="automatic"
-      className="flex-1 bg-black"
-      contentContainerClassName="pb-24"
+      style={{ flex: 1, backgroundColor: "#000" }}
+      contentContainerStyle={{ paddingBottom: 96 }}
     >
       <RecentlyPlayedSection
         tracks={recentTracks}
@@ -43,33 +44,96 @@ function RecentlyPlayedSection({
 }) {
   return (
     <View>
-      <View className="flex-row items-center justify-between px-4 pt-5 pb-3 border-b border-white/10">
-        <Text className="text-[11px] font-bold font-mono uppercase tracking-[2px] text-white/40">
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          paddingHorizontal: 16,
+          paddingTop: 20,
+          paddingBottom: 12,
+          borderBottomWidth: 1,
+          borderBottomColor: "rgba(255,255,255,0.1)",
+        }}
+      >
+        <Text
+          style={{
+            fontSize: 11,
+            fontWeight: "700",
+            fontFamily: MONO_FONT,
+            textTransform: "uppercase",
+            letterSpacing: 1.5,
+            color: "rgba(255,255,255,0.4)",
+          }}
+        >
           RECENTLY PLAYED
         </Text>
         {tracks.length > 0 && (
-          <Text className="text-[11px] font-mono text-white/30 tabular-nums">
+          <Text
+            style={{
+              fontSize: 11,
+              fontFamily: MONO_FONT,
+              color: "rgba(255,255,255,0.3)",
+              fontVariant: ["tabular-nums"],
+            }}
+          >
             {tracks.length}
           </Text>
         )}
       </View>
 
       {loading ? (
-        <View className="py-10 items-center">
+        <View style={{ paddingVertical: 40, alignItems: "center" }}>
           <ActivityIndicator color="rgba(255,255,255,0.5)" />
         </View>
       ) : tracks.length === 0 ? (
-        <View className="items-center justify-center py-16 px-6">
-          <View className="items-center border border-white/10 px-10 py-8 w-full max-w-[300px]">
+        <View
+          style={{
+            alignItems: "center",
+            justifyContent: "center",
+            paddingVertical: 64,
+            paddingHorizontal: 24,
+          }}
+        >
+          <View
+            style={{
+              alignItems: "center",
+              borderWidth: 1,
+              borderColor: "rgba(255,255,255,0.1)",
+              paddingHorizontal: 40,
+              paddingVertical: 32,
+              width: "100%",
+              maxWidth: 300,
+            }}
+          >
             <Image
               source="sf:music.note.list"
-              className="w-8 h-8 mb-3"
+              style={{ width: 32, height: 32, marginBottom: 12 }}
               tintColor="rgba(255,255,255,0.2)"
             />
-            <Text className="text-xs font-semibold font-mono uppercase tracking-[1.5px] text-white/90 mb-1">
+            <Text
+              style={{
+                fontSize: 12,
+                fontWeight: "600",
+                fontFamily: MONO_FONT,
+                textTransform: "uppercase",
+                letterSpacing: 0.8,
+                color: "rgba(255,255,255,0.9)",
+                marginBottom: 4,
+              }}
+            >
               NO RECENT TRACKS
             </Text>
-            <Text className="text-[10px] font-mono uppercase tracking-wider text-white/40 text-center">
+            <Text
+              style={{
+                fontSize: 11,
+                fontFamily: MONO_FONT,
+                textTransform: "uppercase",
+                letterSpacing: 0.5,
+                color: "rgba(255,255,255,0.4)",
+                textAlign: "center",
+              }}
+            >
               Search and play music to see it here
             </Text>
           </View>

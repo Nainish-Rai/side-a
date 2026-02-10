@@ -1,5 +1,5 @@
-import { View, Text, Pressable } from "@/src/tw";
-import { Image } from "@/src/tw/image";
+import { View, Text, Pressable } from "react-native";
+import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
 import { api } from "@/lib/api";
 import {
@@ -9,6 +9,8 @@ import {
   deriveTrackQuality,
 } from "@side-a/shared";
 import type { Track } from "@side-a/shared/api/types";
+
+const MONO_FONT = process.env.EXPO_OS === "ios" ? "ui-monospace" : "monospace";
 
 interface TrackRowProps {
   track: Track;
@@ -39,21 +41,40 @@ export function TrackRow({
   return (
     <Pressable
       onPress={handlePress}
-      className="flex-row items-center px-4 py-3 gap-3 border-b border-white/10 active:opacity-60"
+      style={({ pressed }) => ({
+        flexDirection: "row",
+        alignItems: "center",
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        gap: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: "rgba(255,255,255,0.1)",
+        opacity: pressed ? 0.6 : 1,
+      })}
     >
-      {/* Cover Art — square, no rounded corners per design language */}
-      <View className="w-12 h-12 bg-white/5 border border-white/10 overflow-hidden">
+      {/* Cover Art */}
+      <View
+        style={{
+          width: 48,
+          height: 48,
+          backgroundColor: "rgba(255,255,255,0.05)",
+          borderWidth: 1,
+          borderColor: "rgba(255,255,255,0.1)",
+          overflow: "hidden",
+        }}
+      >
         {coverUrl ? (
           <Image
             source={{ uri: coverUrl }}
-            className="w-12 h-12 object-cover"
+            style={{ width: 48, height: 48 }}
+            contentFit="cover"
             transition={200}
           />
         ) : (
-          <View className="flex-1 items-center justify-center">
+          <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
             <Image
               source="sf:music.note"
-              className="w-5 h-5"
+              style={{ width: 20, height: 20 }}
               tintColor="rgba(255,255,255,0.2)"
             />
           </View>
@@ -61,37 +82,85 @@ export function TrackRow({
       </View>
 
       {/* Title + Artist */}
-      <View className="flex-1 gap-0.5">
-        <View className="flex-row items-center gap-1.5">
+      <View style={{ flex: 1, gap: 2 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
           <Text
             numberOfLines={1}
-            className="flex-1 text-white/90 text-[15px] font-medium"
+            ellipsizeMode="tail"
+            style={{
+              flex: 1,
+              color: "rgba(255,255,255,0.9)",
+              fontSize: 15,
+              fontWeight: "500",
+            }}
           >
             {title}
           </Text>
           {track.explicit && (
-            <View className="px-1 py-px border border-white/20">
-              <Text className="text-[9px] font-bold font-mono text-white/50 uppercase">
+            <View
+              style={{
+                paddingHorizontal: 4,
+                paddingVertical: 1,
+                borderWidth: 1,
+                borderColor: "rgba(255,255,255,0.2)",
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 10,
+                  fontWeight: "700",
+                  fontFamily: MONO_FONT,
+                  color: "rgba(255,255,255,0.5)",
+                  textTransform: "uppercase",
+                }}
+              >
                 E
               </Text>
             </View>
           )}
         </View>
-        <Text numberOfLines={1} className="text-white/50 text-[13px]">
+        <Text
+          numberOfLines={1}
+          ellipsizeMode="tail"
+          style={{ color: "rgba(255,255,255,0.5)", fontSize: 13 }}
+        >
           {artists}
         </Text>
       </View>
 
       {/* Quality badge + Duration */}
-      <View className="items-end gap-1">
+      <View style={{ alignItems: "flex-end", gap: 4 }}>
         {showQuality && quality && (
-          <View className="px-1.5 py-0.5 border border-white/20">
-            <Text className="text-[8px] font-bold font-mono text-white/50 uppercase tracking-wider">
+          <View
+            style={{
+              paddingHorizontal: 6,
+              paddingVertical: 2,
+              borderWidth: 1,
+              borderColor: "rgba(255,255,255,0.2)",
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 10,
+                fontWeight: "700",
+                fontFamily: MONO_FONT,
+                color: "rgba(255,255,255,0.5)",
+                textTransform: "uppercase",
+                letterSpacing: 0.5,
+              }}
+            >
               {quality === "HI_RES_LOSSLESS" ? "HI-RES" : quality}
             </Text>
           </View>
         )}
-        <Text className="text-white/40 text-xs font-mono tabular-nums">
+        <Text
+          style={{
+            color: "rgba(255,255,255,0.4)",
+            fontSize: 12,
+            fontFamily: MONO_FONT,
+            fontVariant: ["tabular-nums"],
+          }}
+        >
           {duration}
         </Text>
       </View>

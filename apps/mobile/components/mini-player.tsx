@@ -1,5 +1,5 @@
-import { View, Text, Pressable } from "@/src/tw";
-import { Image } from "@/src/tw/image";
+import { View, Text, Pressable } from "react-native";
+import { Image } from "expo-image";
 import { usePlayerStore } from "@/stores/player-store";
 import { api } from "@/lib/api";
 import { getTrackTitle, getTrackArtists } from "@side-a/shared";
@@ -41,46 +41,77 @@ export function MiniPlayer({ onExpand }: MiniPlayerProps) {
   };
 
   return (
-    <Pressable onPress={onExpand} className="bg-black border-t border-white/10">
-      <View className="h-16 flex-row items-center px-3 gap-3">
-        <View className="w-12 h-12 bg-white/5 overflow-hidden">
+    <Pressable
+      onPress={onExpand}
+      style={{
+        backgroundColor: "#000",
+        borderTopWidth: 1,
+        borderTopColor: "rgba(255,255,255,0.1)",
+      }}
+    >
+      <View
+        style={{
+          height: 64,
+          flexDirection: "row",
+          alignItems: "center",
+          paddingHorizontal: 12,
+          gap: 12,
+        }}
+      >
+        <View
+          style={{
+            width: 48,
+            height: 48,
+            backgroundColor: "rgba(255,255,255,0.05)",
+            overflow: "hidden",
+          }}
+        >
           {coverUrl ? (
             <Image
               source={{ uri: coverUrl }}
-              className="w-12 h-12 object-cover"
+              style={{ width: 48, height: 48 }}
+              contentFit="cover"
               transition={200}
             />
           ) : (
-            <View className="flex-1 items-center justify-center">
+            <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
               <Image
                 source="sf:music.note"
-                className="w-5 h-5"
+                style={{ width: 20, height: 20 }}
                 tintColor="rgba(255,255,255,0.2)"
               />
             </View>
           )}
         </View>
 
-        <View className="flex-1 gap-0.5">
-          <Text numberOfLines={1} className="text-white text-[14px] font-semibold">
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text
+            numberOfLines={1}
+            ellipsizeMode="tail"
+            style={{ color: "#fff", fontSize: 14, fontWeight: "600" }}
+          >
             {title}
           </Text>
-          <Text numberOfLines={1} className="text-white/50 text-[12px]">
+          <Text
+            numberOfLines={1}
+            ellipsizeMode="tail"
+            style={{ color: "rgba(255,255,255,0.5)", fontSize: 12 }}
+          >
             {artists}
           </Text>
         </View>
 
-        <View className="flex-row items-center gap-1">
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
           <Pressable
             onPress={(e) => {
               e.stopPropagation();
               handleTogglePlayback();
             }}
-            className="p-2"
+            style={{ padding: 8 }}
           >
             <Image
               source={isPlaying ? "sf:pause.fill" : "sf:play.fill"}
-              className="w-5 h-5"
+              style={{ width: 20, height: 20 }}
               tintColor="white"
             />
           </Pressable>
@@ -89,21 +120,30 @@ export function MiniPlayer({ onExpand }: MiniPlayerProps) {
               e.stopPropagation();
               handleSkipNext();
             }}
-            className="p-2"
+            style={{ padding: 8 }}
           >
             <Image
               source="sf:forward.fill"
-              className="w-[18px] h-[18px]"
+              style={{ width: 18, height: 18 }}
               tintColor="rgba(255,255,255,0.6)"
             />
           </Pressable>
         </View>
       </View>
 
-      <View className="h-[2px] bg-white/10 w-full">
+      <View
+        style={{
+          height: 2,
+          backgroundColor: "rgba(255,255,255,0.1)",
+          width: "100%",
+        }}
+      >
         <View
-          className="bg-white/60 h-full"
-          style={{ width: `${progressPercent}%` }}
+          style={{
+            backgroundColor: "rgba(255,255,255,0.6)",
+            height: "100%",
+            width: `${progressPercent}%`,
+          }}
         />
       </View>
     </Pressable>

@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { View, Text } from "@/src/tw";
+import { View, Text } from "react-native";
 import { usePlayerStore } from "@/stores/player-store";
 import { formatTime } from "@side-a/shared";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
@@ -7,8 +7,9 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   runOnJS,
-  withTiming,
 } from "react-native-reanimated";
+
+const MONO_FONT = process.env.EXPO_OS === "ios" ? "ui-monospace" : "monospace";
 
 export function SeekBar() {
   const position = usePlayerStore((s) => s.position);
@@ -84,15 +85,19 @@ export function SeekBar() {
   });
 
   const remaining = duration - position;
-  const displayPosition = isSeeking.value
-    ? seekProgress.value * duration
-    : position;
 
   return (
-    <View className="px-6">
+    <View style={{ paddingHorizontal: 24 }}>
       <GestureDetector gesture={gesture}>
         <Animated.View onLayout={onLayout} style={{ position: "relative" }}>
-          <View className="h-[3px] bg-white/20 rounded-full my-2">
+          <View
+            style={{
+              height: 3,
+              backgroundColor: "rgba(255,255,255,0.2)",
+              borderRadius: 9999,
+              marginVertical: 8,
+            }}
+          >
             <Animated.View
               style={[
                 fillStyle,
@@ -120,11 +125,25 @@ export function SeekBar() {
         </Animated.View>
       </GestureDetector>
 
-      <View className="flex-row justify-between">
-        <Text className="text-white/50 text-xs font-mono tabular-nums">
+      <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+        <Text
+          style={{
+            color: "rgba(255,255,255,0.5)",
+            fontSize: 12,
+            fontFamily: MONO_FONT,
+            fontVariant: ["tabular-nums"],
+          }}
+        >
           {formatTime(position)}
         </Text>
-        <Text className="text-white/50 text-xs font-mono tabular-nums">
+        <Text
+          style={{
+            color: "rgba(255,255,255,0.5)",
+            fontSize: 12,
+            fontFamily: MONO_FONT,
+            fontVariant: ["tabular-nums"],
+          }}
+        >
           -{formatTime(remaining > 0 ? remaining : 0)}
         </Text>
       </View>
