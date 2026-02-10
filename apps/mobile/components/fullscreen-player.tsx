@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { View, Text, Pressable, useWindowDimensions } from "react-native";
 import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -8,6 +9,7 @@ import Animated, {
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 import { usePlayerStore } from "@/stores/player-store";
+import { useFavoritesStore } from "@/stores/favorites-store";
 import { api } from "@/lib/api";
 import { getTrackTitle, getTrackArtists } from "@side-a/shared";
 import { SeekBar } from "@/components/seek-bar";
@@ -56,6 +58,11 @@ export function FullscreenPlayer({ onCollapse }: FullscreenPlayerProps) {
   const cycleRepeatMode = usePlayerStore((s) => s.cycleRepeatMode);
   const showLyrics = usePlayerStore((s) => s.showLyrics);
   const toggleLyrics = usePlayerStore((s) => s.toggleLyrics);
+
+  const isFav = useFavoritesStore((s) => currentTrack ? s.isFavorite(currentTrack.id) : false);
+  const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
+  const loadFavorites = useFavoritesStore((s) => s.loadFavorites);
+  useEffect(() => { loadFavorites(); }, []);
 
   const playPress = useSpringPress(0.9);
   const prevPress = useSpringPress(0.85);
@@ -217,12 +224,15 @@ export function FullscreenPlayer({ onCollapse }: FullscreenPlayerProps) {
                 opacity: pressed ? 0.5 : 1,
                 marginTop: 4,
               })}
-              onPress={() => haptic()}
+              onPress={() => {
+                haptic();
+                toggleFavorite(currentTrack);
+              }}
             >
               <Image
-                source="sf:heart"
+                source={isFav ? "sf:heart.fill" : "sf:heart"}
                 style={{ width: 24, height: 24 }}
-                tintColor="rgba(255,255,255,0.7)"
+                tintColor={isFav ? "#fc3c44" : "rgba(255,255,255,0.7)"}
               />
             </Pressable>
           </View>

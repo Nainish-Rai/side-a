@@ -59,3 +59,45 @@ export function getRecentlyPlayed(limit: number = 20): Track[] {
 export function clearRecentlyPlayed(): void {
   db.runSync(`DELETE FROM recently_played`);
 }
+
+db.execSync(`
+  CREATE TABLE IF NOT EXISTS favorites (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    track_id INTEGER NOT NULL UNIQUE,
+    track_json TEXT NOT NULL,
+    added_at TEXT DEFAULT (datetime('now'))
+  )
+`);
+
+export function addFavorite(track: Track): void {
+  db.runSync(
+    `INSERT OR IGNORE INTO favorites (track_id, track_json) VALUES (?, ?)`,
+    [track.id, JSON.stringify(track)]
+  );
+}
+
+export function removeFavorite(trackId: number): void {
+  db.runSync(`DELETE FROM favorites WHERE track_id = ?`, [trackId]);
+}
+
+export function isFavorite(trackId: number): boolean {
+  const row = db.getFirstSync<{ count: number }>(
+    `SELECT COUNT(*) as count FROM favorites WHERE track_id = ?`,
+    [trackId]
+  );
+  return (row?.count ?? 0) > 0;
+}
+
+export function getFavorites(): Track[] {
+  const rows = db.getAllSync<{ track_json: string }>(
+    `SELECT track_json FROM favorites ORDER BY added_at DESC`
+  );
+  return rows.map((row) => JSON.parse(row.track_json) as Track);
+}
+
+export function getFavoriteIds(): number[] {
+  const rows = db.getAllSync<{ track_id: number }>(
+    `SELECT track_id FROM favorites`
+  );
+  return rows.map((row) => row.track_id);
+}
