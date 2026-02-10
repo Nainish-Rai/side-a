@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { View, Text, Pressable } from "react-native";
 import { Image } from "expo-image";
 import { usePlayerStore } from "@/stores/player-store";
@@ -14,9 +15,6 @@ export function MiniPlayer({ onExpand }: MiniPlayerProps) {
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   const togglePlayback = usePlayerStore((s) => s.togglePlayback);
   const skipNext = usePlayerStore((s) => s.skipNext);
-  const position = usePlayerStore((s) => s.position);
-  const duration = usePlayerStore((s) => s.duration);
-
   if (!currentTrack) return null;
 
   const coverUrl = currentTrack.album?.cover
@@ -24,7 +22,6 @@ export function MiniPlayer({ onExpand }: MiniPlayerProps) {
     : null;
   const title = getTrackTitle(currentTrack);
   const artists = getTrackArtists(currentTrack);
-  const progressPercent = duration > 0 ? (position / duration) * 100 : 0;
 
   const handleTogglePlayback = () => {
     if (process.env.EXPO_OS === "ios") {
@@ -131,21 +128,31 @@ export function MiniPlayer({ onExpand }: MiniPlayerProps) {
         </View>
       </View>
 
-      <View
-        style={{
-          height: 2,
-          backgroundColor: "rgba(255,255,255,0.1)",
-          width: "100%",
-        }}
-      >
-        <View
-          style={{
-            backgroundColor: "rgba(255,255,255,0.6)",
-            height: "100%",
-            width: `${progressPercent}%`,
-          }}
-        />
-      </View>
+      <MiniPlayerProgress />
     </Pressable>
   );
 }
+
+const MiniPlayerProgress = memo(function MiniPlayerProgress() {
+  const position = usePlayerStore((s) => s.position);
+  const duration = usePlayerStore((s) => s.duration);
+  const progressPercent = duration > 0 ? (position / duration) * 100 : 0;
+
+  return (
+    <View
+      style={{
+        height: 2,
+        backgroundColor: "rgba(255,255,255,0.1)",
+        width: "100%",
+      }}
+    >
+      <View
+        style={{
+          backgroundColor: "rgba(255,255,255,0.6)",
+          height: "100%",
+          width: `${progressPercent}%`,
+        }}
+      />
+    </View>
+  );
+});
