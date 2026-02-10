@@ -5,34 +5,30 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "dark",
-    "scheme": "side-a",
+    "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "scheme": "side-a",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#101010"
+      "backgroundColor": "#000000"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.sidea.app",
-      "infoPlist": {
-        "UIBackgroundModes": ["audio"]
-      }
+      "bundleIdentifier": "com.sidea.app"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#101010"
+        "backgroundColor": "#000000"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.sidea.app",
-      "permissions": ["FOREGROUND_SERVICE"]
+      "package": "com.sidea.app"
     },
-    "plugins": [
-      "expo-router",
-      "expo-audio",
-      "expo-sqlite"
-    ]
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": ["expo-router"]
   }
 }

@@ -1,35 +1,38 @@
-const path = require("path");
 const { getDefaultConfig } = require("expo/metro-config");
 const { withNativewind } = require("nativewind/metro");
+const path = require("path");
 
 const projectRoot = __dirname;
 const monorepoRoot = path.resolve(projectRoot, "../..");
 
 const config = getDefaultConfig(projectRoot);
 
-// Monorepo: watch files in both the mobile app and the monorepo root
+// Watch all files in the monorepo
 config.watchFolders = [monorepoRoot];
 
-// Tell Metro where to look for node_modules. Mobile-local first so that
-// react@19.1.0 (needed by Expo SDK 54 / RN 0.81) wins over the root
-// react@19.2.3 (installed for Next.js).
+// Resolve from local node_modules first, then monorepo root
 config.resolver.nodeModulesPaths = [
   path.resolve(projectRoot, "node_modules"),
   path.resolve(monorepoRoot, "node_modules"),
 ];
 
-// Guarantee every `require('react')` resolves to the mobile app's copy
-// (react@19.1.0), even when the requiring file lives in hoisted root
-// node_modules. Without this, react-native (hoisted) picks up root's
-// react@19.2.3, creating two React instances → "Invalid hook call".
-const reactPath = path.resolve(projectRoot, "node_modules/react");
+// Pin react/react-native to the mobile app's copies to prevent duplicates
+const pinnedModules = {
+  react: path.resolve(projectRoot, "node_modules/react"),
+  "react-native": path.resolve(projectRoot, "node_modules/react-native"),
+};
 
+const originalResolveRequest = config.resolver.resolveRequest;
 config.resolver.resolveRequest = (context, moduleName, platform) => {
-  if (moduleName === "react") {
+  if (pinnedModules[moduleName]) {
     return {
-      filePath: require.resolve(reactPath),
       type: "sourceFile",
+      filePath: require.resolve(moduleName, { paths: [projectRoot] }),
     };
+  }
+
+  if (originalResolveRequest) {
+    return originalResolveRequest(context, moduleName, platform);
   }
   return context.resolveRequest(context, moduleName, platform);
 };

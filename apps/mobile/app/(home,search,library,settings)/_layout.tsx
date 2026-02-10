@@ -1,7 +1,7 @@
 import { Stack } from "expo-router/stack";
 
-const TITLES: Record<string, string> = {
-  home: "Side A",
+const titles: Record<string, string> = {
+  home: "Home",
   search: "Search",
   library: "Library",
   settings: "Settings",
@@ -17,23 +17,26 @@ export default function SharedLayout({
   return (
     <Stack
       screenOptions={{
-        headerTransparent: true,
-        headerShadowVisible: false,
+        headerStyle: { backgroundColor: "#000" },
+        headerTintColor: "#fff",
+        contentStyle: { backgroundColor: "#000" },
         headerLargeTitleShadowVisible: false,
-        headerLargeStyle: { backgroundColor: "transparent" },
-        headerLargeTitle: true,
-        headerBlurEffect: "dark",
+        headerShadowVisible: false,
         headerBackButtonDisplayMode: "minimal",
       }}
     >
-      <Stack.Screen name={screen} options={{ title: TITLES[screen] }} />
-      <Stack.Screen name="album/[id]" options={{ headerLargeTitle: false }} />
       <Stack.Screen
-        name="player"
+        name={screen}
         options={{
-          presentation: "modal",
-          headerShown: false,
-          contentStyle: { backgroundColor: "#000" },
+          title: titles[screen] ?? screen,
+          headerLargeTitle: true,
+        }}
+      />
+      <Stack.Screen
+        name="album/[id]"
+        options={{
+          headerLargeTitle: false,
+          title: "",
         }}
       />
     </Stack>

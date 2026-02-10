@@ -1,90 +1,62 @@
-import { useState, useCallback } from "react";
-import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
-import type { Track, Album, Artist } from "@side-a/shared/api/types";
+import type { Track } from "@side-a/shared/api/types";
 
-export type SearchTab = "tracks" | "albums" | "artists";
+function useDebounce<T>(value: T, delay: number): T {
+  const [debounced, setDebounced] = useState(value);
 
-export function useSearch() {
-  const queryClient = useQueryClient();
-  const [query, setQuery] = useState("");
-  const [currentTab, setCurrentTab] = useState<SearchTab>("tracks");
+  useEffect(() => {
+    const timer = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(timer);
+  }, [value, delay]);
 
-  const tracksQuery = useInfiniteQuery({
-    queryKey: ["search", "tracks", query],
-    queryFn: async ({ pageParam = 0, signal }) => {
-      if (!query) return { items: [] as Track[], totalNumberOfItems: 0, offset: 0, limit: 0 };
-      const result = await api.searchTracks(query, { offset: pageParam, limit: 25, signal });
-      return { ...result, offset: pageParam };
-    },
-    getNextPageParam: (lastPage) => {
-      const next = (lastPage.offset ?? 0) + (lastPage.limit ?? 25);
-      return next >= (lastPage.totalNumberOfItems ?? 0) ? undefined : next;
-    },
-    initialPageParam: 0,
-    enabled: !!query && currentTab === "tracks",
-  });
+  return debounced;
+}
 
-  const albumsQuery = useInfiniteQuery({
-    queryKey: ["search", "albums", query],
-    queryFn: async ({ pageParam = 0, signal }) => {
-      if (!query) return { items: [] as Album[], totalNumberOfItems: 0, offset: 0, limit: 0 };
-      const result = await api.searchAlbums(query, { offset: pageParam, limit: 25, signal });
-      return { ...result, offset: pageParam };
-    },
-    getNextPageParam: (lastPage) => {
-      const next = (lastPage.offset ?? 0) + (lastPage.limit ?? 25);
-      return next >= (lastPage.totalNumberOfItems ?? 0) ? undefined : next;
-    },
-    initialPageParam: 0,
-    enabled: !!query && currentTab === "albums",
-  });
+export function useSearchTracks(query: string) {
+  const debouncedQuery = useDebounce(query.trim(), 300);
+  const [results, setResults] = useState<Track[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [total, setTotal] = useState(0);
 
-  const artistsQuery = useInfiniteQuery({
-    queryKey: ["search", "artists", query],
-    queryFn: async ({ pageParam = 0, signal }) => {
-      if (!query) return { items: [] as Artist[], totalNumberOfItems: 0, offset: 0, limit: 0 };
-      const result = await api.searchArtists(query, { offset: pageParam, limit: 25, signal });
-      return { ...result, offset: pageParam };
-    },
-    getNextPageParam: (lastPage) => {
-      const next = (lastPage.offset ?? 0) + (lastPage.limit ?? 25);
-      return next >= (lastPage.totalNumberOfItems ?? 0) ? undefined : next;
-    },
-    initialPageParam: 0,
-    enabled: !!query && currentTab === "artists",
-  });
+  useEffect(() => {
+    if (!debouncedQuery) {
+      setResults([]);
+      setTotal(0);
+      return;
+    }
 
-  const tracks = tracksQuery.data?.pages.flatMap((p) => p.items) ?? [];
-  const albums = albumsQuery.data?.pages.flatMap((p) => p.items) ?? [];
-  const artists = artistsQuery.data?.pages.flatMap((p) => p.items) ?? [];
+    let cancelled = false;
+    const controller = new AbortController();
 
-  const activeQuery =
-    currentTab === "tracks" ? tracksQuery : currentTab === "albums" ? albumsQuery : artistsQuery;
+    (async () => {
+      setLoading(true);
+      try {
+        const response = await api.searchTracks(debouncedQuery, {
+          signal: controller.signal,
+          limit: 25,
+        });
+        if (!cancelled) {
+          setResults(response.items);
+          setTotal(response.totalNumberOfItems);
+        }
+      } catch (error) {
+        if (
+          !cancelled &&
+          !(error instanceof Error && error.name === "AbortError")
+        ) {
+          console.error("Search failed:", error);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
 
-  const handleSearch = useCallback((q: string) => {
-    setQuery(q);
-    setCurrentTab("tracks");
-  }, []);
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [debouncedQuery]);
 
-  const clearSearch = useCallback(() => {
-    setQuery("");
-    setCurrentTab("tracks");
-    queryClient.removeQueries({ queryKey: ["search"] });
-  }, [queryClient]);
-
-  return {
-    query,
-    currentTab,
-    setCurrentTab,
-    handleSearch,
-    clearSearch,
-    tracks,
-    albums,
-    artists,
-    isLoading: activeQuery.isLoading,
-    isFetchingMore: activeQuery.isFetchingNextPage,
-    hasNextPage: activeQuery.hasNextPage ?? false,
-    fetchNextPage: activeQuery.fetchNextPage,
-  };
+  return { results, loading, total };
 }
