@@ -60,8 +60,9 @@ export function PlayerContainer({ tabBarHeight }: { tabBarHeight: number }) {
     bottom: interpolate(
       progress.value,
       [0, 1],
-      [tabBarHeight, 0]
+      [tabBarHeight + 4, 0]
     ),
+    boxShadow: progress.value < 0.3 ? "0 -2px 12px rgba(0,0,0,0.3)" : "none",
   }));
 
   const miniOpacity = useAnimatedStyle(() => ({

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { View, Text, Pressable, useWindowDimensions } from "react-native";
+import { StyleSheet, View, Text, Pressable, useWindowDimensions } from "react-native";
 import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, {
@@ -87,7 +87,16 @@ export function FullscreenPlayer({ onCollapse }: FullscreenPlayerProps) {
         paddingBottom: insets.bottom + 8,
       }}
     >
-      {/* Header */}
+      {coverUrl && (
+        <Image
+          source={{ uri: coverUrl }}
+          style={StyleSheet.absoluteFill}
+          contentFit="cover"
+          blurRadius={80}
+        />
+      )}
+      <View style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(0,0,0,0.6)" }]} />
+
       <View
         style={{
           flexDirection: "row",

@@ -41,9 +41,11 @@ export function MiniPlayer({ onExpand }: MiniPlayerProps) {
     <Pressable
       onPress={onExpand}
       style={{
-        backgroundColor: "#000",
-        borderTopWidth: 1,
-        borderTopColor: "rgba(255,255,255,0.1)",
+        backgroundColor: "rgba(30,30,30,0.95)",
+        marginHorizontal: 8,
+        borderRadius: 12,
+        borderCurve: "continuous",
+        overflow: "hidden",
       }}
     >
       <View
