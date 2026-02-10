@@ -1,19 +1,23 @@
-import { View, Text, Pressable, Dimensions } from "react-native";
+import { View, Text, Pressable, useWindowDimensions } from "react-native";
 import { Image } from "expo-image";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from "react-native-reanimated";
+import * as Haptics from "expo-haptics";
 import { usePlayerStore } from "@/stores/player-store";
 import { api } from "@/lib/api";
-import { getTrackTitle, getTrackArtists, deriveTrackQuality } from "@side-a/shared";
-import * as Haptics from "expo-haptics";
+import { getTrackTitle, getTrackArtists } from "@side-a/shared";
 import { SeekBar } from "@/components/seek-bar";
-import { LyricsView } from "@/components/lyrics-view";
+import { VolumeSlider } from "@/components/volume-slider";
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 interface FullscreenPlayerProps {
   onCollapse: () => void;
 }
-
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const ART_SIZE = Math.min(SCREEN_WIDTH - 48, 300);
-const MONO_FONT = process.env.EXPO_OS === "ios" ? "ui-monospace" : "monospace";
 
 function haptic() {
   if (process.env.EXPO_OS === "ios") {
@@ -21,116 +25,122 @@ function haptic() {
   }
 }
 
+function useSpringPress(scaleDown = 0.92) {
+  const scale = useSharedValue(1);
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+  const onPressIn = () => {
+    scale.value = withSpring(scaleDown, { damping: 15, stiffness: 400 });
+  };
+  const onPressOut = () => {
+    scale.value = withSpring(1, { damping: 15, stiffness: 300 });
+  };
+  return { animatedStyle, onPressIn, onPressOut };
+}
+
 export function FullscreenPlayer({ onCollapse }: FullscreenPlayerProps) {
+  const insets = useSafeAreaInsets();
+  const { width: screenWidth } = useWindowDimensions();
+  const artSize = screenWidth - 48;
+
   const currentTrack = usePlayerStore((s) => s.currentTrack);
   const isPlaying = usePlayerStore((s) => s.isPlaying);
+  const isShuffle = usePlayerStore((s) => s.isShuffle);
+  const repeatMode = usePlayerStore((s) => s.repeatMode);
   const togglePlayback = usePlayerStore((s) => s.togglePlayback);
   const skipNext = usePlayerStore((s) => s.skipNext);
   const skipPrev = usePlayerStore((s) => s.skipPrev);
-  const showLyrics = usePlayerStore((s) => s.showLyrics);
-  const toggleLyrics = usePlayerStore((s) => s.toggleLyrics);
+  const toggleShuffle = usePlayerStore((s) => s.toggleShuffle);
+  const cycleRepeatMode = usePlayerStore((s) => s.cycleRepeatMode);
+
+  const playPress = useSpringPress(0.9);
+  const prevPress = useSpringPress(0.85);
+  const nextPress = useSpringPress(0.85);
 
   if (!currentTrack) return null;
 
   const title = getTrackTitle(currentTrack);
   const artists = getTrackArtists(currentTrack);
-  const quality = deriveTrackQuality(currentTrack);
   const coverUrl = currentTrack.album?.cover
     ? api.getCoverUrl(currentTrack.album.cover, "640")
     : null;
 
-  if (showLyrics) {
-    return (
-      <View style={{ flex: 1, backgroundColor: "#000", paddingTop: 12, paddingBottom: 40 }}>
+  return (
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: "#000",
+        paddingTop: insets.top + 8,
+        paddingBottom: insets.bottom + 8,
+      }}
+    >
+      {/* Header */}
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          paddingHorizontal: 24,
+          height: 44,
+        }}
+      >
         <Pressable
-          onPress={onCollapse}
-          style={{ alignItems: "center", marginTop: 12 }}
+          onPress={() => {
+            haptic();
+            onCollapse();
+          }}
+          hitSlop={12}
+          style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}
         >
-          <View
-            style={{
-              width: 36,
-              height: 5,
-              borderRadius: 9999,
-              backgroundColor: "rgba(255,255,255,0.3)",
-            }}
+          <Image
+            source="sf:chevron.down"
+            style={{ width: 22, height: 22 }}
+            tintColor="rgba(255,255,255,0.7)"
           />
         </Pressable>
-
-        <LyricsView />
-
-        <View style={{ marginTop: 16 }}>
-          <SeekBar />
-        </View>
-
-        <View
+        <Text
           style={{
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 32,
-            marginTop: 16,
+            color: "rgba(255,255,255,0.7)",
+            fontSize: 12,
+            fontWeight: "600",
+            letterSpacing: 1,
           }}
         >
-          <Pressable
-            onPress={() => { haptic(); skipPrev(); }}
-            style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
-          >
-            <Image source="sf:backward.fill" style={{ width: 28, height: 28 }} tintColor="white" />
-          </Pressable>
-          <Pressable
-            onPress={() => { haptic(); togglePlayback(); }}
-            style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
-          >
-            <Image
-              source={isPlaying ? "sf:pause.fill" : "sf:play.fill"}
-              style={{ width: 44, height: 44 }}
-              tintColor="white"
-            />
-          </Pressable>
-          <Pressable
-            onPress={() => { haptic(); skipNext(); }}
-            style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
-          >
-            <Image source="sf:forward.fill" style={{ width: 28, height: 28 }} tintColor="white" />
-          </Pressable>
-        </View>
-
-        <View style={{ alignItems: "center", marginTop: 16 }}>
-          <Pressable
-            onPress={() => { haptic(); toggleLyrics(); }}
-            style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
-          >
-            <Image source="sf:quote.bubble" style={{ width: 22, height: 22 }} tintColor="white" />
-          </Pressable>
-        </View>
+          NOW PLAYING
+        </Text>
+        <Pressable
+          hitSlop={12}
+          style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}
+        >
+          <Image
+            source="sf:ellipsis"
+            style={{ width: 22, height: 22 }}
+            tintColor="rgba(255,255,255,0.7)"
+          />
+        </Pressable>
       </View>
-    );
-  }
 
-  return (
-    <View style={{ flex: 1, backgroundColor: "#000", paddingTop: 12, paddingBottom: 40 }}>
-      <Pressable
-        onPress={onCollapse}
-        style={{ alignItems: "center", marginTop: 12 }}
+      {/* Album Art */}
+      <View
+        style={{
+          alignItems: "center",
+          justifyContent: "center",
+          paddingHorizontal: 24,
+          paddingTop: 24,
+          paddingBottom: 32,
+          flex: 1,
+        }}
       >
         <View
           style={{
-            width: 36,
-            height: 5,
-            borderRadius: 9999,
-            backgroundColor: "rgba(255,255,255,0.3)",
-          }}
-        />
-      </Pressable>
-
-      <View style={{ alignItems: "center", marginTop: 32, marginBottom: 24 }}>
-        <View
-          style={{
-            borderWidth: 1,
-            borderColor: "rgba(255,255,255,0.1)",
+            width: artSize,
+            height: artSize,
+            maxHeight: artSize,
+            borderRadius: 12,
+            borderCurve: "continuous",
             overflow: "hidden",
-            width: ART_SIZE,
-            height: ART_SIZE,
+            boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
           }}
         >
           {coverUrl ? (
@@ -138,7 +148,7 @@ export function FullscreenPlayer({ onCollapse }: FullscreenPlayerProps) {
               source={{ uri: coverUrl }}
               style={{ width: "100%", height: "100%" }}
               contentFit="cover"
-              transition={200}
+              transition={300}
             />
           ) : (
             <View
@@ -151,7 +161,7 @@ export function FullscreenPlayer({ onCollapse }: FullscreenPlayerProps) {
             >
               <Image
                 source="sf:music.note"
-                style={{ width: 48, height: 48 }}
+                style={{ width: 64, height: 64 }}
                 tintColor="rgba(255,255,255,0.2)"
               />
             </View>
@@ -159,63 +169,59 @@ export function FullscreenPlayer({ onCollapse }: FullscreenPlayerProps) {
         </View>
       </View>
 
-      <Text
+      {/* Track Info + Heart */}
+      <View
         style={{
-          color: "#fff",
-          fontSize: 18,
-          fontWeight: "700",
-          textAlign: "center",
+          flexDirection: "row",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
           paddingHorizontal: 24,
         }}
-        numberOfLines={1}
-        ellipsizeMode="tail"
       >
-        {title}
-      </Text>
-      <Text
-        style={{
-          color: "rgba(255,255,255,0.5)",
-          fontSize: 14,
-          textAlign: "center",
-          paddingHorizontal: 24,
-          marginTop: 4,
-        }}
-        numberOfLines={1}
-        ellipsizeMode="tail"
-      >
-        {artists}
-      </Text>
-
-      {quality && (
-        <View
-          style={{
-            alignSelf: "center",
-            marginTop: 8,
-            paddingHorizontal: 6,
-            paddingVertical: 2,
-            borderWidth: 1,
-            borderColor: "rgba(255,255,255,0.2)",
-          }}
-        >
+        <View style={{ flex: 1, marginRight: 16 }}>
           <Text
             style={{
-              fontSize: 10,
+              color: "#fff",
+              fontSize: 22,
               fontWeight: "700",
-              fontFamily: MONO_FONT,
-              color: "rgba(255,255,255,0.5)",
-              textTransform: "uppercase",
-              letterSpacing: 0.5,
             }}
+            numberOfLines={1}
           >
-            {quality === "HI_RES_LOSSLESS" ? "HI-RES" : quality}
+            {title}
+          </Text>
+          <Text
+            style={{
+              color: "rgba(255,255,255,0.5)",
+              fontSize: 16,
+              marginTop: 4,
+            }}
+            numberOfLines={1}
+          >
+            {artists}
           </Text>
         </View>
-      )}
+        <Pressable
+          hitSlop={12}
+          style={({ pressed }) => ({
+            opacity: pressed ? 0.5 : 1,
+            marginTop: 4,
+          })}
+          onPress={() => haptic()}
+        >
+          <Image
+            source="sf:heart"
+            style={{ width: 24, height: 24 }}
+            tintColor="rgba(255,255,255,0.7)"
+          />
+        </Pressable>
+      </View>
 
+      {/* Seek Bar */}
       <View style={{ marginTop: 24 }}>
         <SeekBar />
       </View>
 
+      {/* Playback Controls */}
       <View
         style={{
           flexDirection: "row",
@@ -225,44 +231,105 @@ export function FullscreenPlayer({ onCollapse }: FullscreenPlayerProps) {
           marginTop: 16,
         }}
       >
+        {/* Shuffle */}
         <Pressable
-          onPress={() => { haptic(); skipPrev(); }}
-          style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
+          onPress={() => {
+            haptic();
+            toggleShuffle();
+          }}
+          style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}
         >
-          <Image source="sf:backward.fill" style={{ width: 28, height: 28 }} tintColor="white" />
+          <Image
+            source="sf:shuffle"
+            style={{ width: 22, height: 22 }}
+            tintColor={isShuffle ? "#fff" : "rgba(255,255,255,0.5)"}
+          />
         </Pressable>
 
-        <Pressable
-          onPress={() => { haptic(); togglePlayback(); }}
-          style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
+        {/* Previous */}
+        <AnimatedPressable
+          onPress={() => {
+            haptic();
+            skipPrev();
+          }}
+          onPressIn={prevPress.onPressIn}
+          onPressOut={prevPress.onPressOut}
+          style={prevPress.animatedStyle}
+        >
+          <Image
+            source="sf:backward.fill"
+            style={{ width: 32, height: 32 }}
+            tintColor="white"
+          />
+        </AnimatedPressable>
+
+        {/* Play / Pause */}
+        <AnimatedPressable
+          onPress={() => {
+            haptic();
+            togglePlayback();
+          }}
+          onPressIn={playPress.onPressIn}
+          onPressOut={playPress.onPressOut}
+          style={[
+            {
+              width: 64,
+              height: 64,
+              borderRadius: 32,
+              backgroundColor: "#fff",
+              alignItems: "center",
+              justifyContent: "center",
+            },
+            playPress.animatedStyle,
+          ]}
         >
           <Image
             source={isPlaying ? "sf:pause.fill" : "sf:play.fill"}
-            style={{ width: 44, height: 44 }}
-            tintColor="white"
+            style={{ width: 28, height: 28 }}
+            tintColor="#000"
           />
-        </Pressable>
+        </AnimatedPressable>
 
-        <Pressable
-          onPress={() => { haptic(); skipNext(); }}
-          style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
-        >
-          <Image source="sf:forward.fill" style={{ width: 28, height: 28 }} tintColor="white" />
-        </Pressable>
-      </View>
-
-      <View style={{ alignItems: "center", marginTop: 32 }}>
-        <Pressable
-          onPress={() => { haptic(); toggleLyrics(); }}
-          style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
+        {/* Next */}
+        <AnimatedPressable
+          onPress={() => {
+            haptic();
+            skipNext();
+          }}
+          onPressIn={nextPress.onPressIn}
+          onPressOut={nextPress.onPressOut}
+          style={nextPress.animatedStyle}
         >
           <Image
-            source="sf:quote.bubble"
+            source="sf:forward.fill"
+            style={{ width: 32, height: 32 }}
+            tintColor="white"
+          />
+        </AnimatedPressable>
+
+        {/* Repeat */}
+        <Pressable
+          onPress={() => {
+            haptic();
+            cycleRepeatMode();
+          }}
+          style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}
+        >
+          <Image
+            source={repeatMode === "one" ? "sf:repeat.1" : "sf:repeat"}
             style={{ width: 22, height: 22 }}
-            tintColor="rgba(255,255,255,0.5)"
+            tintColor={
+              repeatMode !== "off" ? "#fff" : "rgba(255,255,255,0.5)"
+            }
           />
         </Pressable>
       </View>
+
+      {/* Spacer pushes volume to bottom */}
+      <View style={{ flex: 1 }} />
+
+      {/* Volume */}
+      <VolumeSlider />
     </View>
   );
 }

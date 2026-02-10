@@ -14,6 +14,9 @@ interface PlayerState {
   position: number;
   duration: number;
   showLyrics: boolean;
+  isShuffle: boolean;
+  repeatMode: "off" | "all" | "one";
+  volume: number;
   isPlayerReady: boolean;
 }
 
@@ -25,6 +28,9 @@ interface PlayerActions {
   skipPrev: () => Promise<void>;
   seekTo: (position: number) => Promise<void>;
   toggleLyrics: () => void;
+  toggleShuffle: () => void;
+  cycleRepeatMode: () => void;
+  setVolume: (volume: number) => void;
 }
 
 type PlayerStore = PlayerState & PlayerActions;
@@ -45,11 +51,24 @@ function handleStatus(status: AudioStatus, get: () => PlayerStore, set: (s: Part
 
   if (status.didJustFinish) {
     const state = get();
+
+    if (state.repeatMode === "one") {
+      if (player) {
+        player.seekTo(0);
+        player.play();
+      }
+      return;
+    }
+
     const nextIndex = state.queueIndex + 1;
     if (nextIndex < state.queue.length) {
       const nextTrack = state.queue[nextIndex];
       set({ queueIndex: nextIndex, currentTrack: nextTrack });
       loadAndPlay(nextTrack, get, set);
+    } else if (state.repeatMode === "all" && state.queue.length > 0) {
+      const firstTrack = state.queue[0];
+      set({ queueIndex: 0, currentTrack: firstTrack });
+      loadAndPlay(firstTrack, get, set);
     } else {
       set({ isPlaying: false });
     }
@@ -82,6 +101,9 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
   position: 0,
   duration: 0,
   showLyrics: false,
+  isShuffle: false,
+  repeatMode: "off" as const,
+  volume: 1,
   isPlayerReady: false,
 
   setupPlayer: async () => {
@@ -150,5 +172,24 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
 
   toggleLyrics: () => {
     set((s) => ({ showLyrics: !s.showLyrics }));
+  },
+
+  toggleShuffle: () => {
+    set((s) => ({ isShuffle: !s.isShuffle }));
+  },
+
+  cycleRepeatMode: () => {
+    set((s) => {
+      const modes: Array<"off" | "all" | "one"> = ["off", "all", "one"];
+      const nextIndex = (modes.indexOf(s.repeatMode) + 1) % modes.length;
+      return { repeatMode: modes[nextIndex] };
+    });
+  },
+
+  setVolume: (volume: number) => {
+    if (player) {
+      player.volume = volume;
+    }
+    set({ volume });
   },
 }));

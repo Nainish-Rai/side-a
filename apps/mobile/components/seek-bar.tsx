@@ -84,8 +84,6 @@ export function SeekBar() {
     };
   });
 
-  const remaining = duration - position;
-
   return (
     <View style={{ paddingHorizontal: 24 }}>
       <GestureDetector gesture={gesture}>
@@ -144,7 +142,7 @@ export function SeekBar() {
             fontVariant: ["tabular-nums"],
           }}
         >
-          -{formatTime(remaining > 0 ? remaining : 0)}
+          {formatTime(duration)}
         </Text>
       </View>
     </View>
