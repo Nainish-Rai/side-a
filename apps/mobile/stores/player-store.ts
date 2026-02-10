@@ -50,6 +50,11 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
   setupPlayer: async () => {
     try {
       await TrackPlayer.setupPlayer();
+    } catch {
+      return;
+    }
+
+    try {
       await TrackPlayer.updateOptions({
         capabilities: [
           Capability.Play,
@@ -65,10 +70,11 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
           Capability.SkipToNext,
         ],
       });
-      set({ isPlayerReady: true });
     } catch {
-      set({ isPlayerReady: true });
+      return;
     }
+
+    set({ isPlayerReady: true });
 
     TrackPlayer.addEventListener(Event.PlaybackState, (e) => {
       set({
