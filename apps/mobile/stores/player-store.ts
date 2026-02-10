@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { createAudioPlayer, setAudioModeAsync } from "expo-audio";
 import type { AudioPlayer, AudioStatus } from "expo-audio";
 import { api } from "@/lib/api";
-import { addRecentlyPlayed } from "@/lib/database";
+import { addRecentlyPlayed, getSetting } from "@/lib/database";
 import type { Track } from "@side-a/shared/api/types";
 
 interface PlayerState {
@@ -38,7 +38,8 @@ type PlayerStore = PlayerState & PlayerActions;
 let player: AudioPlayer | null = null;
 
 async function resolveTrackUrl(track: Track): Promise<string | null> {
-  return api.getStreamUrl(track.id, track.audioQuality ?? "LOSSLESS");
+  const quality = getSetting("audio_quality", "LOSSLESS");
+  return api.getStreamUrl(track.id, quality);
 }
 
 function handleStatus(status: AudioStatus, get: () => PlayerStore, set: (s: Partial<PlayerState>) => void) {
