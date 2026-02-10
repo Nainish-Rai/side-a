@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { View, Text, Pressable } from "react-native";
 import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
@@ -18,7 +19,7 @@ interface TrackRowProps {
   showQuality?: boolean;
 }
 
-export function TrackRow({
+export const TrackRow = memo(function TrackRow({
   track,
   onPress,
   showQuality = true,
@@ -166,4 +167,4 @@ export function TrackRow({
       </View>
     </Pressable>
   );
-}
+});
