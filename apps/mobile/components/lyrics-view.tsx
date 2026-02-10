@@ -1,12 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { View, Text, ScrollView, ActivityIndicator } from "react-native";
-import { Image } from "expo-image";
 import { usePlayerStore } from "@/stores/player-store";
 import { api } from "@/lib/api";
-import { getTrackTitle, getTrackArtists } from "@side-a/shared";
 import type { SyncedLyric } from "@side-a/shared/api/types";
 
-const LINE_HEIGHT = 32;
+const LINE_HEIGHT = 48;
 
 export function LyricsView() {
   const currentTrack = usePlayerStore((s) => s.currentTrack);
@@ -53,70 +51,13 @@ export function LyricsView() {
 
   if (!currentTrack) return null;
 
-  const title = getTrackTitle(currentTrack);
-  const artists = getTrackArtists(currentTrack);
-  const coverUrl = currentTrack.album?.cover
-    ? api.getCoverUrl(currentTrack.album.cover, "160")
-    : null;
-
   return (
     <View style={{ flex: 1 }}>
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          gap: 12,
-          paddingHorizontal: 16,
-          paddingVertical: 12,
-        }}
-      >
-        <View
-          style={{
-            width: 48,
-            height: 48,
-            overflow: "hidden",
-            backgroundColor: "rgba(255,255,255,0.05)",
-          }}
-        >
-          {coverUrl ? (
-            <Image
-              source={{ uri: coverUrl }}
-              style={{ width: "100%", height: "100%" }}
-              contentFit="cover"
-              transition={200}
-            />
-          ) : (
-            <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-              <Image
-                source="sf:music.note"
-                style={{ width: 24, height: 24 }}
-                tintColor="rgba(255,255,255,0.2)"
-              />
-            </View>
-          )}
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text
-            style={{ color: "#fff", fontSize: 14, fontWeight: "600" }}
-            numberOfLines={1}
-            ellipsizeMode="tail"
-          >
-            {title}
-          </Text>
-          <Text
-            style={{ color: "rgba(255,255,255,0.5)", fontSize: 12 }}
-            numberOfLines={1}
-            ellipsizeMode="tail"
-          >
-            {artists}
-          </Text>
-        </View>
-      </View>
-
       <ScrollView
         ref={scrollViewRef}
         style={{ flex: 1 }}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingTop: 20, paddingBottom: 200 }}
       >
         {loading ? (
           <View
@@ -150,8 +91,8 @@ export function LyricsView() {
                 lineHeight: LINE_HEIGHT,
                 paddingHorizontal: 24,
                 color: i === activeIndex ? "#fff" : "rgba(255,255,255,0.3)",
-                fontSize: i === activeIndex ? 18 : 16,
-                fontWeight: i === activeIndex ? "700" : "400",
+                fontSize: i === activeIndex ? 24 : 20,
+                fontWeight: i === activeIndex ? "700" : "500",
               }}
             >
               {line.text || "\u00A0"}
