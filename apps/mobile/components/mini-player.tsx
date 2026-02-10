@@ -4,7 +4,6 @@ import { usePlayerStore } from "@/stores/player-store";
 import { api } from "@/lib/api";
 import { getTrackTitle, getTrackArtists } from "@side-a/shared";
 import * as Haptics from "expo-haptics";
-import { useProgress } from "react-native-track-player";
 
 interface MiniPlayerProps {
   onExpand: () => void;
@@ -15,7 +14,8 @@ export function MiniPlayer({ onExpand }: MiniPlayerProps) {
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   const togglePlayback = usePlayerStore((s) => s.togglePlayback);
   const skipNext = usePlayerStore((s) => s.skipNext);
-  const progress = useProgress();
+  const position = usePlayerStore((s) => s.position);
+  const duration = usePlayerStore((s) => s.duration);
 
   if (!currentTrack) return null;
 
@@ -24,10 +24,7 @@ export function MiniPlayer({ onExpand }: MiniPlayerProps) {
     : null;
   const title = getTrackTitle(currentTrack);
   const artists = getTrackArtists(currentTrack);
-  const progressPercent =
-    progress.duration > 0
-      ? (progress.position / progress.duration) * 100
-      : 0;
+  const progressPercent = duration > 0 ? (position / duration) * 100 : 0;
 
   const handleTogglePlayback = () => {
     if (process.env.EXPO_OS === "ios") {

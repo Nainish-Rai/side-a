@@ -4,7 +4,6 @@ import { View, Text, ScrollView } from "@/src/tw";
 import { Image } from "@/src/tw/image";
 import { usePlayerStore } from "@/stores/player-store";
 import { api } from "@/lib/api";
-import { useProgress } from "react-native-track-player";
 import { getTrackTitle, getTrackArtists } from "@side-a/shared";
 import type { SyncedLyric } from "@side-a/shared/api/types";
 
@@ -12,7 +11,7 @@ const LINE_HEIGHT = 32;
 
 export function LyricsView() {
   const currentTrack = usePlayerStore((s) => s.currentTrack);
-  const { position } = useProgress(500);
+  const position = usePlayerStore((s) => s.position);
   const [lyrics, setLyrics] = useState<SyncedLyric[]>([]);
   const [loading, setLoading] = useState(false);
   const scrollViewRef = useRef<RNScrollView>(null);

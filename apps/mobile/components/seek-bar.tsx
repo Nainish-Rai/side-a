@@ -1,7 +1,6 @@
 import { useState, useCallback } from "react";
 import { View, Text } from "@/src/tw";
 import { usePlayerStore } from "@/stores/player-store";
-import { useProgress } from "react-native-track-player";
 import { formatTime } from "@side-a/shared";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
@@ -12,7 +11,8 @@ import Animated, {
 } from "react-native-reanimated";
 
 export function SeekBar() {
-  const { position, duration } = useProgress(200);
+  const position = usePlayerStore((s) => s.position);
+  const duration = usePlayerStore((s) => s.duration);
   const seekTo = usePlayerStore((s) => s.seekTo);
 
   const [barWidth, setBarWidth] = useState(0);

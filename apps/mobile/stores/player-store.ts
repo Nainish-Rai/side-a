@@ -1,22 +1,17 @@
 import { create } from "zustand";
-import TrackPlayer, {
-  State,
-  Event,
-  RepeatMode,
-  Capability,
-} from "react-native-track-player";
+import { Audio, AVPlaybackStatus } from "expo-av";
 import { api } from "@/lib/api";
 import { addRecentlyPlayed } from "@/lib/database";
 import type { Track } from "@side-a/shared/api/types";
-import { getTrackTitle, getTrackArtists } from "@side-a/shared";
 
 interface PlayerState {
   currentTrack: Track | null;
   queue: Track[];
+  queueIndex: number;
   isPlaying: boolean;
   isBuffering: boolean;
-  repeatMode: RepeatMode;
-  shuffled: boolean;
+  position: number;
+  duration: number;
   showLyrics: boolean;
   isPlayerReady: boolean;
 }
@@ -33,154 +28,129 @@ interface PlayerActions {
 
 type PlayerStore = PlayerState & PlayerActions;
 
+let soundInstance: Audio.Sound | null = null;
+
 async function resolveTrackUrl(track: Track): Promise<string | null> {
   return api.getStreamUrl(track.id, track.audioQuality ?? "LOSSLESS");
+}
+
+function handleStatus(status: AVPlaybackStatus, get: () => PlayerStore, set: (s: Partial<PlayerState>) => void) {
+  if (!status.isLoaded) return;
+
+  set({
+    isPlaying: status.isPlaying,
+    isBuffering: status.isBuffering,
+    position: status.positionMillis / 1000,
+    duration: (status.durationMillis ?? 0) / 1000,
+  });
+
+  if (status.didJustFinish) {
+    const state = get();
+    const nextIndex = state.queueIndex + 1;
+    if (nextIndex < state.queue.length) {
+      const nextTrack = state.queue[nextIndex];
+      set({ queueIndex: nextIndex, currentTrack: nextTrack });
+      loadAndPlay(nextTrack, get, set);
+    } else {
+      set({ isPlaying: false });
+    }
+  }
+}
+
+async function loadAndPlay(track: Track, get: () => PlayerStore, set: (s: Partial<PlayerState>) => void) {
+  const url = await resolveTrackUrl(track);
+  if (!url) return;
+
+  if (soundInstance) {
+    await soundInstance.unloadAsync();
+  }
+
+  const { sound } = await Audio.Sound.createAsync(
+    { uri: url },
+    { shouldPlay: true, progressUpdateIntervalMillis: 200 },
+    (status) => handleStatus(status, get, set)
+  );
+
+  soundInstance = sound;
+  addRecentlyPlayed(track);
 }
 
 export const usePlayerStore = create<PlayerStore>((set, get) => ({
   currentTrack: null,
   queue: [],
+  queueIndex: 0,
   isPlaying: false,
   isBuffering: false,
-  repeatMode: RepeatMode.Off,
-  shuffled: false,
+  position: 0,
+  duration: 0,
   showLyrics: false,
   isPlayerReady: false,
 
   setupPlayer: async () => {
     try {
-      await TrackPlayer.setupPlayer();
-    } catch {
-      return;
-    }
-
-    try {
-      await TrackPlayer.updateOptions({
-        capabilities: [
-          Capability.Play,
-          Capability.Pause,
-          Capability.SkipToNext,
-          Capability.SkipToPrevious,
-          Capability.SeekTo,
-          Capability.Stop,
-        ],
-        compactCapabilities: [
-          Capability.Play,
-          Capability.Pause,
-          Capability.SkipToNext,
-        ],
+      await Audio.setAudioModeAsync({
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: false,
       });
+      set({ isPlayerReady: true });
     } catch {
-      return;
+      set({ isPlayerReady: true });
     }
-
-    set({ isPlayerReady: true });
-
-    TrackPlayer.addEventListener(Event.PlaybackState, (e) => {
-      set({
-        isPlaying: e.state === State.Playing,
-        isBuffering:
-          e.state === State.Buffering || e.state === State.Loading,
-      });
-    });
-
-    TrackPlayer.addEventListener(Event.PlaybackActiveTrackChanged, async (e) => {
-      if (e.index != null) {
-        const queue = get().queue;
-        const track = queue[e.index];
-        if (track) {
-          set({ currentTrack: track });
-          addRecentlyPlayed(track);
-
-          const nextIndex = e.index + 1;
-          if (nextIndex < queue.length) {
-            const nextTrack = queue[nextIndex];
-            resolveTrackUrl(nextTrack);
-          }
-        }
-      }
-    });
   },
 
   playTrack: async (track, context) => {
-    const state = get();
-    if (!state.isPlayerReady) return;
-
-    await TrackPlayer.reset();
-
     const trackIndex = context.findIndex((t) => t.id === track.id);
     const orderedQueue = trackIndex >= 0 ? context : [track, ...context];
     const startIndex = trackIndex >= 0 ? trackIndex : 0;
 
-    set({ queue: orderedQueue, currentTrack: track });
-
-    const url = await resolveTrackUrl(track);
-    if (!url) return;
-
-    const rnTracks = await Promise.all(
-      orderedQueue.map(async (t, i) => {
-        let trackUrl: string | undefined;
-        if (i === startIndex) {
-          trackUrl = url;
-        } else if (i === startIndex + 1) {
-          trackUrl = (await resolveTrackUrl(t)) ?? undefined;
-        }
-        return {
-          id: String(t.id),
-          url: trackUrl ?? "",
-          title: getTrackTitle(t),
-          artist: getTrackArtists(t),
-          artwork: t.album?.cover
-            ? api.getCoverUrl(t.album.cover, "640")
-            : undefined,
-          duration: t.duration,
-        };
-      })
-    );
-
-    await TrackPlayer.add(rnTracks);
-    await TrackPlayer.skip(startIndex);
-    await TrackPlayer.play();
-
-    addRecentlyPlayed(track);
-
-    for (let i = 0; i < orderedQueue.length; i++) {
-      if (i === startIndex || i === startIndex + 1) continue;
-      resolveTrackUrl(orderedQueue[i]).then((resolvedUrl) => {
-        if (resolvedUrl) {
-          TrackPlayer.updateMetadataForTrack(i, {
-            // @ts-expect-error - url update via metadata
-            url: resolvedUrl,
-          });
-        }
-      });
-    }
+    set({ queue: orderedQueue, queueIndex: startIndex, currentTrack: track });
+    await loadAndPlay(track, get, set);
   },
 
   togglePlayback: async () => {
-    const state = await TrackPlayer.getPlaybackState();
-    if (state.state === State.Playing) {
-      await TrackPlayer.pause();
+    if (!soundInstance) return;
+    const status = await soundInstance.getStatusAsync();
+    if (!status.isLoaded) return;
+
+    if (status.isPlaying) {
+      await soundInstance.pauseAsync();
     } else {
-      await TrackPlayer.play();
+      await soundInstance.playAsync();
     }
   },
 
   skipNext: async () => {
-    await TrackPlayer.skipToNext();
+    const state = get();
+    const nextIndex = state.queueIndex + 1;
+    if (nextIndex >= state.queue.length) return;
+
+    const nextTrack = state.queue[nextIndex];
+    set({ queueIndex: nextIndex, currentTrack: nextTrack });
+    await loadAndPlay(nextTrack, get, set);
   },
 
   skipPrev: async () => {
-    const position = await TrackPlayer.getPosition();
-    if (position > 3) {
-      await TrackPlayer.seekTo(0);
-    } else {
-      await TrackPlayer.skipToPrevious();
+    const state = get();
+
+    if (state.position > 3) {
+      await soundInstance?.setPositionAsync(0);
+      return;
     }
+
+    const prevIndex = state.queueIndex - 1;
+    if (prevIndex < 0) {
+      await soundInstance?.setPositionAsync(0);
+      return;
+    }
+
+    const prevTrack = state.queue[prevIndex];
+    set({ queueIndex: prevIndex, currentTrack: prevTrack });
+    await loadAndPlay(prevTrack, get, set);
   },
 
   seekTo: async (position) => {
-    await TrackPlayer.seekTo(position);
+    if (!soundInstance) return;
+    await soundInstance.setPositionAsync(position * 1000);
   },
 
   toggleLyrics: () => {
