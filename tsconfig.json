@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "strict": true,
     "esModuleInterop": true,
     "module": "esnext",
@@ -10,5 +14,6 @@
     "isolatedModules": true,
     "skipLibCheck": true,
     "jsx": "react-jsx"
-  }
+  },
+  "extends": "expo/tsconfig.base"
 }

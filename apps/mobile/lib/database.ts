@@ -3,25 +3,27 @@ import type { Track } from "@side-a/shared/api/types";
 
 const DB_NAME = "sidea.db";
 
-let db: SQLite.SQLiteDatabase | null = null;
+let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;
 
-export async function getDatabase(): Promise<SQLite.SQLiteDatabase> {
-  if (!db) {
-    db = await SQLite.openDatabaseAsync(DB_NAME);
-    await db.execAsync(`
-      CREATE TABLE IF NOT EXISTS favorites (
-        id INTEGER PRIMARY KEY,
-        data TEXT NOT NULL,
-        added_at INTEGER NOT NULL DEFAULT (unixepoch())
-      );
-      CREATE TABLE IF NOT EXISTS recently_played (
-        id INTEGER PRIMARY KEY,
-        data TEXT NOT NULL,
-        played_at INTEGER NOT NULL DEFAULT (unixepoch())
-      );
-    `);
+export function getDatabase(): Promise<SQLite.SQLiteDatabase> {
+  if (!dbPromise) {
+    dbPromise = SQLite.openDatabaseAsync(DB_NAME).then(async (database) => {
+      await database.execAsync(`
+        CREATE TABLE IF NOT EXISTS favorites (
+          id INTEGER PRIMARY KEY,
+          data TEXT NOT NULL,
+          added_at INTEGER NOT NULL DEFAULT (unixepoch())
+        );
+        CREATE TABLE IF NOT EXISTS recently_played (
+          id INTEGER PRIMARY KEY,
+          data TEXT NOT NULL,
+          played_at INTEGER NOT NULL DEFAULT (unixepoch())
+        );
+      `);
+      return database;
+    });
   }
-  return db;
+  return dbPromise;
 }
 
 export async function getFavorites(): Promise<Track[]> {
