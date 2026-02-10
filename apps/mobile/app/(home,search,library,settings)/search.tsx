@@ -1,22 +1,20 @@
 import { useState, useEffect, useCallback } from "react";
-import { View, Text, FlatList, ActivityIndicator } from "react-native";
+import { View, Text, FlatList, ScrollView, ActivityIndicator } from "react-native";
 import { useNavigation } from "expo-router";
 import { Image } from "expo-image";
 import { TrackRow } from "@/components/track-row";
-import { useSearchTracks } from "@/hooks/use-search";
+import { AlbumCard } from "@/components/album-card";
+import { ArtistRow } from "@/components/artist-row";
+import { useSearchAll } from "@/hooks/use-search-all";
 import { usePlayerStore } from "@/stores/player-store";
-import type { Track } from "@side-a/shared/api/types";
+import type { Track, Album, Artist } from "@side-a/shared/api/types";
 
 const MONO_FONT = process.env.EXPO_OS === "ios" ? "ui-monospace" : "monospace";
 
 export default function SearchScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const navigation = useNavigation();
-  const {
-    results,
-    loading: searchLoading,
-    total,
-  } = useSearchTracks(searchQuery);
+  const { tracks, albums, artists, loading } = useSearchAll(searchQuery);
   const playTrack = usePlayerStore((s) => s.playTrack);
 
   useEffect(() => {
@@ -39,13 +37,17 @@ export default function SearchScreen() {
     });
   }, [navigation]);
 
-  const handleTrackPress = useCallback((track: Track) => {
-    playTrack(track, results);
-  }, [playTrack, results]);
+  const handleTrackPress = useCallback(
+    (track: Track) => {
+      playTrack(track, tracks);
+    },
+    [playTrack, tracks],
+  );
 
-  const renderItem = useCallback(({ item }: { item: Track }) => (
-    <TrackRow track={item} onPress={handleTrackPress} />
-  ), [handleTrackPress]);
+  const renderItem = useCallback(
+    ({ item }: { item: Track }) => <TrackRow track={item} onPress={handleTrackPress} />,
+    [handleTrackPress],
+  );
 
   const keyExtractor = useCallback((item: Track) => String(item.id), []);
 
@@ -55,9 +57,11 @@ export default function SearchScreen() {
     return <SearchPrompt />;
   }
 
+  const hasResults = tracks.length > 0 || albums.length > 0 || artists.length > 0;
+
   return (
     <FlatList
-      data={results}
+      data={tracks}
       renderItem={renderItem}
       keyExtractor={keyExtractor}
       contentInsetAdjustmentBehavior="automatic"
@@ -65,12 +69,82 @@ export default function SearchScreen() {
       contentContainerStyle={{ paddingBottom: 96 }}
       keyboardDismissMode="on-drag"
       ListHeaderComponent={
-        <SearchHeader loading={searchLoading} total={total} />
+        <ListHeader
+          artists={artists}
+          albums={albums}
+          hasTracks={tracks.length > 0}
+          loading={loading}
+        />
       }
       ListEmptyComponent={
-        searchLoading ? <LoadingState /> : <EmptySearchState />
+        loading ? <LoadingState /> : hasResults ? null : <EmptySearchState />
       }
     />
+  );
+}
+
+function ListHeader({
+  artists,
+  albums,
+  hasTracks,
+  loading,
+}: {
+  artists: Artist[];
+  albums: Album[];
+  hasTracks: boolean;
+  loading: boolean;
+}) {
+  if (loading && artists.length === 0 && albums.length === 0 && !hasTracks) {
+    return null;
+  }
+
+  return (
+    <View>
+      {artists.length > 0 && (
+        <View>
+          <SectionHeader title="ARTISTS" />
+          {artists.map((artist) => (
+            <ArtistRow key={artist.id} artist={artist} />
+          ))}
+        </View>
+      )}
+
+      {albums.length > 0 && (
+        <View>
+          <SectionHeader title="ALBUMS" />
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: 16, gap: 12, paddingBottom: 8 }}
+          >
+            {albums.map((album) => (
+              <AlbumCard key={album.id} album={album} />
+            ))}
+          </ScrollView>
+        </View>
+      )}
+
+      {hasTracks && <SectionHeader title="SONGS" />}
+    </View>
+  );
+}
+
+function SectionHeader({ title }: { title: string }) {
+  return (
+    <View style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 12 }}>
+      <Text
+        style={{
+          fontSize: 11,
+          fontWeight: "700",
+          fontFamily: MONO_FONT,
+          textTransform: "uppercase",
+          letterSpacing: 1.5,
+          color: "rgba(255,255,255,0.4)",
+        }}
+      >
+        {title}
+      </Text>
+    </View>
   );
 }
 
@@ -128,36 +202,6 @@ function SearchPrompt() {
           </Text>
         </View>
       </View>
-    </View>
-  );
-}
-
-function SearchHeader({ loading, total }: { loading: boolean; total: number }) {
-  return (
-    <View
-      style={{
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        paddingHorizontal: 16,
-        paddingTop: 20,
-        paddingBottom: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: "rgba(255,255,255,0.1)",
-      }}
-    >
-      <Text
-        style={{
-          fontSize: 11,
-          fontWeight: "700",
-          fontFamily: MONO_FONT,
-          textTransform: "uppercase",
-          letterSpacing: 1.5,
-          color: "rgba(255,255,255,0.4)",
-        }}
-      >
-        {loading ? "SEARCHING..." : `${total} RESULTS`}
-      </Text>
     </View>
   );
 }
