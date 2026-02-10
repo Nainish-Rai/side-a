@@ -5,7 +5,7 @@ import { View, Text, ScrollView } from "@/src/tw";
 import { Image } from "@/src/tw/image";
 import { TrackRow } from "@/components/track-row";
 import { useSearchTracks } from "@/hooks/use-search";
-import { useRecentlyPlayed } from "@/hooks/use-recently-played";
+import { usePlayerStore } from "@/stores/player-store";
 import type { Track } from "@side-a/shared/api/types";
 
 export default function SearchScreen() {
@@ -16,7 +16,7 @@ export default function SearchScreen() {
     loading: searchLoading,
     total,
   } = useSearchTracks(searchQuery);
-  const { add } = useRecentlyPlayed();
+  const playTrack = usePlayerStore((s) => s.playTrack);
 
   useEffect(() => {
     navigation.setOptions({
@@ -39,7 +39,7 @@ export default function SearchScreen() {
   }, [navigation]);
 
   const handleTrackPress = (track: Track) => {
-    add(track);
+    playTrack(track, results);
   };
 
   const isSearching = searchQuery.trim().length > 0;

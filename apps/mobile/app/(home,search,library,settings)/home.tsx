@@ -3,17 +3,18 @@ import { View, Text, ScrollView } from "@/src/tw";
 import { Image } from "@/src/tw/image";
 import { TrackRow } from "@/components/track-row";
 import { useRecentlyPlayed } from "@/hooks/use-recently-played";
+import { usePlayerStore } from "@/stores/player-store";
 import type { Track } from "@side-a/shared/api/types";
 
 export default function HomeScreen() {
   const {
     tracks: recentTracks,
     loading: recentLoading,
-    add,
   } = useRecentlyPlayed();
+  const playTrack = usePlayerStore((s) => s.playTrack);
 
   const handleTrackPress = (track: Track) => {
-    add(track);
+    playTrack(track, recentTracks);
   };
 
   return (

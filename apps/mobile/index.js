@@ -1,5 +1,7 @@
 import { registerRootComponent } from "expo";
 import { ExpoRoot } from "expo-router";
+import TrackPlayer from "react-native-track-player";
+import playbackService from "./services/playback-service";
 
 export function App() {
   const ctx = require.context("./app");
@@ -7,3 +9,4 @@ export function App() {
 }
 
 registerRootComponent(App);
+TrackPlayer.registerPlaybackService(() => playbackService);

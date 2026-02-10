@@ -1,8 +1,13 @@
 import "@/src/global.css";
 
+import { useEffect, useState } from "react";
 import { Tabs } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { Image } from "expo-image";
+import { View, Modal } from "react-native";
+import { usePlayerStore } from "@/stores/player-store";
+import { MiniPlayer } from "@/components/mini-player";
+import { FullscreenPlayer } from "@/components/fullscreen-player";
 
 function TabIcon({ sfSymbol, focused }: { sfSymbol: string; focused: boolean }) {
   return (
@@ -15,8 +20,16 @@ function TabIcon({ sfSymbol, focused }: { sfSymbol: string; focused: boolean }) 
 }
 
 export default function RootLayout() {
+  const [fullscreenVisible, setFullscreenVisible] = useState(false);
+  const setupPlayer = usePlayerStore((s) => s.setupPlayer);
+  const currentTrack = usePlayerStore((s) => s.currentTrack);
+
+  useEffect(() => {
+    setupPlayer();
+  }, [setupPlayer]);
+
   return (
-    <>
+    <View style={{ flex: 1, backgroundColor: "#000" }}>
       <StatusBar style="light" />
       <Tabs
         screenOptions={{
@@ -66,6 +79,19 @@ export default function RootLayout() {
           }}
         />
       </Tabs>
-    </>
+
+      {currentTrack && (
+        <MiniPlayer onExpand={() => setFullscreenVisible(true)} />
+      )}
+
+      <Modal
+        visible={fullscreenVisible}
+        animationType="slide"
+        presentationStyle="fullScreen"
+        statusBarTranslucent
+      >
+        <FullscreenPlayer onCollapse={() => setFullscreenVisible(false)} />
+      </Modal>
+    </View>
   );
 }
