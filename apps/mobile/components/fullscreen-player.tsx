@@ -5,6 +5,8 @@ import { api } from "@/lib/api";
 import { getTrackTitle, getTrackArtists, deriveTrackQuality } from "@side-a/shared";
 import * as Haptics from "expo-haptics";
 import { Dimensions } from "react-native";
+import { SeekBar } from "@/components/seek-bar";
+import { LyricsView } from "@/components/lyrics-view";
 
 interface FullscreenPlayerProps {
   onCollapse: () => void;
@@ -36,6 +38,40 @@ export function FullscreenPlayer({ onCollapse }: FullscreenPlayerProps) {
   const coverUrl = currentTrack.album?.cover
     ? api.getCoverUrl(currentTrack.album.cover, "640")
     : null;
+
+  if (showLyrics) {
+    return (
+      <View className="flex-1 bg-black pt-3 pb-10">
+        <Pressable onPress={onCollapse} className="items-center mt-3">
+          <View className="w-9 h-[5px] rounded-full bg-white/30" />
+        </Pressable>
+
+        <LyricsView />
+
+        <View className="mt-4">
+          <SeekBar />
+        </View>
+
+        <View className="flex-row items-center justify-center gap-8 mt-4">
+          <Pressable onPress={() => { haptic(); skipPrev(); }} className="active:opacity-60">
+            <Image source="sf:backward.fill" className="w-7 h-7" tintColor="white" />
+          </Pressable>
+          <Pressable onPress={() => { haptic(); togglePlayback(); }} className="active:opacity-60">
+            <Image source={isPlaying ? "sf:pause.fill" : "sf:play.fill"} className="w-11 h-11" tintColor="white" />
+          </Pressable>
+          <Pressable onPress={() => { haptic(); skipNext(); }} className="active:opacity-60">
+            <Image source="sf:forward.fill" className="w-7 h-7" tintColor="white" />
+          </Pressable>
+        </View>
+
+        <View className="items-center mt-4">
+          <Pressable onPress={() => { haptic(); toggleLyrics(); }} className="active:opacity-60">
+            <Image source="sf:quote.bubble" className="w-[22px] h-[22px]" tintColor="white" />
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View className="flex-1 bg-black pt-3 pb-10">
@@ -81,7 +117,9 @@ export function FullscreenPlayer({ onCollapse }: FullscreenPlayerProps) {
         </View>
       )}
 
-      <View className="h-12 mt-6 px-6" />
+      <View className="mt-6">
+        <SeekBar />
+      </View>
 
       <View className="flex-row items-center justify-center gap-8 mt-4">
         <Pressable
