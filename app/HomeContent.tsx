@@ -7,6 +7,7 @@ import { SearchResults } from "@/components/search/SearchResults";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AuthStatusButton } from "@/components/auth/AuthStatusButton";
 import { MobileSearchHeader } from "@/components/mobile/MobileSearchHeader";
+import { AnimatedLogoMark } from "@/components/layout/AnimatedLogoMark";
 import { useSearch } from "@/hooks/useSearch";
 import { Library, ListMusic, Search } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
@@ -65,11 +66,7 @@ export function HomeContent() {
      <div className="max-w-6xl mx-auto px-6 py-4">
       <div className="flex items-center gap-8">
        <div className="flex-shrink-0 flex items-center gap-3">
-        <div className="flex flex-col gap-[2px]">
-         <div className="w-3 h-[2px] bg-[#FF9FCF]" />
-         <div className="w-3 h-[2px] bg-[#9AC0FF]" />
-         <div className="w-3 h-[2px] bg-[#7FEDD0]" />
-        </div>
+        <AnimatedLogoMark className="text-foreground" />
        <div>
          <h1 className="text-base font-mono uppercase tracking-widest text-foreground leading-tight">
           SIDE A

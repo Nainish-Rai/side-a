@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Search, X, ArrowLeft, ListMusic, Library } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { AuthStatusButton } from "@/components/auth/AuthStatusButton";
+import { AnimatedLogoMark } from "@/components/layout/AnimatedLogoMark";
 
 interface MobileSearchHeaderProps {
   onSearch: (query: string) => void;
@@ -129,12 +130,7 @@ export function MobileSearchHeader({
             >
               {/* Logo */}
               <div className="flex items-center gap-3">
-                {/* VHS Cassette Logo */}
-                <div className="flex flex-col gap-[2px]">
-                  <div className="w-3 h-[2px] bg-[#FF9FCF]" />
-                  <div className="w-3 h-[2px] bg-[#9AC0FF]" />
-                  <div className="w-3 h-[2px] bg-[#7FEDD0]" />
-                </div>
+                <AnimatedLogoMark className="text-foreground" />
 
                 <div>
                   <h1 className="text-sm font-medium uppercase tracking-widest text-foreground leading-tight">

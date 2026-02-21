@@ -3,6 +3,7 @@
 import { X, Download, Share } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
+import { Matrix } from "@/components/ui/matrix";
 
 export function InstallPrompt() {
   const {
@@ -31,11 +32,21 @@ export function InstallPrompt() {
           <div className="px-4 py-3">
             <div className="flex items-start gap-3">
               {/* VHS Logo */}
-              <div className="flex-shrink-0 flex flex-col gap-[2px] mt-1">
-                <div className="w-3 h-[2px] bg-[#FF9FCF]" />
-                <div className="w-3 h-[2px] bg-[#9AC0FF]" />
-                <div className="w-3 h-[2px] bg-[#7FEDD0]" />
-              </div>
+              <Matrix
+                rows={3}
+                cols={3}
+                pattern={[
+                  [1, 0.2, 0.8],
+                  [0.2, 0.7, 0.2],
+                  [0.9, 0.2, 0.9],
+                ]}
+                size={3}
+                gap={1}
+                animatePattern
+                animationDuration={1500}
+                className="flex-shrink-0 mt-1 text-white"
+                aria-hidden
+              />
 
               {/* Content */}
               <div className="flex-1 min-w-0">
