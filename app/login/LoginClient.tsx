@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 
@@ -15,7 +15,7 @@ export function LoginClient() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const isSignedIn = useMemo(() => Boolean(session?.user), [session?.user]);
+  const isSignedIn = Boolean(session?.user);
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
