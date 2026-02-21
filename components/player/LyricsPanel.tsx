@@ -94,7 +94,7 @@ export function LyricsPanel({
          ref={isActive ? activeLineRef : null}
          className={cn(
           "lyrics-line synced-line text-base md:text-lg font-medium text-left transition-colors duration-200 cursor-pointer hover:text-foreground/80",
-          isActive && "active text-foreground font-semibold",
+          isActive && "active text-black! dark:text-foreground font-semibold",
           isUpcoming && "upcoming text-foreground/60",
           isPast && " text-foreground/20",
           !isActive && !isUpcoming && !isPast && "text-foreground/30",

@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import Image from "next/image";
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useLyrics } from "@/hooks/useLyrics";
 import { LyricsPanel } from "./LyricsPanel";
@@ -222,8 +222,7 @@ function MobileSortableQueueItem({
 }
 
 export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
- const { isPlaying, currentTime, duration } =
-  usePlaybackState();
+ const { isPlaying, currentTime, duration } = usePlaybackState();
  const { currentTrack, queue, currentQueueIndex, shuffleActive, repeatMode } =
   useQueue();
  const {
@@ -240,7 +239,6 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
  const [activeTab, setActiveTab] = useState<"queue" | "lyrics">("queue");
  const [expandedTab, setExpandedTab] = useState<Tab>(null); // Mobile only
  const [autoPlay, setAutoPlay] = useState(true);
-
 
  const {
   lyrics,
@@ -466,7 +464,6 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
          {/* Progress Bar */}
          <div className="space-y-2">
           <div
-
            className="relative py-5 -my-4 cursor-pointer group"
            onClick={handleSeek}
           >
@@ -540,7 +537,6 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
            )}
           </button>
          </div>
-
         </div>
        </div>
       </div>
@@ -636,7 +632,6 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
          {/* Progress Bar */}
          <div className="px-6 pb-2 flex-shrink-0">
           <div
-
            className="relative h-1 bg-foreground/20 rounded-full cursor-pointer"
            onTouchStart={handleSeek}
            onTouchMove={handleSeek}
@@ -730,7 +725,7 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
          transition={{ duration: 0.2 }}
          className="h-full flex flex-col bg-background"
         >
-          <div className="flex-1 overflow-y-auto pt-2">
+         <div className="flex-1 overflow-y-auto pt-2">
           <DndContext
            sensors={sensors}
            collisionDetection={closestCenter}
@@ -775,7 +770,8 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
                scale: idx === currentLineIndex ? 1.05 : 1,
               }}
               transition={{ duration: 0.3 }}
-              className={`text-base leading-relaxed ${
+              onClick={() => seek(line.time)}
+              className={`text-base leading-relaxed cursor-pointer transition-colors hover:text-foreground/80 ${
                idx === currentLineIndex
                 ? "text-foreground font-medium"
                 : "text-foreground/60"
