@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db/prisma";
 
 export const runtime = "nodejs";
@@ -127,14 +128,14 @@ export async function PUT(request: NextRequest) {
     where: { deviceId: payload.deviceId },
     create: {
       deviceId: payload.deviceId,
-      likedTracks: payload.state.likedTracks,
-      savedAlbums: payload.state.savedAlbums,
-      recentlyPlayed: payload.state.recentlyPlayed,
+      likedTracks: payload.state.likedTracks as Prisma.InputJsonValue,
+      savedAlbums: payload.state.savedAlbums as Prisma.InputJsonValue,
+      recentlyPlayed: payload.state.recentlyPlayed as Prisma.InputJsonValue,
     },
     update: {
-      likedTracks: payload.state.likedTracks,
-      savedAlbums: payload.state.savedAlbums,
-      recentlyPlayed: payload.state.recentlyPlayed,
+      likedTracks: payload.state.likedTracks as Prisma.InputJsonValue,
+      savedAlbums: payload.state.savedAlbums as Prisma.InputJsonValue,
+      recentlyPlayed: payload.state.recentlyPlayed as Prisma.InputJsonValue,
     },
     select: {
       deviceId: true,

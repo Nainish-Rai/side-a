@@ -5,6 +5,7 @@ import Link from "next/link";
 import { SearchBar } from "@/components/search/SearchBar";
 import { SearchResults } from "@/components/search/SearchResults";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { AuthStatusButton } from "@/components/auth/AuthStatusButton";
 import { MobileSearchHeader } from "@/components/mobile/MobileSearchHeader";
 import { useSearch } from "@/hooks/useSearch";
 import { Library, ListMusic, Search } from "lucide-react";
@@ -112,7 +113,10 @@ export function HomeContent() {
        </div>
 
        <div className="flex-shrink-0">
-        <ThemeToggle />
+        <div className="flex items-center gap-4">
+         <AuthStatusButton />
+         <ThemeToggle />
+        </div>
        </div>
       </div>
      </div>

@@ -4,6 +4,7 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import Link from "next/link";
 import { Search, X, ArrowLeft, ListMusic, Library } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { AuthStatusButton } from "@/components/auth/AuthStatusButton";
 
 interface MobileSearchHeaderProps {
   onSearch: (query: string) => void;
@@ -147,6 +148,9 @@ export function MobileSearchHeader({
 
               {/* Search button */}
               <div className="flex items-center">
+                <div className="pr-1">
+                  <AuthStatusButton />
+                </div>
                 <Link
                   href="/library"
                   className="w-10 h-10 flex items-center justify-center text-foreground/60 active:bg-foreground/10"
