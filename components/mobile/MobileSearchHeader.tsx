@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import Link from "next/link";
-import { Search, X, ArrowLeft, ListMusic } from "lucide-react";
+import { Search, X, ArrowLeft, ListMusic, Library } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 interface MobileSearchHeaderProps {
@@ -147,6 +147,13 @@ export function MobileSearchHeader({
 
               {/* Search button */}
               <div className="flex items-center">
+                <Link
+                  href="/library"
+                  className="w-10 h-10 flex items-center justify-center text-foreground/60 active:bg-foreground/10"
+                  aria-label="Open library"
+                >
+                  <Library className="w-5 h-5" />
+                </Link>
                 <Link
                   href="/playlists"
                   className="w-10 h-10 flex items-center justify-center text-foreground/60 active:bg-foreground/10"

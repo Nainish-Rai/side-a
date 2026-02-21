@@ -5,7 +5,7 @@ import { Track } from "@/lib/api/types";
 import { getTrackTitle, formatTime } from "@/lib/api/utils";
 import { api } from "@/lib/api";
 import Image from "next/image";
-import { Disc, MoreVertical, Play, ListPlus, Share2 } from "lucide-react";
+import { Disc, MoreVertical, Play, ListPlus, Share2, Heart } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 interface MobileTrackRowProps {
@@ -17,6 +17,8 @@ interface MobileTrackRowProps {
  onClick: () => void;
  onAddToQueue?: () => void;
  onShare?: () => void;
+ onToggleLike?: () => void;
+ isLiked?: boolean;
 }
 
 const LONG_PRESS_DURATION = 500; // ms
@@ -30,6 +32,8 @@ function MobileTrackRow({
  onClick,
  onAddToQueue,
  onShare,
+ onToggleLike,
+ isLiked = false,
 }: MobileTrackRowProps) {
  const [showContextMenu, setShowContextMenu] = useState(false);
  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
@@ -107,7 +111,7 @@ function MobileTrackRow({
  }, [showContextMenu, onClick]);
 
  const handleContextMenuAction = useCallback(
-  (action: "play" | "queue" | "share") => {
+  (action: "play" | "queue" | "share" | "like") => {
    setShowContextMenu(false);
    switch (action) {
     case "play":
@@ -119,9 +123,12 @@ function MobileTrackRow({
     case "share":
      onShare?.();
      break;
+    case "like":
+     onToggleLike?.();
+     break;
    }
   },
-  [onClick, onAddToQueue, onShare],
+  [onClick, onAddToQueue, onShare, onToggleLike],
  );
 
  return (
@@ -132,6 +139,7 @@ function MobileTrackRow({
     onTouchMove={handleTouchMove}
     onTouchEnd={handleTouchEnd}
     onTouchCancel={handleTouchEnd}
+    data-track-index={index}
     className={`
           relative flex items-center gap-3
           px-0 py-3
@@ -226,17 +234,30 @@ function MobileTrackRow({
      </div>
     </div>
 
-    {/* More button */}
-    <button
-     onClick={(e) => {
-      e.stopPropagation();
-      setShowContextMenu(true);
-     }}
-     className="w-10 h-10 flex items-center justify-center text-foreground/40 active:bg-foreground/10 -mr-2"
-     aria-label="More options"
-    >
-     <MoreVertical className="w-5 h-5" />
-    </button>
+    <div className="flex items-center -mr-2">
+     {onToggleLike && (
+      <button
+       onClick={(e) => {
+        e.stopPropagation();
+        onToggleLike();
+       }}
+       className="w-10 h-10 flex items-center justify-center text-foreground/40 active:bg-foreground/10"
+       aria-label={isLiked ? "Unlike track" : "Like track"}
+      >
+       <Heart className={`w-4 h-4 ${isLiked ? "fill-foreground text-foreground" : ""}`} />
+      </button>
+     )}
+     <button
+      onClick={(e) => {
+       e.stopPropagation();
+       setShowContextMenu(true);
+      }}
+      className="w-10 h-10 flex items-center justify-center text-foreground/40 active:bg-foreground/10"
+      aria-label="More options"
+     >
+      <MoreVertical className="w-5 h-5" />
+     </button>
+    </div>
    </div>
 
    {/* Context Menu */}
@@ -307,6 +328,16 @@ function MobileTrackRow({
          <Share2 className="w-5 h-5 text-white/60" />
          <span className="text-sm text-white">Share</span>
         </button>
+
+        {onToggleLike && (
+         <button
+          onClick={() => handleContextMenuAction("like")}
+          className="w-full flex items-center gap-4 px-4 py-4 active:bg-white/5"
+         >
+          <Heart className={`w-5 h-5 text-white/60 ${isLiked ? "fill-white text-white" : ""}`} />
+          <span className="text-sm text-white">{isLiked ? "Unlike" : "Like"}</span>
+         </button>
+        )}
        </div>
 
        {/* Cancel */}

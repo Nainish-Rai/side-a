@@ -7,7 +7,7 @@ import { SearchResults } from "@/components/search/SearchResults";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { MobileSearchHeader } from "@/components/mobile/MobileSearchHeader";
 import { useSearch } from "@/hooks/useSearch";
-import { ListMusic, Search } from "lucide-react";
+import { Library, ListMusic, Search } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 export function HomeContent() {
@@ -87,6 +87,15 @@ export function HomeContent() {
          </span>
          <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-foreground" />
         </span>
+        <Link
+         href="/library"
+         className="relative pb-3 text-xs font-mono uppercase tracking-widest text-foreground/40 transition-colors hover:text-foreground/70"
+        >
+         <span className="flex items-center gap-2">
+          <Library className="w-3.5 h-3.5" />
+          LIBRARY
+         </span>
+        </Link>
         <Link
          href="/playlists"
          className="relative pb-3 text-xs font-mono uppercase tracking-widest text-foreground/40 transition-colors hover:text-foreground/70"

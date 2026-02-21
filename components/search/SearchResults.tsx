@@ -6,23 +6,23 @@ import {
  usePlaybackState,
  useQueue,
 } from "@/contexts/AudioPlayerContext";
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import React from "react";
+import { useLibrary } from "@/contexts/LibraryContext";
 import TrackRow from "./TrackRow";
 import MobileTrackRow from "../mobile/MobileTrackRow";
 import AlbumCard from "./AlbumCard";
 import ArtistCard from "./ArtistCard";
 import PlaylistCard from "./PlaylistCard";
 import { TableHeader } from "./TableHeader";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import {
  Search,
  Music2,
  Disc,
  Users,
  ListMusic,
- Loader2,
  type LucideIcon,
 } from "lucide-react";
 import { VirtualSearchResults } from "./VirtualSearchResults";
@@ -79,20 +79,27 @@ export function SearchResults({
  contentType = "tracks",
  isLoading = false,
  totalNumberOfItems,
- offset = 0,
- limit = 25,
+ offset: _offset = 0,
+ limit: _limit = 25,
  onTabChange,
- hasNextPage = false,
- isFetchingMore = false,
- onLoadMore,
+ hasNextPage: _hasNextPage = false,
+ isFetchingMore: _isFetchingMore = false,
+ onLoadMore: _onLoadMore,
  prefetchTab,
 }: SearchResultsProps) {
+ void _offset;
+ void _limit;
+ void _hasNextPage;
+ void _isFetchingMore;
+ void _onLoadMore;
+
  // Use split contexts for state
  const { isPlaying } = usePlaybackState();
  const { currentTrack } = useQueue();
 
  // Still need AudioPlayerContext for methods
  const { setQueue } = useAudioPlayer();
+ const { isTrackLiked, toggleTrackLike, addRecentlyPlayed } = useLibrary();
  const router = useRouter();
 
  const [loadingTrackId, setLoadingTrackId] = useState<number | null>(null);
@@ -187,6 +194,7 @@ export function SearchResults({
   try {
    if (tracks) {
     await setQueue(tracks, index);
+    addRecentlyPlayed(track);
    }
   } catch (error) {
    console.error("Error playing track:", error);
@@ -340,6 +348,8 @@ export function SearchResults({
            isPlaying={isCurrentTrack && isPlaying}
            isLoading={loadingTrackId === track.id}
            onClick={() => handleTrackClick(track, index)}
+           isLiked={isTrackLiked(track.id)}
+           onToggleLike={() => toggleTrackLike(track)}
            onAddToQueue={() => {
             // Add to queue functionality
             console.log("Add to queue:", track);
@@ -366,6 +376,8 @@ export function SearchResults({
           isPlaying={isCurrentTrack && isPlaying}
           isLoading={loadingTrackId === track.id}
           onClick={() => handleTrackClick(track, index)}
+          isLiked={isTrackLiked(track.id)}
+          onToggleLike={() => toggleTrackLike(track)}
          />
         );
        })}

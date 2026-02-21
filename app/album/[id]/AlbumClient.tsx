@@ -8,10 +8,11 @@ import {
  usePlaybackState,
  useQueue,
 } from "@/contexts/AudioPlayerContext";
-import { Play, Pause, ArrowLeft, Music2 } from "lucide-react";
+import { Play, Pause, ArrowLeft, Music2, Heart } from "lucide-react";
 import { getTrackTitle, getTrackArtists, formatTime } from "@/lib/api/utils";
 import { AudioPlayer } from "@/components/player/AudioPlayer";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { useLibrary } from "@/contexts/LibraryContext";
 
 interface AlbumClientProps {
  album: Album;
@@ -27,10 +28,12 @@ export function AlbumClient({ album, tracks }: AlbumClientProps) {
 
  // Still need AudioPlayerContext for methods
  const { setQueue, togglePlayPause } = useAudioPlayer();
+ const { isAlbumSaved, toggleAlbumSave, addRecentlyPlayed } = useLibrary();
 
  const handlePlayAlbum = () => {
   if (tracks.length > 0) {
    setQueue(tracks, 0);
+   addRecentlyPlayed(tracks[0]);
   }
  };
 
@@ -39,6 +42,7 @@ export function AlbumClient({ album, tracks }: AlbumClientProps) {
    togglePlayPause();
   } else {
    setQueue(tracks, index);
+   addRecentlyPlayed(track);
   }
  };
 
@@ -66,6 +70,7 @@ export function AlbumClient({ album, tracks }: AlbumClientProps) {
 
  const isAlbumPlaying =
   currentTrack && tracks.some((t) => t.id === currentTrack.id);
+ const saved = isAlbumSaved(album.id);
 
  return (
   <div className="relative min-h-screen w-full bg-background text-foreground transition-colors duration-300">
@@ -171,6 +176,13 @@ export function AlbumClient({ album, tracks }: AlbumClientProps) {
           <span>Play Album</span>
          </>
         )}
+       </button>
+       <button
+        onClick={() => toggleAlbumSave(album)}
+        className="px-4 py-3 border border-foreground/20 text-foreground/70 hover:text-foreground transition-colors flex items-center gap-2 font-mono uppercase text-xs tracking-widest"
+       >
+        <Heart className={`w-3.5 h-3.5 ${saved ? "fill-foreground text-foreground" : ""}`} />
+        <span>{saved ? "Saved" : "Save Album"}</span>
        </button>
       </div>
      </div>

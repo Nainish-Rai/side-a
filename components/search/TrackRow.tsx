@@ -5,7 +5,7 @@ import { Track } from "@/lib/api/types";
 import { getTrackTitle, formatTime } from "@/lib/api/utils";
 import { api } from "@/lib/api";
 import Image from "next/image";
-import { Disc } from "lucide-react";
+import { Disc, Heart } from "lucide-react";
 
 interface TrackRowProps {
  track: Track;
@@ -14,6 +14,8 @@ interface TrackRowProps {
  isPlaying: boolean;
  isLoading: boolean;
  onClick: () => void;
+ onToggleLike?: () => void;
+ isLiked?: boolean;
 }
 
 function TrackRow({
@@ -23,6 +25,8 @@ function TrackRow({
  isPlaying,
  isLoading,
  onClick,
+ onToggleLike,
+ isLiked = false,
 }: TrackRowProps) {
  // Memoize cover URL computation
  const coverUrl = useMemo(() => {
@@ -46,12 +50,11 @@ function TrackRow({
   const qualityTags = track.mediaMetadata?.tags || [];
   return {
    hasHiRes: qualityTags.includes("HIRES_LOSSLESS"),
-   hasLossless: qualityTags.includes("LOSSLESS"),
    hasDolbyAtmos: qualityTags.includes("DOLBY_ATMOS"),
   };
  }, [track.mediaMetadata?.tags]);
 
- const { hasHiRes, hasLossless, hasDolbyAtmos } = qualityInfo;
+ const { hasHiRes, hasDolbyAtmos } = qualityInfo;
 
  return (
   <div
@@ -175,8 +178,23 @@ function TrackRow({
     )}
    </div>
 
-   {/* Duration */}
-   <div className="text-right">
+   {/* Duration + Like */}
+   <div className="flex items-center justify-end gap-2">
+    {onToggleLike && (
+     <button
+      type="button"
+      onClick={(event) => {
+       event.stopPropagation();
+       onToggleLike();
+      }}
+      className="text-foreground/40 hover:text-foreground/80 transition-colors"
+      aria-label={isLiked ? "Unlike track" : "Like track"}
+     >
+      <Heart
+       className={`w-3.5 h-3.5 ${isLiked ? "fill-foreground text-foreground" : ""}`}
+      />
+     </button>
+    )}
     <span className="text-[12px] font-mono text-foreground/40 group-hover:text-foreground/60 transition-colors tabular-nums">
      {formatTime(track.duration)}
     </span>
