@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import { Search, X, ArrowLeft } from "lucide-react";
+import Link from "next/link";
+import { Search, X, ArrowLeft, ListMusic } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 interface MobileSearchHeaderProps {
@@ -145,13 +146,22 @@ export function MobileSearchHeader({
               </div>
 
               {/* Search button */}
-              <button
-                onClick={handleExpand}
-                className="w-10 h-10 flex items-center justify-center text-foreground/60 active:bg-foreground/10"
-                aria-label="Open search"
-              >
-                <Search className="w-5 h-5" />
-              </button>
+              <div className="flex items-center">
+                <Link
+                  href="/playlists"
+                  className="w-10 h-10 flex items-center justify-center text-foreground/60 active:bg-foreground/10"
+                  aria-label="Open playlists"
+                >
+                  <ListMusic className="w-5 h-5" />
+                </Link>
+                <button
+                  onClick={handleExpand}
+                  className="w-10 h-10 flex items-center justify-center text-foreground/60 active:bg-foreground/10"
+                  aria-label="Open search"
+                >
+                  <Search className="w-5 h-5" />
+                </button>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

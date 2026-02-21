@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { SearchBar } from "@/components/search/SearchBar";
 import { SearchResults } from "@/components/search/SearchResults";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { MobileSearchHeader } from "@/components/mobile/MobileSearchHeader";
 import { useSearch } from "@/hooks/useSearch";
-import { Search } from "lucide-react";
+import { ListMusic, Search } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 export function HomeContent() {
@@ -68,7 +69,7 @@ export function HomeContent() {
          <div className="w-3 h-[2px] bg-[#9AC0FF]" />
          <div className="w-3 h-[2px] bg-[#7FEDD0]" />
         </div>
-        <div>
+       <div>
          <h1 className="text-base font-mono uppercase tracking-widest text-foreground leading-tight">
           SIDE A
          </h1>
@@ -76,6 +77,25 @@ export function HomeContent() {
           HI-FI SEARCH
          </p>
         </div>
+       </div>
+
+       <div className="flex items-center gap-6">
+        <span className="relative pb-3 text-xs font-mono uppercase tracking-widest text-foreground">
+         <span className="flex items-center gap-2">
+          <Search className="w-3.5 h-3.5" />
+          SEARCH
+         </span>
+         <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-foreground" />
+        </span>
+        <Link
+         href="/playlists"
+         className="relative pb-3 text-xs font-mono uppercase tracking-widest text-foreground/40 transition-colors hover:text-foreground/70"
+        >
+         <span className="flex items-center gap-2">
+          <ListMusic className="w-3.5 h-3.5" />
+          PLAYLISTS
+         </span>
+        </Link>
        </div>
 
        <div className="flex-1">
