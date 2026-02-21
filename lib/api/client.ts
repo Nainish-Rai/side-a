@@ -403,6 +403,47 @@ export class LosslessAPI {
     }
   }
 
+  async searchPlaylists(
+    query: string,
+    options: { signal?: AbortSignal; offset?: number; limit?: number } = {}
+  ): Promise<SearchResponse<Playlist>> {
+    const { offset = 0, limit = 25 } = options;
+    const cacheKey = `${query}_${offset}_${limit}`;
+    const cached = (await this.cache.get(
+      "search_playlists",
+      cacheKey
+    )) as SearchResponse<Playlist> | null;
+    if (cached) return cached;
+
+    try {
+      const params = new URLSearchParams({
+        pl: query,
+        offset: offset.toString(),
+        limit: limit.toString(),
+      });
+      const response = await this.fetchWithRetry(
+        `/search/?${params.toString()}`,
+        options
+      );
+      const data = await response.json();
+      const normalized = this.normalizeSearchResponse<Playlist>(
+        data,
+        "playlists"
+      );
+      const result: SearchResponse<Playlist> = {
+        ...normalized,
+        items: normalized.items.map((playlist) => this.preparePlaylist(playlist)),
+      };
+
+      await this.cache.set("search_playlists", cacheKey, result);
+      return result;
+    } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") throw error;
+      console.error("Playlist search failed:", error);
+      return { items: [], limit: 0, offset: 0, totalNumberOfItems: 0 };
+    }
+  }
+
   async getAlbum(
     albumId: number,
     options: { signal?: AbortSignal } = {}

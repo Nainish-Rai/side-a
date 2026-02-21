@@ -70,9 +70,14 @@ export interface Playlist {
   id: string;
   uuid?: string;
   title: string;
+  image?: string;
+  squareImage?: string;
   numberOfTracks?: number;
+  duration?: number;
   description?: string;
-  creator?: string;
+  creator?: string | { id?: number; name?: string };
+  publicPlaylist?: boolean;
+  type?: string;
   explicit?: boolean;
   explicitLyrics?: boolean;
 }
