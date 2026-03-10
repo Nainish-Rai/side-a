@@ -116,7 +116,7 @@ function SearchResultCard({
               {getTrackTitle(track)}
             </h3>
             {isExplicit && (
-                <span className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded bg-foreground/10 text-foreground/60">E</span>
+                <span className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded bg-foreground/10 text-foreground/60">E</span>
             )}
         </div>
         <div className="flex items-center gap-2 text-sm text-foreground/50">
@@ -125,12 +125,12 @@ function SearchResultCard({
            </span>
            {/* Quality Badges - Inline */}
            {hasDolbyAtmos && (
-             <span className="shrink-0 text-[8px] font-bold px-1.5 py-0.5 bg-foreground/10 text-foreground/70 rounded">
+             <span className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 bg-foreground/10 text-foreground/70 rounded uppercase tracking-wider">
                ATMOS
              </span>
            )}
            {hasHiRes && (
-             <span className="shrink-0 text-[8px] font-bold px-1.5 py-0.5 bg-foreground/10 text-foreground/70 rounded">
+             <span className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 bg-foreground/10 text-foreground/70 rounded uppercase tracking-wider">
                HI-RES
              </span>
            )}

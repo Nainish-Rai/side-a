@@ -118,31 +118,31 @@ function TrackRow({
    <div className="min-w-0">
     <div className="flex items-center gap-2 mb-1">
      <h3
-      className={`font-medium text-[15px] md:text-[14px] truncate transition-colors tracking-[-0.01em] ${
+      className={`font-medium text-[14px] truncate transition-colors tracking-[-0.01em] ${
        isCurrentTrack ? "text-foreground" : "text-foreground/90 group-hover:text-foreground"
       }`}
      >
       {getTrackTitle(track)}
      </h3>
      {isExplicit && (
-      <span className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 border border-foreground/20 text-foreground/60 font-mono uppercase tracking-wider">
+      <span className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 border border-foreground/20 text-foreground/60 font-mono uppercase tracking-wider">
        E
       </span>
      )}
     </div>
     <div className="flex items-center gap-2 flex-wrap">
-     <span className="text-[13px] md:text-[12px] text-foreground/50 group-hover:text-foreground/70 transition-colors truncate">
+     <span className="text-[12px] text-foreground/50 group-hover:text-foreground/70 transition-colors truncate">
       {displayArtist}
      </span>
      {/* Quality Badges on Mobile */}
      <div className="flex items-center gap-1.5 md:hidden">
       {hasDolbyAtmos && (
-       <span className="text-[9px] font-bold font-mono px-1.5 py-0.5 border border-foreground/20 text-foreground/60 uppercase tracking-wider">
+       <span className="text-[10px] font-bold font-mono px-1.5 py-0.5 border border-foreground/20 text-foreground/60 uppercase tracking-wider">
         ATMOS
        </span>
       )}
       {hasHiRes && (
-       <span className="text-[9px] font-bold font-mono px-1.5 py-0.5 border border-foreground/20 text-foreground/60 uppercase tracking-wider">
+       <span className="text-[10px] font-bold font-mono px-1.5 py-0.5 border border-foreground/20 text-foreground/60 uppercase tracking-wider">
         HI-RES
        </span>
       )}
@@ -166,13 +166,13 @@ function TrackRow({
    {/* Quality Badges (Desktop only) */}
    <div className="hidden lg:flex items-center gap-1.5">
     {hasDolbyAtmos && (
-     <span className="text-[9px] font-bold font-mono px-1.5 py-0.5 border border-foreground/20 text-foreground/60 uppercase tracking-wider">
+     <span className="text-[10px] font-bold font-mono px-1.5 py-0.5 border border-foreground/20 text-foreground/60 uppercase tracking-wider">
       ATMOS
      </span>
     )}
 
     {track.audioQuality && (
-     <span className="text-[9px] font-bold font-mono px-1.5 py-0.5 border border-foreground/20 text-foreground/60 uppercase tracking-wider">
+     <span className="text-[10px] font-bold font-mono px-1.5 py-0.5 border border-foreground/20 text-foreground/60 uppercase tracking-wider">
       {track.audioQuality}
      </span>
     )}

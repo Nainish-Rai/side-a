@@ -11,7 +11,7 @@ export function AuthStatusButton() {
   if (isPending) {
     return (
       <span className="text-[10px] font-mono uppercase tracking-widest text-foreground/40">
-        Auth...
+        AUTH LOADING
       </span>
     );
   }

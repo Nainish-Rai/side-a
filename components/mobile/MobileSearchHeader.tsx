@@ -79,7 +79,7 @@ export function MobileSearchHeader({
               <button
                 type="button"
                 onClick={handleCollapse}
-                  className="w-10 h-10 flex items-center justify-center text-foreground/70 active:bg-foreground/10"
+                className="w-10 h-10 flex items-center justify-center text-foreground/70 active:bg-foreground/10"
                 aria-label="Close search"
               >
                 <ArrowLeft className="w-5 h-5" />
@@ -92,14 +92,14 @@ export function MobileSearchHeader({
                   type="text"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="SEARCH MUSIC"
+                  placeholder="Search music"
                   disabled={isLoading}
                   autoComplete="off"
                   autoCorrect="off"
                   autoCapitalize="off"
                   spellCheck={false}
                   enterKeyHint="search"
-                  className="w-full py-2 text-base font-mono uppercase tracking-wider
+                  className="w-full py-2 text-base font-mono
                            bg-transparent border-b-2 border-foreground
                            text-foreground placeholder-foreground/30
                            focus:outline-none
@@ -134,10 +134,10 @@ export function MobileSearchHeader({
                   <AnimatedLogoMark className="text-foreground" />
 
                   <div>
-                    <h1 className="text-sm font-medium uppercase tracking-widest text-foreground leading-tight">
+                    <h1 className="text-sm font-mono uppercase tracking-widest text-foreground leading-tight">
                       SIDE A
                     </h1>
-                    <p className="text-[8px] uppercase tracking-widest text-foreground/40">
+                    <p className="text-[10px] font-mono uppercase tracking-widest text-foreground/40">
                       HI-FI SEARCH
                     </p>
                   </div>

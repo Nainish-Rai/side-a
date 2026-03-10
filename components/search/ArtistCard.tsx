@@ -61,7 +61,7 @@ function ArtistCard({ artist, onClick }: ArtistCardProps) {
 
           {/* Artist Type */}
           {artist.type && (
-            <p className="text-xs text-foreground/50 uppercase tracking-wider group-hover:text-foreground/70 transition-colors duration-200">
+            <p className="text-[10px] font-mono uppercase tracking-widest text-foreground/50 group-hover:text-foreground/70 transition-colors duration-200">
               {artist.type}
             </p>
           )}

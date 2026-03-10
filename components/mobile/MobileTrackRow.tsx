@@ -199,7 +199,7 @@ function MobileTrackRow({
        {getTrackTitle(track)}
       </h3>
       {track.explicit && (
-       <span className="flex-shrink-0 text-[8px] font-bold px-1 py-0.5 border border-foreground/20 text-foreground/50 font-mono">
+       <span className="flex-shrink-0 text-[10px] font-bold px-1 py-0.5 border border-foreground/20 text-foreground/50 font-mono">
         E
        </span>
       )}
@@ -214,17 +214,17 @@ function MobileTrackRow({
      {/* Quality badges + Duration row */}
      <div className="flex items-center gap-2 mt-1">
       {hasDolbyAtmos && (
-       <span className="text-[8px] font-bold font-mono px-1 py-0.5 border border-foreground/20 text-foreground/50 uppercase">
+       <span className="text-[10px] font-bold font-mono px-1 py-0.5 border border-foreground/20 text-foreground/50 uppercase tracking-wider">
         ATMOS
        </span>
       )}
       {hasHiRes && (
-       <span className="text-[8px] font-bold font-mono px-1 py-0.5 border border-foreground/20 text-foreground/50 uppercase">
+       <span className="text-[10px] font-bold font-mono px-1 py-0.5 border border-foreground/20 text-foreground/50 uppercase tracking-wider">
         HI-RES
        </span>
       )}
       {track.audioQuality && !hasHiRes && (
-       <span className="text-[8px] font-bold font-mono px-1 py-0.5 border border-foreground/20 text-foreground/50 uppercase">
+       <span className="text-[10px] font-bold font-mono px-1 py-0.5 border border-foreground/20 text-foreground/50 uppercase tracking-wider">
         {track.audioQuality}
        </span>
       )}

@@ -228,7 +228,7 @@ export function AudioPlayer() {
         {currentQuality && (
          <button
           onClick={() => setIsStatsOpen(true)}
-          className="px-1.5 py-0.5 bg-foreground/10 hover:bg-foreground/20 transition-colors text-[8px] text-foreground/60 tracking-wider border border-foreground/20 flex-shrink-0"
+          className="px-1.5 py-0.5 bg-foreground/10 hover:bg-foreground/20 transition-colors text-[10px] text-foreground/60 tracking-wider border border-foreground/20 flex-shrink-0"
          >
           {currentQuality}
          </button>

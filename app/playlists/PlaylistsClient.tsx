@@ -70,7 +70,7 @@ export function PlaylistsClient() {
                   id="playlist-search"
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
-                  placeholder="editorial, focus, house..."
+                  placeholder="editorial, focus, house"
                   className="h-10 w-full bg-transparent px-3 text-sm text-foreground/90 outline-none placeholder:text-foreground/30"
                 />
               </div>
@@ -119,7 +119,7 @@ export function PlaylistsClient() {
             <div className="border-b border-foreground/10 px-6 py-3">
               <p className="text-[10px] font-mono uppercase tracking-widest text-foreground/40">
                 {isLoading
-                  ? "Loading playlists..."
+                  ? "LOADING PLAYLISTS"
                   : `${playlists.length} shown / ${total} total`}
               </p>
             </div>

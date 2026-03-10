@@ -50,9 +50,9 @@ export function SearchBar({ onSearch, isLoading = false }: SearchBarProps) {
           onChange={handleChange}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
-          placeholder="SEARCH MUSIC"
+          placeholder="Search music"
           disabled={isLoading}
-          className={`w-full pl-11 pr-32 py-3 text-sm font-mono uppercase tracking-wider
+          className={`w-full pl-11 pr-32 py-3 text-sm font-mono
                      bg-transparent border-b-2 transition-colors duration-200
                      text-foreground placeholder-foreground/30
                      focus:outline-none
