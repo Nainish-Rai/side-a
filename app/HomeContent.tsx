@@ -62,57 +62,57 @@ export function HomeContent() {
     )}
 
     {/* Desktop Header */}
-    <header className="sticky top-0 z-30 bg-background border-b border-foreground/10 hidden lg:block">
-     <div className="max-w-6xl mx-auto px-6 py-4">
-      <div className="flex items-center gap-8">
-       <div className="flex-shrink-0 flex items-center gap-3">
-        <AnimatedLogoMark className="text-foreground" />
-       <div>
-         <h1 className="text-base font-mono uppercase tracking-widest text-foreground leading-tight">
-          SIDE A
-         </h1>
-         <p className="text-[9px] font-mono uppercase tracking-widest text-foreground/40">
-          HI-FI SEARCH
-         </p>
+    <header className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm hidden lg:block">
+     <div className="max-w-6xl mx-auto px-6 pt-4">
+      <div className="border border-foreground/10">
+       <div className="grid grid-cols-[220px_1fr] border-b border-foreground/10">
+        <div className="px-5 py-4 border-r border-foreground/10">
+         <div className="flex items-center gap-3">
+          <AnimatedLogoMark className="text-foreground" />
+          <div>
+           <h1 className="text-base font-mono uppercase tracking-widest text-foreground leading-tight">
+            SIDE A
+           </h1>
+           <p className="text-[9px] font-mono uppercase tracking-widest text-foreground/40">
+            HI-FI SEARCH
+           </p>
+          </div>
+         </div>
+        </div>
+
+        <div className="px-5 py-4">
+         <div className="flex items-center gap-4">
+          <span className="inline-flex items-center gap-2 px-3 py-2 border border-foreground/15 text-xs font-mono uppercase tracking-widest text-foreground">
+           <Search className="w-3.5 h-3.5" />
+           SEARCH
+          </span>
+          <Link
+           href="/library"
+           className="inline-flex items-center gap-2 px-3 py-2 border border-foreground/10 text-xs font-mono uppercase tracking-widest text-foreground/55 transition-colors hover:text-foreground/75 hover:border-foreground/20"
+          >
+           <Library className="w-3.5 h-3.5" />
+           LIBRARY
+          </Link>
+          <Link
+           href="/playlists"
+           className="inline-flex items-center gap-2 px-3 py-2 border border-foreground/10 text-xs font-mono uppercase tracking-widest text-foreground/55 transition-colors hover:text-foreground/75 hover:border-foreground/20"
+          >
+           <ListMusic className="w-3.5 h-3.5" />
+           PLAYLISTS
+          </Link>
+         </div>
         </div>
        </div>
 
-       <div className="flex items-center gap-6">
-        <span className="relative pb-3 text-xs font-mono uppercase tracking-widest text-foreground">
-         <span className="flex items-center gap-2">
-          <Search className="w-3.5 h-3.5" />
-          SEARCH
-         </span>
-         <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-foreground" />
-        </span>
-        <Link
-         href="/library"
-         className="relative pb-3 text-xs font-mono uppercase tracking-widest text-foreground/40 transition-colors hover:text-foreground/70"
-        >
-         <span className="flex items-center gap-2">
-          <Library className="w-3.5 h-3.5" />
-          LIBRARY
-         </span>
-        </Link>
-        <Link
-         href="/playlists"
-         className="relative pb-3 text-xs font-mono uppercase tracking-widest text-foreground/40 transition-colors hover:text-foreground/70"
-        >
-         <span className="flex items-center gap-2">
-          <ListMusic className="w-3.5 h-3.5" />
-          PLAYLISTS
-         </span>
-        </Link>
-       </div>
-
-       <div className="flex-1">
-        <SearchBar onSearch={handleSearchWithTracking} isLoading={isLoading} />
-       </div>
-
-       <div className="flex-shrink-0">
-        <div className="flex items-center gap-4">
-         <AuthStatusButton />
-         <ThemeToggle />
+       <div className="grid grid-cols-[1fr_auto]">
+        <div className="px-5 py-4 border-r border-foreground/10">
+         <SearchBar onSearch={handleSearchWithTracking} isLoading={isLoading} />
+        </div>
+        <div className="px-5 py-4">
+         <div className="flex items-center gap-4 h-full">
+          <AuthStatusButton />
+          <ThemeToggle />
+         </div>
         </div>
        </div>
       </div>
@@ -120,16 +120,17 @@ export function HomeContent() {
     </header>
 
     {/* Content Area */}
-    <div className="max-w-6xl mx-auto px-6 py-8">
+    <div className="max-w-6xl mx-auto px-6 py-6 lg:py-8">
      <AnimatePresence mode="wait">
       {hasResults || isLoading ? (
-       <motion.div
+       <motion.section
         key="results"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -20 }}
         transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
         style={{ willChange: "opacity, transform" }}
+        className="border border-foreground/10"
        >
         <SearchResults
          tracks={tracks}
@@ -146,7 +147,7 @@ export function HomeContent() {
          onLoadMore={fetchNextPage}
          prefetchTab={prefetchTab}
         />
-       </motion.div>
+       </motion.section>
       ) : (
        <motion.div
         key="empty"

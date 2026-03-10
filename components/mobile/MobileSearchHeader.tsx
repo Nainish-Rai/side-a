@@ -62,8 +62,8 @@ export function MobileSearchHeader({
   }, [isExpanded, handleCollapse]);
 
   return (
-    <header className="sticky top-0 z-30 bg-background border-b border-foreground/10 lg:hidden">
-      <div className="px-4 py-3">
+    <header className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm lg:hidden">
+      <div className="px-4 pt-3">
         <AnimatePresence mode="wait">
           {isExpanded ? (
             <motion.form
@@ -73,13 +73,13 @@ export function MobileSearchHeader({
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
               onSubmit={handleSubmit}
-              className="flex items-center gap-3"
+              className="flex items-center gap-3 border border-foreground/10 px-2 py-2"
             >
               {/* Back button */}
               <button
                 type="button"
                 onClick={handleCollapse}
-                className="w-10 h-10 flex items-center justify-center text-foreground/70 active:bg-foreground/10 -ml-2"
+                  className="w-10 h-10 flex items-center justify-center text-foreground/70 active:bg-foreground/10"
                 aria-label="Close search"
               >
                 <ArrowLeft className="w-5 h-5" />
@@ -126,48 +126,50 @@ export function MobileSearchHeader({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
-              className="flex items-center justify-between"
+              className="border border-foreground/10"
             >
               {/* Logo */}
-              <div className="flex items-center gap-3">
-                <AnimatedLogoMark className="text-foreground" />
+              <div className="grid grid-cols-[1fr_auto]">
+                <div className="flex items-center gap-3 px-3 py-3 border-r border-foreground/10">
+                  <AnimatedLogoMark className="text-foreground" />
 
-                <div>
-                  <h1 className="text-sm font-medium uppercase tracking-widest text-foreground leading-tight">
-                    SIDE A
-                  </h1>
-                  <p className="text-[8px] uppercase tracking-widest text-foreground/40">
-                    HI-FI SEARCH
-                  </p>
+                  <div>
+                    <h1 className="text-sm font-medium uppercase tracking-widest text-foreground leading-tight">
+                      SIDE A
+                    </h1>
+                    <p className="text-[8px] uppercase tracking-widest text-foreground/40">
+                      HI-FI SEARCH
+                    </p>
+                  </div>
                 </div>
-              </div>
 
-              {/* Search button */}
-              <div className="flex items-center">
-                <div className="pr-1">
-                  <AuthStatusButton />
+                {/* Search button */}
+                <div className="flex items-center px-1">
+                  <div className="pr-1">
+                    <AuthStatusButton />
+                  </div>
+                  <Link
+                    href="/library"
+                    className="w-10 h-10 flex items-center justify-center text-foreground/60 active:bg-foreground/10"
+                    aria-label="Open library"
+                  >
+                    <Library className="w-5 h-5" />
+                  </Link>
+                  <Link
+                    href="/playlists"
+                    className="w-10 h-10 flex items-center justify-center text-foreground/60 active:bg-foreground/10"
+                    aria-label="Open playlists"
+                  >
+                    <ListMusic className="w-5 h-5" />
+                  </Link>
+                  <button
+                    onClick={handleExpand}
+                    className="w-10 h-10 flex items-center justify-center text-foreground/60 active:bg-foreground/10"
+                    aria-label="Open search"
+                  >
+                    <Search className="w-5 h-5" />
+                  </button>
                 </div>
-                <Link
-                  href="/library"
-                  className="w-10 h-10 flex items-center justify-center text-foreground/60 active:bg-foreground/10"
-                  aria-label="Open library"
-                >
-                  <Library className="w-5 h-5" />
-                </Link>
-                <Link
-                  href="/playlists"
-                  className="w-10 h-10 flex items-center justify-center text-foreground/60 active:bg-foreground/10"
-                  aria-label="Open playlists"
-                >
-                  <ListMusic className="w-5 h-5" />
-                </Link>
-                <button
-                  onClick={handleExpand}
-                  className="w-10 h-10 flex items-center justify-center text-foreground/60 active:bg-foreground/10"
-                  aria-label="Open search"
-                >
-                  <Search className="w-5 h-5" />
-                </button>
               </div>
             </motion.div>
           )}

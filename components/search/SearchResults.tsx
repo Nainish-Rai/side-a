@@ -264,10 +264,10 @@ export function SearchResults({
 
  return (
   <div className="w-full">
-   {/* Tab Navigation - Touch-optimized with horizontal scroll */}
-   <div className="sticky -top-6 z-10 pb-0 -mx-4 px-0 lg:px-4 bg-background/95 backdrop-blur-2xl border-b border-foreground/10">
+   {/* Tab Navigation - Block based */}
+   <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-foreground/10">
     <div
-     className="flex items-center gap-1 lg:gap-8 overflow-x-auto no-scrollbar py-2 lg:py-4 px-4"
+     className="flex items-center gap-1 lg:gap-8 overflow-x-auto no-scrollbar py-2 lg:py-4 px-4 lg:px-6"
      style={{ WebkitOverflowScrolling: "touch" }}
     >
      {tabs.map((tab) => (
@@ -308,29 +308,25 @@ export function SearchResults({
     </div>
    </div>
 
-   {/* Results Count */}
-   <div className="mb-2 px-1 mt-6">
+   {/* Results Count Block */}
+   <div className="border-b border-foreground/10 px-4 lg:px-6 py-3">
     <div className="text-[10px] font-mono uppercase tracking-widest text-foreground/40">
-     {totalNumberOfItems !== undefined ? (
-      <>
-       {totalNumberOfItems.toLocaleString()} {contentType}
-      </>
-     ) : (
-      `${items.length} ${contentType}`
-     )}
+     {totalNumberOfItems !== undefined
+      ? `${totalNumberOfItems.toLocaleString()} ${contentType}`
+      : `${items.length} ${contentType}`}
     </div>
    </div>
 
-   {/* Content Area */}
+   {/* Content Block */}
    <motion.div
     initial={{ opacity: 0, y: 10 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
    >
     {contentType === "tracks" ? (
-     <div className="border-t border-foreground/10">
+     <div className="border-b border-foreground/10">
       {/* Table header - desktop only */}
-      <div className="sticky top-[4.8rem] z-10 hidden lg:block">
+      <div className="sticky top-[3.8rem] z-10 hidden lg:block">
        <TableHeader />
       </div>
       <div>
@@ -387,33 +383,37 @@ export function SearchResults({
       albums &&
       albums.length > 50 &&
       windowDimensions.width > 0 ? (
-     <VirtualSearchResults
-      albums={albums}
-      height={windowDimensions.height - 200}
-      width={windowDimensions.width}
-     />
+     <div className="px-4 lg:px-6 py-5 border-b border-foreground/10">
+      <VirtualSearchResults
+       albums={albums}
+       height={windowDimensions.height - 200}
+       width={windowDimensions.width}
+      />
+     </div>
     ) : (
-     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 md:gap-8">
-      {contentType === "albums" &&
-       albums?.map((album) => (
-        <div key={album.id} className="w-full">
-         <AlbumCard album={album} />
-        </div>
-       ))}
+     <div className="px-4 lg:px-6 py-5 border-b border-foreground/10">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 md:gap-8">
+       {contentType === "albums" &&
+        albums?.map((album) => (
+         <div key={album.id} className="w-full">
+          <AlbumCard album={album} />
+         </div>
+        ))}
 
-      {contentType === "artists" &&
-       artists?.map((artist) => (
-        <div key={artist.id} className="w-full">
-         <ArtistCard artist={artist} onClick={handleArtistClick} />
-        </div>
-       ))}
+       {contentType === "artists" &&
+        artists?.map((artist) => (
+         <div key={artist.id} className="w-full">
+          <ArtistCard artist={artist} onClick={handleArtistClick} />
+         </div>
+        ))}
 
-      {contentType === "playlists" &&
-       playlists?.map((playlist) => (
-        <div key={playlist.uuid} className="w-full">
-         <PlaylistCard playlist={playlist} onClick={handlePlaylistClick} />
-        </div>
-       ))}
+       {contentType === "playlists" &&
+        playlists?.map((playlist) => (
+         <div key={playlist.uuid} className="w-full">
+          <PlaylistCard playlist={playlist} onClick={handlePlaylistClick} />
+         </div>
+        ))}
+      </div>
      </div>
     )}
    </motion.div>
