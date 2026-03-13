@@ -4,8 +4,18 @@ import React, { memo, useMemo, useState, useRef, useCallback } from "react";
 import { Track } from "@/lib/api/types";
 import { getTrackTitle, formatTime } from "@/lib/api/utils";
 import { api } from "@/lib/api";
+import { useLibrary } from "@/contexts/LibraryContext";
 import Image from "next/image";
-import { Disc, MoreVertical, Play, ListPlus, Share2, Heart } from "lucide-react";
+import {
+ Disc,
+ MoreVertical,
+ Play,
+ ListPlus,
+ FolderPlus,
+ Share2,
+ Heart,
+ SkipForward,
+} from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 interface MobileTrackRowProps {
@@ -16,6 +26,8 @@ interface MobileTrackRowProps {
  isLoading: boolean;
  onClick: () => void;
  onAddToQueue?: () => void;
+ onAddToPlaylist?: () => void;
+ onPlayNext?: () => void;
  onShare?: () => void;
  onToggleLike?: () => void;
  isLiked?: boolean;
@@ -31,10 +43,13 @@ function MobileTrackRow({
  isLoading,
  onClick,
  onAddToQueue,
+ onAddToPlaylist,
+ onPlayNext,
  onShare,
  onToggleLike,
  isLiked = false,
 }: MobileTrackRowProps) {
+ const { getPlaylistsForTrack } = useLibrary();
  const [showContextMenu, setShowContextMenu] = useState(false);
  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
  const touchStartPos = useRef<{ x: number; y: number } | null>(null);
@@ -65,6 +80,9 @@ function MobileTrackRow({
  }, [track.mediaMetadata?.tags]);
 
  const { hasHiRes, hasDolbyAtmos } = qualityInfo;
+ const playlists = getPlaylistsForTrack(track.id);
+ const playlistLabel =
+  playlists.length > 0 ? playlists.map((playlist) => playlist.name).join(", ") : "";
 
  // Long press handlers
  const handleTouchStart = useCallback((e: React.TouchEvent) => {
@@ -111,14 +129,20 @@ function MobileTrackRow({
  }, [showContextMenu, onClick]);
 
  const handleContextMenuAction = useCallback(
-  (action: "play" | "queue" | "share" | "like") => {
+  (action: "play" | "next" | "queue" | "playlist" | "share" | "like") => {
    setShowContextMenu(false);
    switch (action) {
     case "play":
      onClick();
      break;
+    case "next":
+     onPlayNext?.();
+     break;
     case "queue":
      onAddToQueue?.();
+     break;
+    case "playlist":
+     onAddToPlaylist?.();
      break;
     case "share":
      onShare?.();
@@ -128,7 +152,7 @@ function MobileTrackRow({
      break;
    }
   },
-  [onClick, onAddToQueue, onShare, onToggleLike],
+  [onClick, onAddToPlaylist, onAddToQueue, onPlayNext, onShare, onToggleLike],
  );
 
  return (
@@ -147,7 +171,7 @@ function MobileTrackRow({
           cursor-pointer
           transition-colors duration-150
           active:bg-foreground/5
-          ${isCurrentTrack ? "border-l-[3px] border-l-foreground pl-[13px] bg-foreground/[0.02]" : ""}
+          ${isCurrentTrack ? "border-l-[3px] border-l-foreground pl-[13px]" : ""}
           ${isLoading ? "opacity-50 pointer-events-none" : ""}
         `}
    >
@@ -172,15 +196,15 @@ function MobileTrackRow({
       <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
        <div className="flex items-end gap-[2px] h-4">
         <div
-         className="w-[3px] bg-white rounded-full animate-[wave1_0.6s_ease-in-out_infinite]"
+         className="w-[3px] bg-white animate-[wave1_0.6s_ease-in-out_infinite]"
          style={{ height: "40%" }}
         />
         <div
-         className="w-[3px] bg-white rounded-full animate-[wave2_0.6s_ease-in-out_infinite]"
+         className="w-[3px] bg-white animate-[wave2_0.6s_ease-in-out_infinite]"
          style={{ height: "100%", animationDelay: "0.1s" }}
         />
         <div
-         className="w-[3px] bg-white rounded-full animate-[wave3_0.6s_ease-in-out_infinite]"
+         className="w-[3px] bg-white animate-[wave3_0.6s_ease-in-out_infinite]"
          style={{ height: "60%", animationDelay: "0.2s" }}
         />
        </div>
@@ -206,9 +230,17 @@ function MobileTrackRow({
      </div>
 
      <div className="flex items-center gap-2">
-      <span className="text-[13px] text-foreground/50 truncate">
-       {displayArtist}
-      </span>
+     <span className="text-[13px] text-foreground/50 truncate">
+      {displayArtist}
+     </span>
+      {playlists.length > 0 && (
+       <span
+        className="shrink-0 text-[10px] font-mono uppercase tracking-wider text-foreground/35"
+        title={playlistLabel}
+       >
+        PL {playlists.length}
+       </span>
+      )}
      </div>
 
      {/* Quality badges + Duration row */}
@@ -308,18 +340,40 @@ function MobileTrackRow({
         <button
          onClick={() => handleContextMenuAction("play")}
          className="w-full flex items-center gap-4 px-4 py-4 active:bg-white/5"
-        >
-         <Play className="w-5 h-5 text-white/60" />
-         <span className="text-sm text-white">Play Now</span>
-        </button>
+         >
+          <Play className="w-5 h-5 text-white/60" />
+          <span className="text-sm text-white">Play Now</span>
+         </button>
 
-        <button
-         onClick={() => handleContextMenuAction("queue")}
-         className="w-full flex items-center gap-4 px-4 py-4 active:bg-white/5"
-        >
-         <ListPlus className="w-5 h-5 text-white/60" />
-         <span className="text-sm text-white">Add to Queue</span>
-        </button>
+         {onPlayNext && (
+          <button
+           onClick={() => handleContextMenuAction("next")}
+           className="w-full flex items-center gap-4 px-4 py-4 active:bg-white/5"
+          >
+           <SkipForward className="w-5 h-5 text-white/60" />
+           <span className="text-sm text-white">Play Next</span>
+          </button>
+         )}
+
+         {onAddToQueue && (
+          <button
+           onClick={() => handleContextMenuAction("queue")}
+           className="w-full flex items-center gap-4 px-4 py-4 active:bg-white/5"
+          >
+           <ListPlus className="w-5 h-5 text-white/60" />
+           <span className="text-sm text-white">Add to Queue</span>
+          </button>
+         )}
+
+         {onAddToPlaylist && (
+          <button
+           onClick={() => handleContextMenuAction("playlist")}
+           className="w-full flex items-center gap-4 px-4 py-4 active:bg-white/5"
+          >
+           <FolderPlus className="w-5 h-5 text-white/60" />
+           <span className="text-sm text-white">Add to Playlist</span>
+          </button>
+         )}
 
         <button
          onClick={() => handleContextMenuAction("share")}

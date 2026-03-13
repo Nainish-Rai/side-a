@@ -8,6 +8,7 @@ interface LibraryState {
   likedTracks: unknown[];
   savedAlbums: unknown[];
   recentlyPlayed: unknown[];
+  playlists: unknown[];
 }
 
 interface PutPayload {
@@ -23,15 +24,17 @@ function isValidLibraryState(value: unknown): value is LibraryState {
   if (!isPlainObject(value)) return false;
 
   const keys = Object.keys(value);
-  if (keys.length !== 3) return false;
+  if (keys.length !== 4) return false;
   if (!keys.includes("likedTracks")) return false;
   if (!keys.includes("savedAlbums")) return false;
   if (!keys.includes("recentlyPlayed")) return false;
+  if (!keys.includes("playlists")) return false;
 
   return (
     Array.isArray(value.likedTracks) &&
     Array.isArray(value.savedAlbums) &&
-    Array.isArray(value.recentlyPlayed)
+    Array.isArray(value.recentlyPlayed) &&
+    Array.isArray(value.playlists)
   );
 }
 
@@ -76,6 +79,7 @@ export async function GET(request: NextRequest) {
       likedTracks: true,
       savedAlbums: true,
       recentlyPlayed: true,
+      playlists: true,
       updatedAt: true,
     },
   });
@@ -94,6 +98,7 @@ export async function GET(request: NextRequest) {
         likedTracks: record.likedTracks,
         savedAlbums: record.savedAlbums,
         recentlyPlayed: record.recentlyPlayed,
+        playlists: record.playlists,
       },
       updatedAt: record.updatedAt,
     },
@@ -118,7 +123,7 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json(
       {
         error:
-          "Body must match { deviceId: string, state: { likedTracks: [], savedAlbums: [], recentlyPlayed: [] } }.",
+          "Body must match { deviceId: string, state: { likedTracks: [], savedAlbums: [], recentlyPlayed: [], playlists: [] } }.",
       },
       { status: 400 },
     );
@@ -131,17 +136,20 @@ export async function PUT(request: NextRequest) {
       likedTracks: payload.state.likedTracks as Prisma.InputJsonValue,
       savedAlbums: payload.state.savedAlbums as Prisma.InputJsonValue,
       recentlyPlayed: payload.state.recentlyPlayed as Prisma.InputJsonValue,
+      playlists: payload.state.playlists as Prisma.InputJsonValue,
     },
     update: {
       likedTracks: payload.state.likedTracks as Prisma.InputJsonValue,
       savedAlbums: payload.state.savedAlbums as Prisma.InputJsonValue,
       recentlyPlayed: payload.state.recentlyPlayed as Prisma.InputJsonValue,
+      playlists: payload.state.playlists as Prisma.InputJsonValue,
     },
     select: {
       deviceId: true,
       likedTracks: true,
       savedAlbums: true,
       recentlyPlayed: true,
+      playlists: true,
       updatedAt: true,
     },
   });
@@ -153,6 +161,7 @@ export async function PUT(request: NextRequest) {
         likedTracks: saved.likedTracks,
         savedAlbums: saved.savedAlbums,
         recentlyPlayed: saved.recentlyPlayed,
+        playlists: saved.playlists,
       },
       updatedAt: saved.updatedAt,
     },

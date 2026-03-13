@@ -2,8 +2,10 @@ import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useCallback } from "react";
 import { useSearchContext } from "@/contexts/SearchContext";
+import type { SearchResponse, Track, Album, Artist } from "@/lib/api/types";
 
 type SearchContentType = "tracks" | "albums" | "artists" | "playlists";
+type SearchPage = SearchResponse<Track> | SearchResponse<Album> | SearchResponse<Artist>;
 
 export function useSearch() {
  const queryClient = useQueryClient();
@@ -162,6 +164,20 @@ export function useSearch() {
  const firstAlbumsPage = albumsQuery.data?.pages[0];
  const firstArtistsPage = artistsQuery.data?.pages[0];
 
+ const activeQuery =
+  currentTab === "tracks"
+   ? tracksQuery
+   : currentTab === "albums"
+     ? albumsQuery
+     : artistsQuery;
+
+ const activeItems =
+  currentTab === "tracks"
+   ? tracks
+   : currentTab === "albums"
+     ? albums
+     : artists;
+
  const prefetchTab = useCallback(
   (tab: "tracks" | "albums" | "artists") => {
    if (!query) return;
@@ -175,15 +191,21 @@ export function useSearch() {
 
    queryClient.prefetchInfiniteQuery({
     queryKey,
-    queryFn: (({ pageParam = 0 }) => {
+    queryFn: async ({
+     pageParam = 0,
+     signal,
+    }: {
+     pageParam: number;
+     signal?: AbortSignal;
+    }): Promise<SearchPage> => {
      if (tab === "tracks") {
-      return api.searchTracks(query, { offset: pageParam, limit: 25 });
+      return api.searchTracks(query, { offset: pageParam, limit: 25, signal });
      } else if (tab === "albums") {
-      return api.searchAlbums(query, { offset: pageParam, limit: 25 });
+      return api.searchAlbums(query, { offset: pageParam, limit: 25, signal });
      } else {
-      return api.searchArtists(query, { offset: pageParam, limit: 25 });
+      return api.searchArtists(query, { offset: pageParam, limit: 25, signal });
      }
-    }) as any,
+    },
     initialPageParam: 0,
    });
   },
@@ -219,15 +241,11 @@ export function useSearch() {
   },
 
   // Loading states
-  isLoading:
-   tracksQuery.isLoading || albumsQuery.isLoading || artistsQuery.isLoading,
+  isLoading: activeQuery.isLoading && activeItems.length === 0,
   isTracksLoading: tracksQuery.isLoading,
   isAlbumsLoading: albumsQuery.isLoading,
   isArtistsLoading: artistsQuery.isLoading,
-  isFetchingMore:
-   tracksQuery.isFetchingNextPage ||
-   albumsQuery.isFetchingNextPage ||
-   artistsQuery.isFetchingNextPage,
+  isFetchingMore: activeQuery.isFetchingNextPage,
 
   // Infinite scroll
   hasNextPage:

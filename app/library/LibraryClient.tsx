@@ -12,8 +12,10 @@ import {
 } from "@/contexts/AudioPlayerContext";
 import { useLibrary } from "@/contexts/LibraryContext";
 import { Heart, Library, Music2 } from "lucide-react";
+import { toast } from "sonner";
 import TrackRow from "@/components/search/TrackRow";
 import MobileTrackRow from "@/components/mobile/MobileTrackRow";
+import { TrackPlaylistPickerDialog } from "@/components/playlists/PlaylistDialogs";
 
 interface TrackSectionProps {
  title: string;
@@ -24,6 +26,9 @@ interface TrackSectionProps {
  isPlaying: boolean;
  loadingTrackId: number | null;
  onPlayTrack: (index: number) => void;
+ onAddToQueue?: (track: Track) => void;
+ onPlayNext?: (track: Track) => void;
+ onAddToPlaylist?: (track: Track) => void;
  onToggleLike?: (track: Track) => void;
  isTrackLiked?: (trackId: number) => boolean;
 }
@@ -37,6 +42,9 @@ function TrackSection({
  isPlaying,
  loadingTrackId,
  onPlayTrack,
+ onAddToQueue,
+ onPlayNext,
+ onAddToPlaylist,
  onToggleLike,
  isTrackLiked,
 }: TrackSectionProps) {
@@ -96,6 +104,9 @@ function TrackSection({
           isPlaying={isCurrentTrack && isPlaying}
           isLoading={loadingTrackId === track.id}
           onClick={() => onPlayTrack(index)}
+          onAddToQueue={onAddToQueue ? () => onAddToQueue(track) : undefined}
+          onAddToPlaylist={onAddToPlaylist ? () => onAddToPlaylist(track) : undefined}
+          onPlayNext={onPlayNext ? () => onPlayNext(track) : undefined}
           isLiked={isTrackLiked?.(track.id)}
           onToggleLike={onToggleLike ? () => onToggleLike(track) : undefined}
          />
@@ -111,6 +122,9 @@ function TrackSection({
          isPlaying={isCurrentTrack && isPlaying}
          isLoading={loadingTrackId === track.id}
          onClick={() => onPlayTrack(index)}
+         onAddToPlaylist={onAddToPlaylist ? () => onAddToPlaylist(track) : undefined}
+         onAddToQueue={onAddToQueue ? () => onAddToQueue(track) : undefined}
+         onPlayNext={onPlayNext ? () => onPlayNext(track) : undefined}
          isLiked={isTrackLiked?.(track.id)}
          onToggleLike={onToggleLike ? () => onToggleLike(track) : undefined}
         />
@@ -131,7 +145,7 @@ function getAlbumCoverUrl(album: Album): string | null {
 export function LibraryClient() {
  const { isPlaying } = usePlaybackState();
  const { currentTrack } = useQueue();
- const { setQueue } = useAudioPlayer();
+ const { setQueue, addToQueue, playNextInQueue } = useAudioPlayer();
  const {
   likedTracks,
   recentlyPlayed,
@@ -144,6 +158,7 @@ export function LibraryClient() {
 
  const [loadingTrackId, setLoadingTrackId] = useState<number | null>(null);
  const [isMobile, setIsMobile] = useState(false);
+ const [playlistPickerTrack, setPlaylistPickerTrack] = useState<Track | null>(null);
 
  useEffect(() => {
   const checkMobile = () => {
@@ -168,6 +183,42 @@ export function LibraryClient() {
    }
   },
   [addRecentlyPlayed, loadingTrackId, setQueue],
+ );
+
+ const handleAddToQueue = useCallback(
+  (track: Track) => {
+   if (!track?.id) {
+    toast.error("Could not update queue");
+    return;
+   }
+
+   try {
+    addToQueue(track);
+    toast.success("Added to queue");
+   } catch (error) {
+    console.error("Error adding track to queue:", error);
+    toast.error("Could not update queue");
+   }
+  },
+  [addToQueue],
+ );
+
+ const handlePlayNext = useCallback(
+  (track: Track) => {
+   if (!track?.id) {
+    toast.error("Could not update queue");
+    return;
+   }
+
+   try {
+    playNextInQueue(track);
+    toast.success("Will play next");
+   } catch (error) {
+    console.error("Error inserting track as next:", error);
+    toast.error("Could not update queue");
+   }
+  },
+  [playNextInQueue],
  );
 
  const topRecentTracks = useMemo(() => recentlyPlayed.slice(0, 20), [recentlyPlayed]);
@@ -206,6 +257,9 @@ export function LibraryClient() {
      isPlaying={isPlaying}
      loadingTrackId={loadingTrackId}
      onPlayTrack={(index) => playTrackFromCollection(likedTracks, index)}
+     onAddToQueue={handleAddToQueue}
+     onPlayNext={handlePlayNext}
+     onAddToPlaylist={setPlaylistPickerTrack}
      onToggleLike={toggleTrackLike}
      isTrackLiked={isTrackLiked}
     />
@@ -219,6 +273,9 @@ export function LibraryClient() {
      isPlaying={isPlaying}
      loadingTrackId={loadingTrackId}
      onPlayTrack={(index) => playTrackFromCollection(topRecentTracks, index)}
+     onAddToQueue={handleAddToQueue}
+     onPlayNext={handlePlayNext}
+     onAddToPlaylist={setPlaylistPickerTrack}
      onToggleLike={toggleTrackLike}
      isTrackLiked={isTrackLiked}
     />
@@ -289,8 +346,13 @@ export function LibraryClient() {
        })}
       </div>
      )}
-    </section>
-   </div>
+   </section>
+   <TrackPlaylistPickerDialog
+    isOpen={playlistPickerTrack !== null}
+    track={playlistPickerTrack}
+    onClose={() => setPlaylistPickerTrack(null)}
+   />
   </div>
- );
+ </div>
+);
 }

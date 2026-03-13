@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Album, Track } from "@/lib/api/types";
@@ -8,11 +9,12 @@ import {
  usePlaybackState,
  useQueue,
 } from "@/contexts/AudioPlayerContext";
-import { Play, Pause, ArrowLeft, Music2, Heart } from "lucide-react";
+import { Play, Pause, ArrowLeft, Music2, Heart, FolderPlus } from "lucide-react";
 import { getTrackTitle, getTrackArtists, formatTime } from "@/lib/api/utils";
 import { AudioPlayer } from "@/components/player/AudioPlayer";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useLibrary } from "@/contexts/LibraryContext";
+import { TrackPlaylistPickerDialog } from "@/components/playlists/PlaylistDialogs";
 
 interface AlbumClientProps {
  album: Album;
@@ -28,7 +30,8 @@ export function AlbumClient({ album, tracks }: AlbumClientProps) {
 
  // Still need AudioPlayerContext for methods
  const { setQueue, togglePlayPause } = useAudioPlayer();
- const { isAlbumSaved, toggleAlbumSave, addRecentlyPlayed } = useLibrary();
+ const { isAlbumSaved, toggleAlbumSave, addRecentlyPlayed, getPlaylistsForTrack } =
+  useLibrary();
 
  const handlePlayAlbum = () => {
   if (tracks.length > 0) {
@@ -71,6 +74,7 @@ export function AlbumClient({ album, tracks }: AlbumClientProps) {
  const isAlbumPlaying =
   currentTrack && tracks.some((t) => t.id === currentTrack.id);
  const saved = isAlbumSaved(album.id);
+ const [playlistPickerTrack, setPlaylistPickerTrack] = useState<Track | null>(null);
 
  return (
   <div className="relative min-h-screen w-full bg-background text-foreground transition-colors duration-300">
@@ -192,7 +196,7 @@ export function AlbumClient({ album, tracks }: AlbumClientProps) {
     <div className="border-t border-foreground/10">
      {/* Table Header */}
      <div className="sticky top-[73px] z-20 bg-background/95 backdrop-blur-xl border-b border-foreground/10">
-      <div className="grid grid-cols-[50px_1fr_120px_80px] md:grid-cols-[50px_1fr_180px_120px_80px] gap-4 px-6 py-3">
+      <div className="grid grid-cols-[50px_1fr_120px_100px] md:grid-cols-[50px_1fr_180px_120px_100px] gap-4 px-6 py-3">
        <span className="text-[10px] font-mono uppercase tracking-widest text-foreground/40">
         #
        </span>
@@ -206,7 +210,7 @@ export function AlbumClient({ album, tracks }: AlbumClientProps) {
         Plays
        </span>
        <span className="text-[10px] font-mono uppercase tracking-widest text-foreground/40 text-right">
-        Time
+        Time / Save
        </span>
       </div>
      </div>
@@ -215,12 +219,15 @@ export function AlbumClient({ album, tracks }: AlbumClientProps) {
      <div>
       {tracks.map((track, index) => {
        const isCurrent = currentTrack?.id === track.id;
+       const playlists = getPlaylistsForTrack(track.id);
+       const playlistLabel =
+        playlists.length > 0 ? playlists.map((playlist) => playlist.name).join(", ") : "";
 
        return (
         <div
          key={track.id}
          onClick={() => handlePlayTrack(track, index)}
-         className={`grid grid-cols-[50px_1fr_120px_80px] md:grid-cols-[50px_1fr_180px_120px_80px] gap-4 items-center px-6 py-3 border-b border-foreground/10 cursor-pointer transition-all duration-200 hover:bg-foreground/[0.02] ${
+         className={`grid grid-cols-[50px_1fr_120px_100px] md:grid-cols-[50px_1fr_180px_120px_100px] gap-4 items-center px-6 py-3 border-b border-foreground/10 cursor-pointer transition-all duration-200 hover:bg-foreground/[0.02] ${
           isCurrent
            ? "border-l-[3px] border-l-foreground pl-[21px]"
            : "border-l-[3px] border-l-transparent"
@@ -247,6 +254,14 @@ export function AlbumClient({ album, tracks }: AlbumClientProps) {
           >
            {getTrackArtists(track)}
           </p>
+          {playlists.length > 0 && (
+           <p
+            className="mt-1 text-[10px] font-mono uppercase tracking-wider text-foreground/35"
+            title={playlistLabel}
+           >
+            PL {playlists.length}
+           </p>
+          )}
          </div>
 
          {/* Album - Hidden on mobile */}
@@ -264,7 +279,18 @@ export function AlbumClient({ album, tracks }: AlbumClientProps) {
          </div>
 
          {/* Duration */}
-         <div className="text-right">
+         <div className="flex items-center justify-end gap-3">
+          <button
+           type="button"
+           onClick={(event) => {
+            event.stopPropagation();
+            setPlaylistPickerTrack(track);
+           }}
+           className="text-foreground/35 transition-colors hover:text-foreground/80"
+           aria-label="Add to playlist"
+          >
+           <FolderPlus className="h-3.5 w-3.5" />
+          </button>
           <span className="text-[12px] font-mono text-foreground/40 tabular-nums">
            {formatTime(track.duration)}
           </span>
@@ -278,6 +304,11 @@ export function AlbumClient({ album, tracks }: AlbumClientProps) {
 
    {/* Fixed Audio Player */}
    <AudioPlayer />
+   <TrackPlaylistPickerDialog
+    isOpen={playlistPickerTrack !== null}
+    track={playlistPickerTrack}
+    onClose={() => setPlaylistPickerTrack(null)}
+   />
   </div>
  );
 }

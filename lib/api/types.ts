@@ -82,6 +82,15 @@ export interface Playlist {
   explicitLyrics?: boolean;
 }
 
+export interface UserPlaylist {
+  id: string;
+  name: string;
+  description?: string;
+  createdAt: string;
+  updatedAt: string;
+  tracks: Track[];
+}
+
 export interface SearchResponse<T> {
   items: T[];
   limit: number;

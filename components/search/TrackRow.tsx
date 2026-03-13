@@ -4,8 +4,9 @@ import React, { memo, useMemo } from "react";
 import { Track } from "@/lib/api/types";
 import { getTrackTitle, formatTime } from "@/lib/api/utils";
 import { api } from "@/lib/api";
+import { useLibrary } from "@/contexts/LibraryContext";
 import Image from "next/image";
-import { Disc, Heart } from "lucide-react";
+import { Disc, FolderPlus, Heart, ListPlus, SkipForward } from "lucide-react";
 
 interface TrackRowProps {
  track: Track;
@@ -14,6 +15,9 @@ interface TrackRowProps {
  isPlaying: boolean;
  isLoading: boolean;
  onClick: () => void;
+ onAddToQueue?: () => void;
+ onAddToPlaylist?: () => void;
+ onPlayNext?: () => void;
  onToggleLike?: () => void;
  isLiked?: boolean;
 }
@@ -25,9 +29,13 @@ function TrackRow({
  isPlaying,
  isLoading,
  onClick,
+ onAddToQueue,
+ onAddToPlaylist,
+ onPlayNext,
  onToggleLike,
  isLiked = false,
 }: TrackRowProps) {
+ const { getPlaylistsForTrack } = useLibrary();
  // Memoize cover URL computation
  const coverUrl = useMemo(() => {
   const coverId = track.album?.cover || track.album?.id;
@@ -55,6 +63,9 @@ function TrackRow({
  }, [track.mediaMetadata?.tags]);
 
  const { hasHiRes, hasDolbyAtmos } = qualityInfo;
+ const playlists = getPlaylistsForTrack(track.id);
+ const playlistLabel =
+  playlists.length > 0 ? playlists.map((playlist) => playlist.name).join(", ") : "";
 
  return (
   <div
@@ -74,15 +85,15 @@ function TrackRow({
     {isCurrentTrack && isPlaying ? (
      <div className="flex items-end justify-center gap-[3px] h-5">
       <div
-       className="w-1 bg-foreground rounded-full animate-[wave1_0.6s_ease-in-out_infinite]"
+       className="w-1 bg-foreground animate-[wave1_0.6s_ease-in-out_infinite]"
        style={{ height: "40%" }}
       />
       <div
-       className="w-1 bg-foreground rounded-full animate-[wave2_0.6s_ease-in-out_infinite]"
+       className="w-1 bg-foreground animate-[wave2_0.6s_ease-in-out_infinite]"
        style={{ height: "100%", animationDelay: "0.1s" }}
       />
       <div
-       className="w-1 bg-foreground rounded-full animate-[wave3_0.6s_ease-in-out_infinite]"
+       className="w-1 bg-foreground animate-[wave3_0.6s_ease-in-out_infinite]"
        style={{ height: "60%", animationDelay: "0.2s" }}
       />
      </div>
@@ -132,8 +143,16 @@ function TrackRow({
     </div>
     <div className="flex items-center gap-2 flex-wrap">
      <span className="text-[12px] text-foreground/50 group-hover:text-foreground/70 transition-colors truncate">
-      {displayArtist}
+     {displayArtist}
      </span>
+     {playlists.length > 0 && (
+      <span
+       className="shrink-0 text-[10px] font-mono uppercase tracking-wider text-foreground/35"
+       title={playlistLabel}
+      >
+       PL {playlists.length}
+      </span>
+     )}
      {/* Quality Badges on Mobile */}
      <div className="flex items-center gap-1.5 md:hidden">
       {hasDolbyAtmos && (
@@ -179,17 +198,56 @@ function TrackRow({
    </div>
 
    {/* Duration + Like */}
-   <div className="flex items-center justify-end gap-2">
-    {onToggleLike && (
-     <button
-      type="button"
-      onClick={(event) => {
-       event.stopPropagation();
-       onToggleLike();
-      }}
-      className="text-foreground/40 hover:text-foreground/80 transition-colors"
-      aria-label={isLiked ? "Unlike track" : "Like track"}
-     >
+    <div className="flex items-center justify-end gap-2">
+     {onPlayNext && (
+      <button
+       type="button"
+       onClick={(event) => {
+        event.stopPropagation();
+        onPlayNext();
+       }}
+       className="text-foreground/30 hover:text-foreground/80 transition-colors opacity-0 group-hover:opacity-100"
+       aria-label="Play next"
+      >
+       <SkipForward className="w-3.5 h-3.5" />
+      </button>
+     )}
+     {onAddToPlaylist && (
+      <button
+       type="button"
+       onClick={(event) => {
+        event.stopPropagation();
+        onAddToPlaylist();
+       }}
+       className="text-foreground/30 hover:text-foreground/80 transition-colors opacity-0 group-hover:opacity-100"
+       aria-label="Add to playlist"
+      >
+       <FolderPlus className="w-3.5 h-3.5" />
+      </button>
+     )}
+     {onAddToQueue && (
+      <button
+       type="button"
+       onClick={(event) => {
+        event.stopPropagation();
+        onAddToQueue();
+       }}
+       className="text-foreground/30 hover:text-foreground/80 transition-colors opacity-0 group-hover:opacity-100"
+       aria-label="Add to queue"
+      >
+       <ListPlus className="w-3.5 h-3.5" />
+      </button>
+     )}
+     {onToggleLike && (
+      <button
+       type="button"
+       onClick={(event) => {
+        event.stopPropagation();
+        onToggleLike();
+       }}
+       className="text-foreground/40 hover:text-foreground/80 transition-colors"
+       aria-label={isLiked ? "Unlike track" : "Like track"}
+      >
       <Heart
        className={`w-3.5 h-3.5 ${isLiked ? "fill-foreground text-foreground" : ""}`}
       />

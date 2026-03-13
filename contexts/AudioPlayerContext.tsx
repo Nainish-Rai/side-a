@@ -33,6 +33,7 @@ interface AudioPlayerState {
 interface AudioPlayerContextValue extends AudioPlayerState {
   playTrack: (track: Track, streamUrl: string) => void;
   addToQueue: (track: Track) => void;
+  playNextInQueue: (track: Track) => void;
   setQueue: (tracks: Track[], startIndex?: number) => void;
   reorderQueue: (newQueue: Track[], newCurrentIndex: number) => void;
   play: () => void;
@@ -135,6 +136,12 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const shuffledQueue = useRef<Track[]>([]);
   const playNextRef = useRef<(() => Promise<void>) | null>(null);
   const persistTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const insertTrackAt = useCallback((tracks: Track[], index: number, track: Track) => {
+    const nextTracks = [...tracks];
+    nextTracks.splice(index, 0, track);
+    return nextTracks;
+  }, []);
 
   // Helper function to safely play audio, handling AbortError from interrupted loads
   const safePlay = useCallback(async (audio: HTMLAudioElement) => {
@@ -419,11 +426,67 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
   // Queue management functions
   const addToQueue = useCallback((track: Track) => {
-    setState((prev) => ({
-      ...prev,
-      queue: [...prev.queue, track],
-    }));
+    setState((prev) => {
+      const nextQueue = [...prev.queue, track];
+
+      if (prev.shuffleActive) {
+        originalQueueBeforeShuffle.current = [
+          ...(originalQueueBeforeShuffle.current.length > 0
+            ? originalQueueBeforeShuffle.current
+            : prev.queue),
+          track,
+        ];
+        shuffledQueue.current = [
+          ...(shuffledQueue.current.length > 0 ? shuffledQueue.current : prev.queue),
+          track,
+        ];
+      }
+
+      return {
+        ...prev,
+        queue: nextQueue,
+      };
+    });
   }, []);
+
+  const playNextInQueue = useCallback(
+    (track: Track) => {
+      setState((prev) => {
+        const displayInsertIndex = prev.currentTrack
+          ? Math.max(
+              prev.queue.findIndex((queueTrack) => queueTrack.id === prev.currentTrack?.id),
+              -1,
+            ) + 1
+          : 0;
+
+        if (prev.shuffleActive) {
+          const baseOriginalQueue =
+            originalQueueBeforeShuffle.current.length > 0
+              ? originalQueueBeforeShuffle.current
+              : prev.queue;
+          const baseShuffledQueue =
+            shuffledQueue.current.length > 0 ? shuffledQueue.current : prev.queue;
+
+          originalQueueBeforeShuffle.current = insertTrackAt(
+            baseOriginalQueue,
+            displayInsertIndex,
+            track,
+          );
+          shuffledQueue.current = insertTrackAt(
+            baseShuffledQueue,
+            Math.max(prev.currentQueueIndex, -1) + 1,
+            track,
+          );
+        }
+
+        return {
+          ...prev,
+          queue: insertTrackAt(prev.queue, displayInsertIndex, track),
+        };
+      });
+    },
+    [insertTrackAt],
+  );
 
   // Reorder queue without interrupting playback
   const reorderQueue = useCallback((newQueue: Track[], newCurrentIndex: number) => {
@@ -798,6 +861,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     ...state,
     playTrack,
     addToQueue,
+    playNextInQueue,
     setQueue,
     reorderQueue,
     play,

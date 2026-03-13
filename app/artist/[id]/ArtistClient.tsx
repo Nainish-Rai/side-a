@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import type { Album, Artist, Track } from "@/lib/api/types";
@@ -9,10 +9,12 @@ import {
   usePlaybackState,
   useQueue,
 } from "@/contexts/AudioPlayerContext";
-import { ArrowLeft, Pause, Play, User2 } from "lucide-react";
+import { ArrowLeft, Pause, Play, User2, FolderPlus } from "lucide-react";
 import { getTrackArtists, getTrackTitle, formatTime } from "@/lib/api/utils";
 import { AudioPlayer } from "@/components/player/AudioPlayer";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { TrackPlaylistPickerDialog } from "@/components/playlists/PlaylistDialogs";
+import { useLibrary } from "@/contexts/LibraryContext";
 
 interface ArtistClientProps {
   artist: Artist;
@@ -29,6 +31,8 @@ export function ArtistClient({ artist, topTracks, discography }: ArtistClientPro
   const { isPlaying } = usePlaybackState();
   const { currentTrack } = useQueue();
   const { setQueue, togglePlayPause } = useAudioPlayer();
+  const { getPlaylistsForTrack } = useLibrary();
+  const [playlistPickerTrack, setPlaylistPickerTrack] = useState<Track | null>(null);
 
   const topTrackIds = useMemo(() => new Set(topTracks.map((track) => track.id)), [topTracks]);
 
@@ -171,7 +175,7 @@ export function ArtistClient({ artist, topTracks, discography }: ArtistClientPro
           ) : (
             <div className="border-t border-foreground/10">
               <div className="sticky top-[73px] z-20 bg-background/95 backdrop-blur-xl border-b border-foreground/10">
-                <div className="grid grid-cols-[50px_1fr_120px_80px] md:grid-cols-[50px_1fr_180px_120px_80px] gap-4 px-6 py-3">
+                <div className="grid grid-cols-[50px_1fr_120px_100px] md:grid-cols-[50px_1fr_180px_120px_100px] gap-4 px-6 py-3">
                   <span className="text-[10px] font-mono uppercase tracking-widest text-foreground/40">
                     #
                   </span>
@@ -185,7 +189,7 @@ export function ArtistClient({ artist, topTracks, discography }: ArtistClientPro
                     Plays
                   </span>
                   <span className="text-[10px] font-mono uppercase tracking-widest text-foreground/40 text-right">
-                    Time
+                    Time / Save
                   </span>
                 </div>
               </div>
@@ -194,12 +198,17 @@ export function ArtistClient({ artist, topTracks, discography }: ArtistClientPro
                 {topTracks.map((track, index) => {
                   const isCurrent = currentTrack?.id === track.id;
                   const albumTitle = track.album?.title || "Single";
+                  const playlists = getPlaylistsForTrack(track.id);
+                  const playlistLabel =
+                    playlists.length > 0
+                      ? playlists.map((playlist) => playlist.name).join(", ")
+                      : "";
 
                   return (
                     <div
                       key={track.id}
                       onClick={() => handlePlayTrack(track, index)}
-                      className={`grid grid-cols-[50px_1fr_120px_80px] md:grid-cols-[50px_1fr_180px_120px_80px] gap-4 items-center px-6 py-3 border-b border-foreground/10 cursor-pointer transition-all duration-200 hover:bg-foreground/[0.02] ${
+                      className={`grid grid-cols-[50px_1fr_120px_100px] md:grid-cols-[50px_1fr_180px_120px_100px] gap-4 items-center px-6 py-3 border-b border-foreground/10 cursor-pointer transition-all duration-200 hover:bg-foreground/[0.02] ${
                         isCurrent
                           ? "border-l-[3px] border-l-foreground pl-[21px]"
                           : "border-l-[3px] border-l-transparent"
@@ -234,6 +243,14 @@ export function ArtistClient({ artist, topTracks, discography }: ArtistClientPro
                         >
                           {getTrackArtists(track, { fallback: artist.name || "Unknown Artist" })}
                         </p>
+                        {playlists.length > 0 && (
+                          <p
+                            className="mt-1 text-[10px] font-mono uppercase tracking-wider text-foreground/35"
+                            title={playlistLabel}
+                          >
+                            PL {playlists.length}
+                          </p>
+                        )}
                       </div>
 
                       <div className="hidden md:block min-w-0 text-right">
@@ -248,7 +265,18 @@ export function ArtistClient({ artist, topTracks, discography }: ArtistClientPro
                         </span>
                       </div>
 
-                      <div className="text-right">
+                      <div className="flex items-center justify-end gap-3">
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setPlaylistPickerTrack(track);
+                          }}
+                          className="text-foreground/35 transition-colors hover:text-foreground/80"
+                          aria-label="Add to playlist"
+                        >
+                          <FolderPlus className="h-3.5 w-3.5" />
+                        </button>
                         <span className="text-[12px] font-mono text-foreground/40 tabular-nums">
                           {formatTime(track.duration || 0)}
                         </span>
@@ -328,6 +356,11 @@ export function ArtistClient({ artist, topTracks, discography }: ArtistClientPro
       </div>
 
       <AudioPlayer />
+      <TrackPlaylistPickerDialog
+        isOpen={playlistPickerTrack !== null}
+        track={playlistPickerTrack}
+        onClose={() => setPlaylistPickerTrack(null)}
+      />
     </div>
   );
 }
