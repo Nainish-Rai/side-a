@@ -148,7 +148,7 @@ function PlaylistEditorDialogBody({
       onSubmit={(event) => {
         event.preventDefault();
         if (!name.trim()) {
-          toast.error("Playlist name is required");
+          toast.error("NAME REQUIRED");
           return;
         }
         onSubmit({ name, description });
@@ -390,7 +390,7 @@ function TrackPlaylistPickerDialogBody({
             type="button"
             onClick={() => {
               if (!newPlaylistName.trim()) {
-                toast.error("Playlist name is required");
+                toast.error("NAME REQUIRED");
                 return;
               }
               const id = createPlaylist({
@@ -399,7 +399,7 @@ function TrackPlaylistPickerDialogBody({
               });
               setSelectedIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
               setNewPlaylistName("");
-              toast.success("Playlist created");
+              toast.success("TAPE RECORDED");
             }}
             className="inline-flex h-10 items-center gap-2 border border-foreground/20 px-3 text-[10px] font-mono uppercase tracking-widest text-foreground/70 transition-colors hover:text-foreground"
           >
@@ -425,7 +425,7 @@ function TrackPlaylistPickerDialogBody({
             type="button"
             onClick={() => {
               setTrackPlaylistMemberships(track, selectedIds);
-              toast.success("Playlist membership updated");
+              toast.success("TRACK ASSIGNED");
               onClose();
             }}
             className="border border-foreground bg-foreground px-3 py-2 text-[10px] font-mono uppercase tracking-widest text-background transition-opacity hover:opacity-90"

@@ -102,7 +102,13 @@ export async function GET(request: NextRequest) {
       },
       updatedAt: record.updatedAt,
     },
-    { status: 200 },
+    {
+      status: 200,
+      headers: {
+        // User-specific data: never share across users or cache at a CDN/SW layer.
+        "Cache-Control": "private, no-store",
+      },
+    },
   );
 }
 
@@ -165,6 +171,12 @@ export async function PUT(request: NextRequest) {
       },
       updatedAt: saved.updatedAt,
     },
-    { status: 200 },
+    {
+      status: 200,
+      headers: {
+        // Mutation responses must not be cached.
+        "Cache-Control": "no-store",
+      },
+    },
   );
 }

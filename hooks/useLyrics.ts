@@ -41,19 +41,19 @@ export function useLyrics(
       setCurrentLineIndex(initialState.currentLineIndex);
 
       try {
-        const data = await api.fetchLyrics(currentTrack);
+        const data = await api.fetchLyrics(currentTrack, {
+          signal: controller.signal,
+        });
         if (!controller.signal.aborted) {
           // Batch success state updates
           setLyrics(data);
           setIsLoading(false);
         }
       } catch (err) {
+        if (err instanceof Error && err.name === "AbortError") return;
         console.error("Error fetching lyrics:", err);
-        if (!controller.signal.aborted) {
-          // Batch error state updates
-          setError("Failed to load lyrics");
-          setIsLoading(false);
-        }
+        setError("Failed to load lyrics");
+        setIsLoading(false);
       }
     };
 

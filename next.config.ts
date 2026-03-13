@@ -1,5 +1,19 @@
 import type { NextConfig } from "next";
 import withPWAInit from "@ducanh2912/next-pwa";
+import { createRequire } from "module";
+
+const require = createRequire(import.meta.url);
+
+// Build the SW regex from instances.json at build time so it stays in sync
+// automatically whenever the instance list changes.
+const instances: string[] = require("./instances.json");
+const escapedHosts = instances
+  .map((url) => new URL(url).hostname.replace(/\./g, "\\."))
+  .join("|");
+const tidalApiPattern = new RegExp(
+  `^https:\\/\\/(?:${escapedHosts})\\/api\\/.*`,
+  "i"
+);
 
 const withPWA = withPWAInit({
   dest: "public",
@@ -35,8 +49,11 @@ const withPWA = withPWAInit({
         },
       },
       {
-        // Network-first for API calls
-        urlPattern: /^https:\/\/.*\/api\/.*/i,
+        // Network-first for external TIDAL proxy API calls only.
+        // Derived from instances.json at build time — adding/removing an instance
+        // there is all that's needed to keep this rule in sync.
+        // Same-origin /api/ routes (auth, library state) are never matched.
+        urlPattern: tidalApiPattern,
         handler: "NetworkFirst",
         options: {
           cacheName: "api-cache",

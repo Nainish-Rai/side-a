@@ -185,41 +185,41 @@ export function LibraryClient() {
   [addRecentlyPlayed, loadingTrackId, setQueue],
  );
 
- const handleAddToQueue = useCallback(
-  (track: Track) => {
-   if (!track?.id) {
-    toast.error("Could not update queue");
-    return;
-   }
+  const handleAddToQueue = useCallback(
+    (track: Track) => {
+      if (!track?.id) {
+        toast.error("DECK JAMMED");
+        return;
+      }
 
-   try {
-    addToQueue(track);
-    toast.success("Added to queue");
-   } catch (error) {
-    console.error("Error adding track to queue:", error);
-    toast.error("Could not update queue");
-   }
-  },
-  [addToQueue],
- );
+      try {
+        addToQueue(track);
+        toast.success("QUEUED");
+      } catch (error) {
+        console.error("Error adding track to queue:", error);
+        toast.error("DECK JAMMED");
+      }
+    },
+    [addToQueue],
+  );
 
- const handlePlayNext = useCallback(
-  (track: Track) => {
-   if (!track?.id) {
-    toast.error("Could not update queue");
-    return;
-   }
+  const handlePlayNext = useCallback(
+    (track: Track) => {
+      if (!track?.id) {
+        toast.error("DECK JAMMED");
+        return;
+      }
 
-   try {
-    playNextInQueue(track);
-    toast.success("Will play next");
-   } catch (error) {
-    console.error("Error inserting track as next:", error);
-    toast.error("Could not update queue");
-   }
-  },
-  [playNextInQueue],
- );
+      try {
+        playNextInQueue(track);
+        toast.success("NEXT IN LINE");
+      } catch (error) {
+        console.error("Error inserting track as next:", error);
+        toast.error("DECK JAMMED");
+      }
+    },
+    [playNextInQueue],
+  );
 
  const topRecentTracks = useMemo(() => recentlyPlayed.slice(0, 20), [recentlyPlayed]);
 

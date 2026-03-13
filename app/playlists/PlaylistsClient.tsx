@@ -207,7 +207,7 @@ export function PlaylistsClient() {
                         type="button"
                         onClick={() => {
                           if (playlist.tracks.length === 0) {
-                            toast.error("Playlist has no tracks");
+                            toast.error("TAPE EMPTY");
                             return;
                           }
                           void setQueue(playlist.tracks, 0);
@@ -423,7 +423,7 @@ export function PlaylistsClient() {
         onClose={() => setIsCreateOpen(false)}
         onSubmit={(values) => {
           createPlaylist(values);
-          toast.success("Playlist created");
+          toast.success("TAPE CREATED");
         }}
       />
       <PlaylistEditorDialog
@@ -434,7 +434,7 @@ export function PlaylistsClient() {
         onSubmit={(values) => {
           if (!playlistBeingEdited) return;
           updatePlaylist(playlistBeingEdited.id, values);
-          toast.success("Playlist updated");
+          toast.success("TAPE REWINDED");
         }}
       />
       <PlaylistDeleteDialog
@@ -444,7 +444,7 @@ export function PlaylistsClient() {
         onConfirm={() => {
           if (!playlistBeingDeleted) return;
           deletePlaylist(playlistBeingDeleted.id);
-          toast.success("Playlist deleted");
+          toast.success("TAPE EJECTED");
         }}
       />
     </div>

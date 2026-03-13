@@ -48,6 +48,15 @@ export default function RootLayout({
     <html lang="en" className="light" suppressHydrationWarning>
       <head>
         <link rel="apple-touch-icon" href="/icons/icon.svg" />
+        {/* Pre-establish TCP+TLS connections to external origins used at runtime.
+            resources.tidal.com — album art images
+            lyricsplus.prjktla.workers.dev — lyrics API */}
+        <link rel="preconnect" href="https://resources.tidal.com" />
+        <link
+          rel="preconnect"
+          href="https://lyricsplus.prjktla.workers.dev"
+          crossOrigin="anonymous"
+        />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}

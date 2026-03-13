@@ -27,6 +27,7 @@ import {
   Music2,
   Pencil,
   Play,
+  Shuffle,
   Trash2,
   X,
 } from "lucide-react";
@@ -39,6 +40,17 @@ import {
 } from "@/components/playlists/PlaylistDialogs";
 import { getPlaylistCoverUrl, getPlaylistDuration } from "@/components/playlists/playlist-utils";
 import { formatDuration, formatTime, getTrackArtists, getTrackTitle } from "@/lib/api/utils";
+
+function shuffleTracks<T>(items: T[]): T[] {
+  const result = [...items];
+
+  for (let index = result.length - 1; index > 0; index -= 1) {
+    const randomIndex = Math.floor(Math.random() * (index + 1));
+    [result[index], result[randomIndex]] = [result[randomIndex], result[index]];
+  }
+
+  return result;
+}
 
 interface PlaylistDetailClientProps {
   playlistId: string;
@@ -287,15 +299,32 @@ export function PlaylistDetailClient({ playlistId }: PlaylistDetailClientProps) 
                 type="button"
                 onClick={() => {
                   if (playlist.tracks.length === 0) {
-                    toast.error("Playlist has no tracks");
+                    toast.error("TAPE EMPTY");
                     return;
                   }
                   void setQueue(playlist.tracks, 0);
                 }}
                 className="inline-flex items-center gap-2 border border-foreground bg-foreground px-4 py-3 text-[10px] font-mono uppercase tracking-widest text-background transition-opacity hover:opacity-90"
+                >
+                  <Play className="h-3.5 w-3.5 fill-current" />
+                  Play Playlist
+                </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (playlist.tracks.length === 0) {
+                    toast.error("TAPE EMPTY");
+                    return;
+                  }
+
+                  const shuffledTracks = shuffleTracks(playlist.tracks);
+                  void setQueue(shuffledTracks, 0);
+                  toast.success("SHUFFLE MODE ACTIVE");
+                }}
+                className="inline-flex items-center gap-2 border border-foreground/20 px-4 py-3 text-[10px] font-mono uppercase tracking-widest text-foreground/65 transition-colors hover:text-foreground"
               >
-                <Play className="h-3.5 w-3.5 fill-current" />
-                Play Playlist
+                <Shuffle className="h-3.5 w-3.5" />
+                Shuffle Playlist
               </button>
               <p className="text-[10px] font-mono uppercase tracking-widest text-foreground/35">
                 Drag rows to reorder
@@ -371,7 +400,7 @@ export function PlaylistDetailClient({ playlistId }: PlaylistDetailClientProps) 
         onClose={() => setIsEditOpen(false)}
         onSubmit={(values) => {
           updatePlaylist(playlist.id, values);
-          toast.success("Playlist updated");
+          toast.success("TAPE REWINDED");
         }}
       />
       <PlaylistDeleteDialog
@@ -380,7 +409,7 @@ export function PlaylistDetailClient({ playlistId }: PlaylistDetailClientProps) 
         onClose={() => setIsDeleteOpen(false)}
         onConfirm={() => {
           deletePlaylist(playlist.id);
-          toast.success("Playlist deleted");
+          toast.success("TAPE EJECTED");
           router.push("/playlists");
         }}
       />

@@ -128,12 +128,15 @@ function ensureDeviceId(): string {
   return generated;
 }
 
-async function fetchRemoteState(deviceId: string): Promise<LibraryState | null> {
+async function fetchRemoteState(
+  deviceId: string,
+  signal?: AbortSignal,
+): Promise<LibraryState | null> {
   const endpoint = getSyncEndpoint();
   const url = new URL(endpoint, window.location.origin);
   url.searchParams.set("deviceId", deviceId);
 
-  const response = await fetch(url.toString(), { method: "GET" });
+  const response = await fetch(url.toString(), { method: "GET", signal });
   if (!response.ok) return null;
 
   const data = (await response.json()) as unknown;
@@ -145,12 +148,17 @@ async function fetchRemoteState(deviceId: string): Promise<LibraryState | null> 
   return normalizeState(remoteState);
 }
 
-async function pushRemoteState(deviceId: string, state: LibraryState): Promise<boolean> {
+async function pushRemoteState(
+  deviceId: string,
+  state: LibraryState,
+  signal?: AbortSignal,
+): Promise<boolean> {
   const endpoint = getSyncEndpoint();
   const response = await fetch(endpoint, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ deviceId, state }),
+    signal,
   });
 
   return response.ok;
@@ -272,14 +280,14 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
     }
   }, [state]);
 
-  const runPushSync = useCallback(async () => {
+  const runPushSync = useCallback(async (signal?: AbortSignal) => {
     const meta = syncMetaRef.current;
     if (!meta.isOnline || meta.isSyncing) return;
 
     setSyncMeta((prev) => ({ ...prev, isSyncing: true }));
 
     try {
-      const ok = await pushRemoteState(meta.deviceId, stateRef.current);
+      const ok = await pushRemoteState(meta.deviceId, stateRef.current, signal);
       if (!ok) {
         setSyncMeta((prev) => ({ ...prev, isSyncing: false }));
         return;
@@ -309,14 +317,14 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
     }, SYNC_DEBOUNCE_MS);
   }, [runPushSync]);
 
-  const bootstrapFromRemote = useCallback(async () => {
+  const bootstrapFromRemote = useCallback(async (signal?: AbortSignal) => {
     if (typeof window === "undefined") return;
 
     const meta = syncMetaRef.current;
     if (!meta.isOnline || meta.isBootstrapped) return;
 
     try {
-      const remote = await fetchRemoteState(meta.deviceId);
+      const remote = await fetchRemoteState(meta.deviceId, signal);
       if (remote) {
         setState((prev) => mergeStates(prev, remote));
       }
@@ -332,7 +340,9 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    void bootstrapFromRemote();
+    const controller = new AbortController();
+    void bootstrapFromRemote(controller.signal);
+    return () => controller.abort();
   }, [bootstrapFromRemote]);
 
   useEffect(() => {

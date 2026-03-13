@@ -573,7 +573,10 @@ export class LosslessAPI {
     return `https://resources.tidal.com/images/${formattedId}/${size}x${size}.jpg`;
   }
 
-  async fetchLyrics(track: Track): Promise<LyricsData | null> {
+  async fetchLyrics(
+    track: Track,
+    options: { signal?: AbortSignal } = {}
+  ): Promise<LyricsData | null> {
     // Check cache first
     if (this.lyricsCache.has(track.id)) {
       return this.lyricsCache.get(track.id)!;
@@ -591,7 +594,7 @@ export class LosslessAPI {
 
       const lyricsUrl = `https://lyricsplus.prjktla.workers.dev/v2/lyrics/get?title=${title}&artist=${artist}&album=${album}&duration=${duration}&source=${source}`;
 
-      const response = await fetch(lyricsUrl);
+      const response = await fetch(lyricsUrl, { signal: options.signal });
 
       if (!response.ok) {
         console.warn(`Lyrics API returned ${response.status}`);
@@ -611,6 +614,7 @@ export class LosslessAPI {
         return lyricsData;
       }
     } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") throw error;
       console.error("Failed to fetch lyrics:", error);
     }
     return null;

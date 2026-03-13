@@ -4,7 +4,6 @@ import { ReactNode, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { Music2, Search, TrendingUp } from "lucide-react";
-import { MiniPlayer } from "@/components/mobile/MiniPlayer";
 import { InstallPrompt } from "@/components/mobile/InstallPrompt";
 import { useQueue } from "@/contexts/AudioPlayerContext";
 
@@ -22,6 +21,16 @@ const FullscreenPlayer = dynamic(
  () =>
   import("@/components/player/FullscreenPlayer").then((mod) => ({
    default: mod.FullscreenPlayer,
+  })),
+ { ssr: false },
+);
+
+// Dynamic import for mini player — depends on client-only AudioPlayerContext
+// state (currentTrack), so SSR must be skipped to avoid hydration mismatches.
+const MiniPlayer = dynamic(
+ () =>
+  import("@/components/mobile/MiniPlayer").then((mod) => ({
+   default: mod.MiniPlayer,
   })),
  { ssr: false },
 );
@@ -50,6 +59,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
       ? "calc(64px + env(safe-area-inset-bottom))" // Mini player + safe area
       : "env(safe-area-inset-bottom)", // Safe area only
     }}
+    suppressHydrationWarning
    >
     <div className="lg:pb-24">{children}</div>
    </main>

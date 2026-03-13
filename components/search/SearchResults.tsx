@@ -235,16 +235,16 @@ export function SearchResults({
   const handleAddToQueue = React.useCallback(
     (track: Track) => {
       if (!track?.id) {
-        toast.error("Could not update queue");
+        toast.error("DECK JAMMED");
         return;
       }
 
       try {
         addToQueue(track);
-        toast.success("Added to queue");
+        toast.success("QUEUED");
       } catch (error) {
         console.error("Error adding track to queue:", error);
-        toast.error("Could not update queue");
+        toast.error("DECK JAMMED");
       }
     },
     [addToQueue],
@@ -253,16 +253,16 @@ export function SearchResults({
   const handlePlayNext = React.useCallback(
     (track: Track) => {
       if (!track?.id) {
-        toast.error("Could not update queue");
+        toast.error("DECK JAMMED");
         return;
       }
 
       try {
         playNextInQueue(track);
-        toast.success("Will play next");
+        toast.success("NEXT IN LINE");
       } catch (error) {
         console.error("Error inserting track as next:", error);
-        toast.error("Could not update queue");
+        toast.error("DECK JAMMED");
       }
     },
     [playNextInQueue],
