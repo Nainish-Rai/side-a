@@ -22,12 +22,9 @@ export function SearchBar({ onSearch, isLoading = false }: SearchBarProps) {
     [query, onSearch],
   );
 
-  const handleChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      setQuery(e.target.value);
-    },
-    [],
-  );
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setQuery(e.target.value);
+  }, []);
 
   const handleClear = useCallback(() => {
     setQuery("");
@@ -53,7 +50,7 @@ export function SearchBar({ onSearch, isLoading = false }: SearchBarProps) {
           placeholder="Search music"
           disabled={isLoading}
           className={`w-full pl-11 pr-32 py-3 text-sm font-mono
-                     bg-transparent border-b-2 transition-colors duration-200
+                     bg-transparent  transition-colors duration-200
                      text-foreground placeholder-foreground/30
                      focus:outline-none
                      disabled:opacity-50 disabled:cursor-not-allowed
