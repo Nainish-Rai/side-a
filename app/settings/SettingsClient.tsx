@@ -48,11 +48,13 @@ export function SettingsClient() {
                 }`}
                 role="switch"
                 aria-checked={crossfade.enabled}
+                aria-label="Enable crossfade"
               >
                 <div
                   className={`w-5 h-5 bg-background rounded-full transition-transform ${
                     crossfade.enabled ? "translate-x-6" : "translate-x-0.5"
                   }`}
+                  aria-hidden="true"
                 />
               </button>
             </div>
