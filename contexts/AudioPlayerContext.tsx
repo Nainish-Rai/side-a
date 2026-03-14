@@ -12,6 +12,8 @@ import {
 } from "react";
 import { Track } from "@/lib/api/types";
 import { api } from "@/lib/api";
+import { CrossfadeController } from '@/lib/crossfade';
+import { getSettings } from '@/lib/settings';
 
 type RepeatMode = "off" | "all" | "one";
 
@@ -110,6 +112,9 @@ function getPersistedState(): Partial<PersistedState> {
 
 export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const secondaryAudioRef = useRef<HTMLAudioElement | null>(null);
+  const crossfadeControllerRef = useRef<CrossfadeController | null>(null);
+  const crossfadeCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const currentPlayPromiseRef = useRef<Promise<void> | null>(null);
 
   // Initialize state from localStorage using lazy initialization
@@ -251,7 +256,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     };
   }, []); // Empty deps array - only restore on mount
 
-  // Create Audio element once on mount
+// Create Audio element once on mount
   useEffect(() => {
     const audio = new Audio();
     // Set crossOrigin to allow Web Audio API access for spectrum analyzer
@@ -263,6 +268,96 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       audio.src = "";
     };
   }, []);
+
+  // Create secondary Audio element for crossfade
+  useEffect(() => {
+    const secondaryAudio = new Audio();
+    secondaryAudio.crossOrigin = "anonymous";
+    secondaryAudioRef.current = secondaryAudio;
+
+    return () => {
+      secondaryAudio.pause();
+      secondaryAudio.src = "";
+    };
+  }, []);
+
+  // Initialize crossfade controller
+  useEffect(() => {
+    const settings = getSettings();
+    
+    if (settings.crossfade.enabled && audioRef.current && secondaryAudioRef.current) {
+      crossfadeControllerRef.current = new CrossfadeController({
+        duration: settings.crossfade.duration,
+        prebufferTime: settings.crossfade.prebufferTime,
+      });
+      crossfadeControllerRef.current.setAudioElements(
+        audioRef.current,
+        secondaryAudioRef.current
+      );
+    }
+
+    return () => {
+      if (crossfadeControllerRef.current) {
+        crossfadeControllerRef.current.destroy();
+        crossfadeControllerRef.current = null;
+      }
+    };
+  }, []);
+
+  // Monitor for crossfade trigger point
+  useEffect(() => {
+    if (!crossfadeControllerRef.current) return;
+
+    const settings = getSettings();
+    if (!settings.crossfade.enabled) return;
+
+    const checkCrossfadeTrigger = () => {
+      if (!audioRef.current || !secondaryAudioRef.current) return;
+      
+      const { currentTime, duration } = audioRef.current;
+      const triggerTime = duration - settings.crossfade.prebufferTime;
+      
+      if (currentTime >= triggerTime && !crossfadeControllerRef.current?.isActive()) {
+        // Get next track
+        const currentQueue = state.shuffleActive
+          ? shuffledQueue.current
+          : state.queue;
+        const nextIndex = state.repeatMode === 'all'
+          ? (state.currentQueueIndex + 1) % currentQueue.length
+          : state.currentQueueIndex + 1;
+        
+        if (nextIndex < currentQueue.length) {
+          const nextTrack = currentQueue[nextIndex];
+          
+          // Pre-buffer next track
+          (async () => {
+            try {
+              const streamUrl = await api.getStreamUrl(nextTrack.id, state.currentQuality);
+              if (streamUrl && secondaryAudioRef.current) {
+                secondaryAudioRef.current.src = streamUrl;
+                // Start crossfade at duration - settings.crossfade.duration
+                const crossfadeStart = duration - settings.crossfade.duration;
+                if (currentTime >= crossfadeStart) {
+                  crossfadeControllerRef.current?.startCrossfade();
+                }
+              }
+            } catch (error) {
+              console.error('Failed to pre-buffer next track:', error);
+            }
+          })();
+        }
+      }
+    };
+
+    // Check every second
+    crossfadeCheckIntervalRef.current = setInterval(checkCrossfadeTrigger, 1000);
+
+    return () => {
+      if (crossfadeCheckIntervalRef.current) {
+        clearInterval(crossfadeCheckIntervalRef.current);
+      }
+    };
+  }, [state.shuffleActive, state.queue, state.currentQueueIndex, state.repeatMode, state.currentQuality]);
 
   // Set up event listeners with stable refs
   useEffect(() => {
@@ -324,8 +419,13 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     };
   }, []); // Empty deps - listeners are stable
 
-  const playTrack = useCallback((track: Track, streamUrl: string) => {
-    if (!audioRef.current || !streamUrl) return;
+const playTrack = useCallback((track: Track, streamUrl: string) => {
+  // Cancel any ongoing crossfade
+  if (crossfadeControllerRef.current?.isActive()) {
+    crossfadeControllerRef.current.cancelCrossfade();
+  }
+
+  if (!audioRef.current || !streamUrl) return;
 
     audioRef.current.src = streamUrl;
     safePlay(audioRef.current);
