@@ -136,11 +136,12 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     };
   });
 
-  const preloadCache = useRef<Map<number, string>>(new Map());
+const preloadCache = useRef<Map<number, string>>(new Map());
   const originalQueueBeforeShuffle = useRef<Track[]>([]);
   const shuffledQueue = useRef<Track[]>([]);
-  const playNextRef = useRef<(() => Promise<void>) | null>(null);
+  const playNextRef = useRef<(() =>Promise<void>)| null>(null);
   const persistTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const volumeRef = useRef(state.volume);
 
   const insertTrackAt = useCallback((tracks: Track[], index: number, track: Track) => {
     const nextTracks = [...tracks];
@@ -289,6 +290,11 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       crossfadeControllerRef.current = new CrossfadeController({
         duration: settings.crossfade.duration,
         prebufferTime: settings.crossfade.prebufferTime,
+        onCrossfadeEnd: () => {
+          if (audioRef.current) {
+            audioRef.current.volume = volumeRef.current;
+          }
+        },
       });
       crossfadeControllerRef.current.setAudioElements(
         audioRef.current,
@@ -729,9 +735,13 @@ const playTrack = useCallback((track: Track, streamUrl: string) => {
   }, [safePlay]);
 
   // Keep ref updated
-  useEffect(() => {
+useEffect(() => {
     playNextRef.current = playNext;
   }, [playNext]);
+
+  useEffect(() => {
+    volumeRef.current = state.volume;
+  }, [state.volume]);
 
   const playPrev = useCallback(async () => {
     setState((prev) => {
