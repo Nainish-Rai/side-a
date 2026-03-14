@@ -14,8 +14,6 @@ export class CrossfadeController {
   private config: CrossfadeConfig;
   private isCrossfading = false;
   private crossfadeStartTime = 0;
-  private cleanupFns: (() => void)[] = [];
-
   constructor(config: CrossfadeConfig) {
     this.config = config;
   }
@@ -115,8 +113,6 @@ export class CrossfadeController {
 
   destroy(): void {
     this.cancelCrossfade();
-    this.cleanupFns.forEach(fn => fn());
-    this.cleanupFns = [];
     this.primaryAudio = null;
     this.secondaryAudio = null;
   }
