@@ -195,3 +195,12 @@ export interface LyricsResponse {
   lyrics?: string;
   subtitles?: string;
 }
+
+export type Provider = 'tidal' | 'qobuz';
+
+export interface UnifiedTrack extends Track {
+  provider: Provider;
+  originalId: number | string;
+}
+
+export type TrackId = number | string;

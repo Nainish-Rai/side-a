@@ -21,6 +21,7 @@ export class LosslessAPI {
   private cache: APICache;
   private streamCache: Map<string, string>;
   private lyricsCache: Map<number, LyricsData>;
+  private cleanupInterval: ReturnType<typeof setInterval> | null = null;
 
   constructor(settings: APISettings) {
     this.settings = settings;
@@ -31,11 +32,18 @@ export class LosslessAPI {
     this.streamCache = new Map();
     this.lyricsCache = new Map();
 
-    setInterval(() => {
+    this.cleanupInterval = setInterval(() => {
       this.cache.clearExpired();
       this.pruneStreamCache();
       this.pruneLyricsCache();
     }, 1000 * 60 * 5);
+  }
+
+  destroy(): void {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = null;
+    }
   }
 
   private pruneStreamCache(): void {
@@ -54,6 +62,15 @@ export class LosslessAPI {
     }
   }
 
+private shuffleInstances(instances: string[]): string[] {
+    const result = [...instances];
+    for (let i = result.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [result[i], result[j]] = [result[j], result[i]];
+    }
+    return result;
+  }
+
   private async fetchWithRetry(
     relativePath: string,
     options: { signal?: AbortSignal } = {}
@@ -63,15 +80,16 @@ export class LosslessAPI {
       throw new Error("No API instances configured.");
     }
 
-    const maxRetries = 3;
+    const shuffledInstances = this.shuffleInstances(instances);
+    const maxRetriesPerInstance = 2;
     let lastError: Error | null = null;
 
-    for (const baseUrl of instances) {
+    for (const baseUrl of shuffledInstances) {
       const url = baseUrl.endsWith("/")
         ? `${baseUrl}${relativePath.substring(1)}`
         : `${baseUrl}${relativePath}`;
 
-      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      for (let attempt = 1; attempt <= maxRetriesPerInstance; attempt++) {
         try {
           const response = await fetch(url, { signal: options.signal });
 
@@ -95,16 +113,21 @@ export class LosslessAPI {
               lastError = new Error(
                 errorData?.userMessage || "Authentication failed"
               );
-              if (attempt < maxRetries) {
+              if (attempt < maxRetriesPerInstance) {
                 await delay(200 * attempt);
                 continue;
               }
             }
+            break;
           }
 
-          if (response.status >= 500 && attempt < maxRetries) {
-            await delay(200 * attempt);
-            continue;
+          if (response.status >= 500) {
+            lastError = new Error(`Status ${response.status}`);
+            if (attempt < maxRetriesPerInstance) {
+              await delay(200 * attempt);
+              continue;
+            }
+            break;
           }
 
           lastError = new Error(
@@ -119,7 +142,7 @@ export class LosslessAPI {
           lastError =
             error instanceof Error ? error : new Error("Unknown error");
 
-          if (attempt < maxRetries) {
+          if (attempt < maxRetriesPerInstance) {
             await delay(200 * attempt);
           }
         }
