@@ -16,6 +16,8 @@ interface SearchContextValue {
   currentTab: SearchContentType;
   setQuery: (query: string) => void;
   setCurrentTab: (tab: SearchContentType) => void;
+  /** Convenience: sets query and resets tab to "tracks" */
+  handleSearch: (query: string) => void;
 }
 
 const SearchContext = createContext<SearchContextValue | undefined>(undefined);
@@ -72,6 +74,11 @@ export function SearchProvider({ children }: { children: ReactNode }) {
     setCurrentTabState(tab);
   };
 
+  const handleSearch = (newQuery: string) => {
+    setQueryState(newQuery);
+    setCurrentTabState("tracks");
+  };
+
   return (
     <SearchContext.Provider
       value={{
@@ -79,6 +86,7 @@ export function SearchProvider({ children }: { children: ReactNode }) {
         currentTab,
         setQuery,
         setCurrentTab,
+        handleSearch,
       }}
     >
       {children}

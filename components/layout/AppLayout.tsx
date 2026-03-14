@@ -1,11 +1,10 @@
 "use client";
 
 import { ReactNode, useState } from "react";
-import Link from "next/link";
 import dynamic from "next/dynamic";
-import { Music2, Search, TrendingUp } from "lucide-react";
 import { InstallPrompt } from "@/components/mobile/InstallPrompt";
 import { useQueue } from "@/contexts/AudioPlayerContext";
+import { DesktopHeader } from "@/components/layout/DesktopHeader";
 
 // Dynamic import for desktop audio player
 const AudioPlayer = dynamic(
@@ -47,9 +46,12 @@ export default function AppLayout({ children }: AppLayoutProps) {
   setIsFullscreenOpen(true);
  };
 
- return (
-  <div className="min-h-screen bg-background transition-colors duration-300">
-   {/* Main Content */}
+  return (
+   <div className="min-h-screen bg-background transition-colors duration-300">
+    {/* Shared desktop navigation header — hidden on mobile */}
+    <DesktopHeader />
+
+    {/* Main Content */}
    {/* Desktop: margin for sidebar + padding for audio player */}
    {/* Mobile: padding for mini player */}
    <main

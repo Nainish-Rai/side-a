@@ -69,28 +69,16 @@ export function PlaylistsClient() {
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-30 border-b border-foreground/10 bg-background">
-        <div className="mx-auto max-w-6xl px-6 py-4">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <p className="text-[10px] font-mono uppercase tracking-widest text-foreground/40">
-                Library
-              </p>
-              <h1 className="mt-1 text-base font-semibold uppercase tracking-[0.08em] text-foreground/90">
-                PLAYLISTS
-              </h1>
-              <p className="mt-2 max-w-2xl text-sm text-foreground/55">
-                Build your own sequences, keep them local-first, and reuse tracks across multiple playlists.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3">
-              <Link
-                href="/library"
-                className="text-[10px] font-mono uppercase tracking-widest text-foreground/40 transition-colors hover:text-foreground/70"
-              >
-                Library
-              </Link>
+      <div className="mx-auto max-w-6xl space-y-10 px-6 py-8">
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xs font-mono uppercase tracking-widest text-foreground/90">
+              Your Playlists
+            </h2>
+            <div className="flex items-center gap-4">
+              <span className="text-[10px] font-mono uppercase tracking-widest text-foreground/40">
+                {playlists.length}
+              </span>
               <button
                 type="button"
                 onClick={() => setIsCreateOpen(true)}
@@ -100,19 +88,6 @@ export function PlaylistsClient() {
                 New Playlist
               </button>
             </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="mx-auto max-w-6xl space-y-10 px-6 py-8">
-        <section className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xs font-mono uppercase tracking-widest text-foreground/90">
-              Your Playlists
-            </h2>
-            <span className="text-[10px] font-mono uppercase tracking-widest text-foreground/40">
-              {playlists.length}
-            </span>
           </div>
 
           {playlists.length === 0 ? (
@@ -135,7 +110,7 @@ export function PlaylistsClient() {
             </div>
           ) : (
             <div className="border border-foreground/10">
-              <div className="sticky top-[73px] z-20 border-b border-foreground/10 bg-background/95 backdrop-blur-xl">
+              <div className="sticky top-0 z-20 border-b border-foreground/10 bg-background/95 backdrop-blur-xl lg:top-[73px]">
                 <div className="grid grid-cols-[40px_1fr_80px_100px_210px] gap-4 px-6 py-3">
                   <span className="text-center text-[10px] font-mono uppercase tracking-widest text-foreground/40">
                     #
@@ -309,7 +284,7 @@ export function PlaylistsClient() {
                 </p>
               </div>
 
-              <div className="sticky top-[73px] z-20 border-b border-foreground/10 bg-background/95 backdrop-blur-xl">
+              <div className="sticky top-0 z-20 border-b border-foreground/10 bg-background/95 backdrop-blur-xl lg:top-[73px]">
                 <div className="grid grid-cols-[40px_1fr_160px_80px_220px] gap-4 px-6 py-3">
                   <span className="text-center text-[10px] font-mono uppercase tracking-widest text-foreground/40">
                     #

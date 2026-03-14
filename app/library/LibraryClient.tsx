@@ -11,7 +11,7 @@ import {
  useQueue,
 } from "@/contexts/AudioPlayerContext";
 import { useLibrary } from "@/contexts/LibraryContext";
-import { Heart, Library, Music2 } from "lucide-react";
+import { Heart, Music2 } from "lucide-react";
 import { toast } from "sonner";
 import TrackRow from "@/components/search/TrackRow";
 import MobileTrackRow from "@/components/mobile/MobileTrackRow";
@@ -225,28 +225,6 @@ export function LibraryClient() {
 
  return (
   <div className="min-h-screen">
-   <header className="sticky top-0 z-30 border-b border-foreground/10 bg-background/95 backdrop-blur-xl">
-    <div className="mx-auto max-w-6xl px-6 py-4">
-     <div className="flex items-end justify-between">
-      <div>
-       <p className="text-[10px] font-mono uppercase tracking-widest text-foreground/40">
-        Collection
-       </p>
-       <h1 className="mt-1 flex items-center gap-2 text-base font-semibold tracking-tight text-foreground/90">
-        <Library className="h-4 w-4" />
-        LIBRARY
-       </h1>
-      </div>
-      <Link
-       href="/"
-       className="text-[10px] font-mono uppercase tracking-widest text-foreground/40 transition-colors hover:text-foreground/70"
-      >
-       Search
-      </Link>
-     </div>
-    </div>
-   </header>
-
    <div className="mx-auto flex max-w-6xl flex-col gap-10 px-6 py-8">
     <TrackSection
      title="Favorites"

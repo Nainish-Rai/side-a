@@ -130,8 +130,10 @@ export function SearchResults({
   const { isTrackLiked, toggleTrackLike, addRecentlyPlayed } = useLibrary();
   const router = useRouter();
 
- const [loadingTrackId, setLoadingTrackId] = useState<number | null>(null);
- const [playlistPickerTrack, setPlaylistPickerTrack] = useState<Track | null>(null);
+  const [loadingTrackId, setLoadingTrackId] = useState<number | null>(null);
+  const [playlistPickerTrack, setPlaylistPickerTrack] = useState<Track | null>(
+    null,
+  );
 
   // Lazy initialization to avoid SSR issues
   const [windowDimensions, setWindowDimensions] = useState(() => ({
@@ -398,7 +400,7 @@ export function SearchResults({
         {contentType === "tracks" ? (
           <div className="border-b border-foreground/10">
             {/* Table header - desktop only */}
-            <div className="sticky top-[5.1rem] z-10 hidden lg:block">
+            <div className="sticky top-[3.8rem] z-10 hidden lg:block">
               <TableHeader />
             </div>
             <div>
@@ -416,12 +418,12 @@ export function SearchResults({
                       isPlaying={isCurrentTrack && isPlaying}
                       isLoading={loadingTrackId === track.id}
                       onClick={() => handleTrackClick(track, index)}
-           isLiked={isTrackLiked(track.id)}
-            onToggleLike={() => toggleTrackLike(track)}
-             onAddToQueue={() => handleAddToQueue(track)}
-             onAddToPlaylist={() => setPlaylistPickerTrack(track)}
-             onPlayNext={() => handlePlayNext(track)}
-            onShare={() => {
+                      isLiked={isTrackLiked(track.id)}
+                      onToggleLike={() => toggleTrackLike(track)}
+                      onAddToQueue={() => handleAddToQueue(track)}
+                      onAddToPlaylist={() => setPlaylistPickerTrack(track)}
+                      onPlayNext={() => handlePlayNext(track)}
+                      onShare={() => {
                         // Share functionality
                         if (navigator.share) {
                           navigator.share({
@@ -442,11 +444,11 @@ export function SearchResults({
                     isCurrentTrack={isCurrentTrack}
                     isPlaying={isCurrentTrack && isPlaying}
                     isLoading={loadingTrackId === track.id}
-           onClick={() => handleTrackClick(track, index)}
-            onAddToQueue={() => handleAddToQueue(track)}
-            onAddToPlaylist={() => setPlaylistPickerTrack(track)}
-            onPlayNext={() => handlePlayNext(track)}
-           isLiked={isTrackLiked(track.id)}
+                    onClick={() => handleTrackClick(track, index)}
+                    onAddToQueue={() => handleAddToQueue(track)}
+                    onAddToPlaylist={() => setPlaylistPickerTrack(track)}
+                    onPlayNext={() => handlePlayNext(track)}
+                    isLiked={isTrackLiked(track.id)}
                     onToggleLike={() => toggleTrackLike(track)}
                   />
                 );
@@ -661,7 +663,7 @@ export function SearchResults({
         )}
       </motion.div>
 
-   {/* DISABLED: Infinite Scroll Loading Indicator */}
+      {/* DISABLED: Infinite Scroll Loading Indicator */}
       {/* {isFetchingMore && (
     <motion.div
      initial={{ opacity: 0 }}
@@ -675,13 +677,13 @@ export function SearchResults({
     </motion.div>
    )} */}
 
-   {/* DISABLED: Intersection Observer Target */}
-   {/* <div ref={observerTarget} className="h-4" /> */}
-   <TrackPlaylistPickerDialog
-    isOpen={playlistPickerTrack !== null}
-    track={playlistPickerTrack}
-    onClose={() => setPlaylistPickerTrack(null)}
-   />
-  </div>
- );
+      {/* DISABLED: Intersection Observer Target */}
+      {/* <div ref={observerTarget} className="h-4" /> */}
+      <TrackPlaylistPickerDialog
+        isOpen={playlistPickerTrack !== null}
+        track={playlistPickerTrack}
+        onClose={() => setPlaylistPickerTrack(null)}
+      />
+    </div>
+  );
 }

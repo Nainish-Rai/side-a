@@ -208,7 +208,7 @@ export function PlaylistDetailClient({ playlistId }: PlaylistDetailClientProps) 
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-30 border-b border-foreground/10 bg-background">
+      <header className="sticky top-0 z-30 border-b border-foreground/10 bg-background lg:top-[73px]">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <button
             type="button"
@@ -335,7 +335,7 @@ export function PlaylistDetailClient({ playlistId }: PlaylistDetailClientProps) 
 
         <section className="pt-8">
           <div className="border-t border-foreground/10">
-            <div className="sticky top-[73px] z-20 border-b border-foreground/10 bg-background/95 backdrop-blur-xl">
+            <div className="sticky top-[57px] z-20 border-b border-foreground/10 bg-background/95 backdrop-blur-xl lg:top-[146px]">
               <div className="grid grid-cols-[24px_40px_1fr_90px_72px_24px] gap-4 px-6 py-3">
                 <span className="text-[10px] font-mono uppercase tracking-widest text-foreground/40">
                   Move
