@@ -1,7 +1,8 @@
 # SIDE A
 
 <p align="center">
-  <img src="./docs/screenshots/home-placeholder.svg" alt="SIDE A home screen placeholder" width="100%" />
+  <img width="1470" height="801" alt="image" src="https://github.com/user-attachments/assets/f93b6e15-60a1-412a-b2f3-e8ea8f488ce6" />
+
 </p>
 
 <p align="center">
@@ -79,7 +80,10 @@ These are placeholders for now and can be replaced with real captures later.
 
 | Home | Player | Lyrics |
 | --- | --- | --- |
-| ![SIDE A home placeholder](./docs/screenshots/home-placeholder.svg) | ![SIDE A player placeholder](./docs/screenshots/player-placeholder.svg) | ![SIDE A lyrics placeholder](./docs/screenshots/lyrics-placeholder.svg) |
+| <img width="1470" height="802" alt="image" src="https://github.com/user-attachments/assets/ff9f7c7b-675c-4bcb-a150-c0302d8787b1" />
+| <img width="1470" height="802" alt="image" src="https://github.com/user-attachments/assets/edbeedb1-d76a-49bb-8cfd-815bfb2fbd0e" />
+| <img width="1470" height="798" alt="image" src="https://github.com/user-attachments/assets/567ac8fa-32ce-4dfa-a93b-67b41930559a" />
+|
 
 ## Product Philosophy
 
@@ -224,14 +228,3 @@ If you want to contribute, the highest-leverage areas right now are:
 - library and settings UX
 - reliability, performance, and offline support
 - screenshot assets and README polish
-
-## Strategic Notes
-
-This README intentionally reflects two strategy frameworks:
-
-- **Contagious / STEPPS by Jonah Berger**: social currency, triggers, emotion, public visibility, practical value, and stories
-- **Blue Ocean Strategy by W. Chan Kim and Renée Mauborgne**: value innovation, a differentiated strategy curve, and an eliminate-reduce-raise-create framing
-
-Those ideas fit this product well because SIDE A is not trying to be "another streaming app." It is trying to make a different promise:
-
-**premium-feeling listening, fully free, open source, and centered on the parts users actually care about.**
