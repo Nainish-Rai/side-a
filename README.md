@@ -80,10 +80,7 @@ These are placeholders for now and can be replaced with real captures later.
 
 | Home | Player | Lyrics |
 | --- | --- | --- |
-| <img width="1470" height="802" alt="image" src="https://github.com/user-attachments/assets/ff9f7c7b-675c-4bcb-a150-c0302d8787b1" />
-| <img width="1470" height="802" alt="image" src="https://github.com/user-attachments/assets/edbeedb1-d76a-49bb-8cfd-815bfb2fbd0e" />
-| <img width="1470" height="798" alt="image" src="https://github.com/user-attachments/assets/567ac8fa-32ce-4dfa-a93b-67b41930559a" />
-|
+| <img width="1470" height="802" alt="image" src="https://github.com/user-attachments/assets/ff9f7c7b-675c-4bcb-a150-c0302d8787b1" />| <img width="1470" height="802" alt="image" src="https://github.com/user-attachments/assets/edbeedb1-d76a-49bb-8cfd-815bfb2fbd0e" />| <img width="1470" height="798" alt="image" src="https://github.com/user-attachments/assets/567ac8fa-32ce-4dfa-a93b-67b41930559a" />|
 
 ## Product Philosophy
 
