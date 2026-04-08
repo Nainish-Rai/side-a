@@ -1,166 +1,82 @@
 # SIDE A
 
 <p align="center">
-  <img width="1470" height="801" alt="image" src="https://github.com/user-attachments/assets/f93b6e15-60a1-412a-b2f3-e8ea8f488ce6" />
-
+  <img width="1470" height="801" alt="SIDE A screenshot" src="https://github.com/user-attachments/assets/f93b6e15-60a1-412a-b2f3-e8ea8f488ce6" />
 </p>
 
-<p align="center">
-  <strong>An open source, completely free streaming app built for a better listening experience.</strong>
-</p>
+SIDE A is an open source web music player focused on lossless playback, synced lyrics, and a cleaner listening experience.
 
-<p align="center">
-  No ads. No premium wall. Synced lyrics. Hi-fi direction. Modern queue and library UX.
-</p>
 
-## What SIDE A Is
+- what the project does
+- what works today
+- what is in progress
+- how FLAC / lossless playback is handled in the current codebase
+- how to run and contribute
 
-SIDE A is a lyric-first, playback-first music app for people who care about the listening experience, not growth hacks, interruptions, or feature clutter.
+## Project Focus
 
-The goal is simple:
+The current product direction is:
 
-- make music feel premium without charging for basic dignity
-- keep the product open source and transparent
-- deliver a high-quality streaming experience with synced lyrics at the center
-- remove the friction, noise, and ad-heavy patterns that define too many music apps
+- lossless-first streaming
+- FLAC-oriented playback and quality visibility
+- synced lyrics as a core feature
+- clean player, queue, and library UX
+- no ads
+- fully free to use
 
-This project is built with Next.js and ships as a web app with PWA support.
+## Current Status
 
-## Why It Exists
+SIDE A is actively being built as a Next.js web app with PWA support.
 
-Most streaming apps compete in the same red ocean:
-
-- subscriptions stacked on subscriptions
-- ad-supported free tiers that degrade the experience
-- bloated product surfaces
-- weak lyric experiences
-- lock-in around playlists and ecosystems
-
-SIDE A is aiming at a different curve.
-
-Instead of fighting on the usual terms, it focuses on value innovation:
-
-| Eliminate | Reduce | Raise | Create |
-| --- | --- | --- | --- |
-| Ads, artificial friction, paywall-style experience tax | Clutter, noise, unnecessary complexity | Listening quality, lyric experience, UI clarity, playback feel | A free and open source streaming experience that feels premium |
-
-That is the product bet: make the experience better while keeping it free.
-
-## Current Features
-
-These are already present in the codebase today:
+What is implemented today:
 
 - track, album, and artist search
-- playback queue with reordering
-- fullscreen player experience
-- synced lyrics and plain lyrics fallback
 - album pages
-- library foundations with persisted state
-- recently played tracking
-- playlist primitives and add-to-playlist flows
-- mobile-first layout with mini player
+- playback queue with reordering
+- fullscreen player and mobile mini player
+- synced lyrics with plain-lyrics fallback
+- library persistence and recently played tracking
+- playlist creation / add-to-playlist flows
+- auth and synced library state infrastructure
 - installable PWA support
-- auth flow and synced library state infrastructure
-- multi-source lyrics fetching
+- cache-aware playback helpers and stats
+- crossfade work in progress in the player stack
 
-## In Progress
-
-These are the near-term features currently in focus:
+What is not complete yet:
 
 - Spotify playlist sync
 - YouTube Music playlist sync
-- stronger playlist import and migration flows
-- richer library and settings surfaces
-- playlist detail pages and sharing polish
-- reliability improvements around errors, offline states, and loading UX
+- full playlist import / migration flow
+- richer playlist detail pages
+- broader offline and error-state polish
+
+## FLAC / Lossless Streaming
+
+This is the part the repo is increasingly centered around.
+
+Current implementation details:
+
+- playback quality defaults to `LOSSLESS` in the queue / audio player state
+- the API client requests stream URLs with an explicit `quality` parameter
+- quality tokens and aliases are normalized in [`lib/api/utils.ts`](/Users/nainish/development/side-a/lib/api/utils.ts)
+- the player surfaces quality information through badges and the stats panel
+- the stats panel maps `LOSSLESS` and `HI_RES_LOSSLESS` playback to FLAC-oriented output
+- stream URLs are cached client-side for reuse
+
+
+Important caveat:
+
+- TIDAL-backed lossless playback is the path currently wired into streaming
+- Qobuz search and metadata support exist in the repo
+- Qobuz streaming is not implemented yet and currently throws in [`lib/api/index.ts`](/Users/nainish/development/side-a/lib/api/index.ts)
+
+So the README should be read as: SIDE A is a lossless / FLAC-focused streaming project, with the implementation still expanding.
 
 ## Screenshots
 
-These are placeholders for now and can be replaced with real captures later.
-
 | Home | Player | Lyrics |
 | --- | --- | --- |
-| <img width="1470" height="802" alt="image" src="https://github.com/user-attachments/assets/ff9f7c7b-675c-4bcb-a150-c0302d8787b1" />| <img width="1470" height="802" alt="image" src="https://github.com/user-attachments/assets/edbeedb1-d76a-49bb-8cfd-815bfb2fbd0e" />| <img width="1470" height="798" alt="image" src="https://github.com/user-attachments/assets/567ac8fa-32ce-4dfa-a93b-67b41930559a" />|
-
-## Product Philosophy
-
-### 1. Completely Free Means Completely Free
-
-No ads. No fake free tier. No "listen with limits" pattern.
-
-If a feature makes listening worse in order to monetize attention, it does not belong here.
-
-### 2. Open Source Is a Product Feature
-
-Open source is not just a distribution model. It is part of the trust model.
-
-- the app can be inspected
-- the direction can be discussed in public
-- contributors can shape the roadmap
-- users are not trapped inside a black box
-
-### 3. Lyrics Are Not a Side Panel
-
-Lyrics change how people experience music. SIDE A treats synced lyrics as a first-class part of the product, not a throwaway extra.
-
-### 4. Quality Matters
-
-SIDE A is built around a hi-fi listening direction and a cleaner playback experience. The standard is not "good enough for free." The standard is "this should feel better than paid apps."
-
-## Why People Share SIDE A
-
-This product naturally maps to the strongest word-of-mouth drivers:
-
-### Social Currency
-
-People like sharing products that make them look early, sharp, and taste-driven. An open source music app that is free, ad-free, and lyric-first gives people something worth recommending.
-
-### Triggers
-
-Music is a daily habit. So are lyric searches, queue building, and playlist migration pain. SIDE A connects to moments people already repeat every day.
-
-### Emotion
-
-There is real emotional energy behind this category:
-
-- frustration with ads
-- fatigue with subscriptions
-- excitement around finding something cleaner
-- delight when synced lyrics actually feel good
-
-### Public
-
-The product is visually legible. Fullscreen player states, lyrics, and future screenshot-ready listening cards make the experience easy to show and easy to talk about.
-
-### Practical Value
-
-The message is immediately useful:
-
-- it is free
-- it has no ads
-- it supports synced lyrics
-- it is open source
-- playlist sync is being worked on
-
-That is the kind of information people pass to friends.
-
-### Stories
-
-The story is simple and retellable:
-
-> We wanted a streaming app that felt better, stayed free, respected listeners, and treated lyrics like part of the music.
-
-That story carries the product on its own.
-
-## Who This Is For
-
-SIDE A is especially for:
-
-- listeners who are tired of ads and degraded free tiers
-- people who care about synced lyrics
-- users who want a cleaner, sharper player UI
-- open source users who prefer transparent software
-- people with playlists trapped in other ecosystems
+| <img width="1470" height="802" alt="SIDE A home" src="https://github.com/user-attachments/assets/ff9f7c7b-675c-4bcb-a150-c0302d8787b1" /> | <img width="1470" height="802" alt="SIDE A player" src="https://github.com/user-attachments/assets/edbeedb1-d76a-49bb-8cfd-815bfb2fbd0e" /> | <img width="1470" height="798" alt="SIDE A lyrics" src="https://github.com/user-attachments/assets/567ac8fa-32ce-4dfa-a93b-67b41930559a" /> |
 
 ## Tech Stack
 
@@ -171,13 +87,13 @@ SIDE A is especially for:
 - TanStack Query
 - Prisma
 - Better Auth
-- PWA support via `@ducanh2912/next-pwa`
+- `@ducanh2912/next-pwa`
 
 ## Running Locally
 
 1. Install dependencies.
-2. Copy `.env.example` into your local environment.
-3. Run the dev server.
+2. Set up environment variables from `.env.example`.
+3. Start the dev server.
 
 ```bash
 npm install
@@ -188,40 +104,43 @@ Open `http://localhost:3000`.
 
 ## Environment
 
-The project includes `.env.example` with the expected variables for:
+The repo includes [`.env.example`](/Users/nainish/development/side-a/.env.example) for:
 
 - Postgres / Prisma
 - Better Auth
 - Google OAuth
-- app URLs
+- app base URLs
 - library sync endpoint overrides
 
 ## Roadmap
 
-### Near Term
+Near term:
 
 - Spotify playlist sync
 - YouTube Music playlist sync
 - playlist detail pages
-- stronger share flows
-- better loading and error states
-- expanded library and settings
+- better share flows
+- stronger loading / error states
+- more complete library and settings surfaces
+- continued playback quality and crossfade polish
 
-### Longer Term
+Medium term:
 
-- smoother onboarding for imported playlists
-- stronger offline and caching behavior
-- deeper listening stats
-- more polished social and shareable listening surfaces
+- better import and migration UX for external playlists
+- deeper playback stats
+- stronger offline / caching behavior
+- broader provider support for lossless playback
+
 
 ## Contributing
 
-Issues, ideas, and pull requests are welcome.
+Issues and pull requests are welcome.
 
-If you want to contribute, the highest-leverage areas right now are:
+Areas that currently need the most attention:
 
-- playlist sync and migration flows
-- player and lyrics polish
+- FLAC / lossless playback improvements
+- provider integration work
+- playlist sync and migration
+- player / queue / lyrics polish
+- reliability, error handling, and offline support
 - library and settings UX
-- reliability, performance, and offline support
-- screenshot assets and README polish
