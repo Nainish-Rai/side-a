@@ -1,0 +1,28 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1600" height="900" fill="#080808"/>
+  <rect x="72" y="72" width="1456" height="756" rx="30" fill="#101010" stroke="#2D2D2D" stroke-width="2"/>
+  <rect x="108" y="108" width="640" height="684" rx="24" fill="#151515" stroke="#303030"/>
+  <rect x="152" y="152" width="552" height="552" rx="20" fill="url(#paint0_linear)"/>
+  <rect x="812" y="128" width="612" height="72" rx="18" fill="#161616" stroke="#313131"/>
+  <rect x="848" y="154" width="120" height="18" rx="9" fill="#EDEDED"/>
+  <rect x="812" y="238" width="380" height="28" rx="14" fill="#F4F4F4"/>
+  <rect x="812" y="280" width="220" height="18" rx="9" fill="#636363"/>
+  <rect x="812" y="340" width="540" height="10" rx="5" fill="#2D2D2D"/>
+  <rect x="812" y="340" width="240" height="10" rx="5" fill="#F4F4F4"/>
+  <circle cx="1052" cy="345" r="18" fill="#F4F4F4"/>
+  <circle cx="904" cy="434" r="26" fill="#2D2D2D"/>
+  <circle cx="1000" cy="434" r="34" fill="#F4F4F4"/>
+  <circle cx="1112" cy="434" r="26" fill="#2D2D2D"/>
+  <rect x="812" y="506" width="280" height="22" rx="11" fill="#EDEDED"/>
+  <rect x="812" y="548" width="472" height="18" rx="9" fill="#565656"/>
+  <rect x="812" y="584" width="420" height="18" rx="9" fill="#3E3E3E"/>
+  <rect x="812" y="620" width="388" height="18" rx="9" fill="#565656"/>
+  <rect x="812" y="656" width="450" height="18" rx="9" fill="#3E3E3E"/>
+  <text x="108" y="860" fill="#7A7A7A" font-family="Arial, Helvetica, sans-serif" font-size="24">SIDE A • PLAYER SCREEN PLACEHOLDER</text>
+  <defs>
+    <linearGradient id="paint0_linear" x1="152" y1="152" x2="704" y2="704" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2D2D2D"/>
+      <stop offset="1" stop-color="#111111"/>
+    </linearGradient>
+  </defs>
+</svg>

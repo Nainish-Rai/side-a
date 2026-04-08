@@ -1,0 +1,37 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1600" height="900" fill="#0A0A0A"/>
+  <rect x="56" y="56" width="1488" height="788" rx="28" fill="#111111" stroke="#2A2A2A" stroke-width="2"/>
+  <rect x="96" y="96" width="1408" height="88" rx="18" fill="#161616" stroke="#2E2E2E"/>
+  <rect x="128" y="124" width="220" height="20" rx="10" fill="#F4F4F4"/>
+  <rect x="1160" y="118" width="120" height="32" rx="16" fill="#1E1E1E" stroke="#393939"/>
+  <rect x="1300" y="118" width="120" height="32" rx="16" fill="#1E1E1E" stroke="#393939"/>
+  <rect x="96" y="228" width="420" height="440" rx="24" fill="#151515" stroke="#303030"/>
+  <rect x="548" y="228" width="460" height="440" rx="24" fill="#151515" stroke="#303030"/>
+  <rect x="1040" y="228" width="400" height="440" rx="24" fill="#151515" stroke="#303030"/>
+  <rect x="136" y="268" width="160" height="18" rx="9" fill="#EDEDED"/>
+  <rect x="136" y="304" width="250" height="54" rx="12" fill="#202020"/>
+  <rect x="136" y="374" width="340" height="14" rx="7" fill="#505050"/>
+  <rect x="136" y="404" width="310" height="14" rx="7" fill="#424242"/>
+  <rect x="136" y="434" width="280" height="14" rx="7" fill="#383838"/>
+  <rect x="136" y="498" width="180" height="18" rx="9" fill="#EDEDED"/>
+  <rect x="136" y="536" width="320" height="18" rx="9" fill="#5A5A5A"/>
+  <rect x="588" y="268" width="170" height="18" rx="9" fill="#EDEDED"/>
+  <rect x="588" y="314" width="380" height="18" rx="9" fill="#666666"/>
+  <rect x="588" y="360" width="380" height="18" rx="9" fill="#4C4C4C"/>
+  <rect x="588" y="406" width="380" height="18" rx="9" fill="#666666"/>
+  <rect x="588" y="452" width="380" height="18" rx="9" fill="#4C4C4C"/>
+  <rect x="588" y="498" width="380" height="18" rx="9" fill="#666666"/>
+  <rect x="588" y="544" width="380" height="18" rx="9" fill="#4C4C4C"/>
+  <rect x="1080" y="268" width="140" height="18" rx="9" fill="#EDEDED"/>
+  <rect x="1080" y="314" width="320" height="18" rx="9" fill="#585858"/>
+  <rect x="1080" y="354" width="240" height="18" rx="9" fill="#404040"/>
+  <rect x="1080" y="422" width="240" height="180" rx="18" fill="#1C1C1C" stroke="#363636"/>
+  <rect x="96" y="712" width="1344" height="92" rx="22" fill="#141414" stroke="#2F2F2F"/>
+  <circle cx="154" cy="758" r="24" fill="#F4F4F4"/>
+  <rect x="196" y="740" width="200" height="16" rx="8" fill="#F4F4F4"/>
+  <rect x="196" y="766" width="140" height="12" rx="6" fill="#606060"/>
+  <rect x="568" y="754" width="464" height="10" rx="5" fill="#2E2E2E"/>
+  <rect x="568" y="754" width="212" height="10" rx="5" fill="#F4F4F4"/>
+  <circle cx="800" cy="759" r="18" fill="#F4F4F4"/>
+  <text x="96" y="868" fill="#7A7A7A" font-family="Arial, Helvetica, sans-serif" font-size="24">SIDE A • HOME SCREEN PLACEHOLDER</text>
+</svg>
