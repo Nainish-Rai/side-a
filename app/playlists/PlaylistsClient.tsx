@@ -21,10 +21,12 @@ import { useLibrary } from "@/contexts/LibraryContext";
 import {
   PlaylistDeleteDialog,
   PlaylistEditorDialog,
+  YtMusicImportDialog,
 } from "@/components/playlists/PlaylistDialogs";
 import { getPlaylistCoverUrl, getPlaylistDuration } from "@/components/playlists/playlist-utils";
 import { formatDuration } from "@/lib/api/utils";
 import type { Playlist, UserPlaylist } from "@/lib/api/types";
+import type { PlaylistImportResult } from "@/lib/ytmusic-import/types";
 
 const DEFAULT_LIMIT = 40;
 
@@ -46,6 +48,7 @@ export function PlaylistsClient() {
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
   const [playlistBeingEdited, setPlaylistBeingEdited] = useState<UserPlaylist | null>(null);
   const [playlistBeingDeleted, setPlaylistBeingDeleted] = useState<UserPlaylist | null>(null);
   const trimmedQuery = debouncedQuery.trim();
@@ -79,6 +82,14 @@ export function PlaylistsClient() {
               <span className="text-[10px] font-mono uppercase tracking-widest text-foreground/40">
                 {playlists.length}
               </span>
+              <button
+                type="button"
+                onClick={() => setIsImportOpen(true)}
+                className="inline-flex items-center gap-2 border border-foreground/20 px-3 py-2 text-[10px] font-mono uppercase tracking-widest text-foreground/70 transition-colors hover:text-foreground"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Import YTMusic
+              </button>
               <button
                 type="button"
                 onClick={() => setIsCreateOpen(true)}
@@ -399,6 +410,26 @@ export function PlaylistsClient() {
         onSubmit={(values) => {
           createPlaylist(values);
           toast.success("TAPE CREATED");
+        }}
+      />
+      <YtMusicImportDialog
+        isOpen={isImportOpen}
+        onClose={() => setIsImportOpen(false)}
+        onImport={(result: PlaylistImportResult) => {
+          createPlaylist({
+            name: result.playlistName,
+            description: "Imported from YouTube Music",
+            initialTracks: result.matchedTracks,
+          });
+
+          if (result.stats.unmatched > 0) {
+            toast.success(
+              `IMPORTED ${result.stats.matched}/${result.stats.total} TRACKS`,
+            );
+            return;
+          }
+
+          toast.success("YTMusic playlist imported");
         }}
       />
       <PlaylistEditorDialog

@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "motion/react";
-import { Check, ListMusic, Plus, X } from "lucide-react";
+import { Check, ListMusic, Loader2, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import type { Track, UserPlaylist } from "@/lib/api/types";
 import { useLibrary } from "@/contexts/LibraryContext";
 import { getTrackArtists, getTrackTitle } from "@/lib/api/utils";
+import type { PlaylistImportResult } from "@/lib/ytmusic-import/types";
 
 interface BaseDialogProps {
   isOpen: boolean;
@@ -251,6 +252,142 @@ export function PlaylistDeleteDialog({
         Delete this playlist and remove its ordering. Tracks stay in your library and can remain in other playlists.
       </p>
     </PlaylistDialogFrame>
+  );
+}
+
+interface YtMusicImportDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onImport: (result: PlaylistImportResult) => void;
+}
+
+export function YtMusicImportDialog({
+  isOpen,
+  onClose,
+  onImport,
+}: YtMusicImportDialogProps) {
+  return (
+    <PlaylistDialogFrame
+      isOpen={isOpen}
+      onClose={onClose}
+      eyebrow="Import Playlist"
+      title="Import YTMusic"
+    >
+      <YtMusicImportDialogBody
+        key={isOpen ? "open" : "closed"}
+        onClose={onClose}
+        onImport={onImport}
+      />
+    </PlaylistDialogFrame>
+  );
+}
+
+async function importYtMusicPlaylist(url: string): Promise<PlaylistImportResult> {
+  const response = await fetch("/api/import/ytmusic", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url }),
+  });
+
+  const data = (await response.json()) as { error?: string } & Partial<PlaylistImportResult>;
+  if (!response.ok) {
+    throw new Error(data.error || "Import failed.");
+  }
+
+  if (
+    typeof data.playlistName !== "string" ||
+    !Array.isArray(data.matchedTracks) ||
+    !Array.isArray(data.unmatchedTracks) ||
+    !data.stats
+  ) {
+    throw new Error("Import response was invalid.");
+  }
+
+  return data as PlaylistImportResult;
+}
+
+function YtMusicImportDialogBody({
+  onClose,
+  onImport,
+}: {
+  onClose: () => void;
+  onImport: (result: PlaylistImportResult) => void;
+}) {
+  const [url, setUrl] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  return (
+    <form
+      onSubmit={async (event) => {
+        event.preventDefault();
+
+        if (!url.trim()) {
+          toast.error("URL REQUIRED");
+          return;
+        }
+
+        setIsSubmitting(true);
+
+        try {
+          const result = await importYtMusicPlaylist(url);
+          onImport(result);
+          onClose();
+        } catch (error) {
+          toast.error(error instanceof Error ? error.message : "Import failed.");
+        } finally {
+          setIsSubmitting(false);
+        }
+      }}
+      className="space-y-5"
+    >
+      <div className="space-y-2">
+        <label
+          htmlFor="ytmusic-playlist-url"
+          className="block text-[10px] font-mono uppercase tracking-widest text-foreground/40"
+        >
+          Playlist URL
+        </label>
+        <input
+          id="ytmusic-playlist-url"
+          value={url}
+          onChange={(event) => setUrl(event.target.value)}
+          placeholder="https://music.youtube.com/playlist?list=..."
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+          className="h-11 w-full border border-foreground/20 bg-transparent px-3 text-sm text-foreground outline-none placeholder:text-foreground/30 focus:border-foreground/40"
+        />
+      </div>
+
+      <div className="border border-foreground/10 px-4 py-3">
+        <p className="text-[10px] font-mono uppercase tracking-widest text-foreground/35">
+          Phase 1
+        </p>
+        <p className="mt-2 text-sm leading-relaxed text-foreground/60">
+          Imports a public YouTube Music playlist, matches tracks against playable TIDAL
+          results, and saves the matched tracks as a normal local playlist.
+        </p>
+      </div>
+
+      <div className="flex items-center justify-between gap-3 border-t border-foreground/10 pt-4">
+        <button
+          type="button"
+          onClick={onClose}
+          disabled={isSubmitting}
+          className="border border-foreground/20 px-3 py-2 text-[10px] font-mono uppercase tracking-widest text-foreground/55 transition-colors hover:text-foreground/75 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="inline-flex items-center gap-2 border border-foreground bg-foreground px-3 py-2 text-[10px] font-mono uppercase tracking-widest text-background transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
+        >
+          {isSubmitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+          Import Playlist
+        </button>
+      </div>
+    </form>
   );
 }
 
