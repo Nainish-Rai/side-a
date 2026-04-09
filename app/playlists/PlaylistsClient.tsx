@@ -416,20 +416,11 @@ export function PlaylistsClient() {
         isOpen={isImportOpen}
         onClose={() => setIsImportOpen(false)}
         onImport={(result: PlaylistImportResult) => {
-          createPlaylist({
+          return createPlaylist({
             name: result.playlistName,
             description: "Imported from YouTube Music",
             initialTracks: result.matchedTracks,
           });
-
-          if (result.stats.unmatched > 0) {
-            toast.success(
-              `IMPORTED ${result.stats.matched}/${result.stats.total} TRACKS`,
-            );
-            return;
-          }
-
-          toast.success("YTMusic playlist imported");
         }}
       />
       <PlaylistEditorDialog

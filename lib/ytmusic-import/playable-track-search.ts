@@ -2,7 +2,7 @@ import { musicApi } from "@/lib/api";
 import type { Track } from "@/lib/api/types";
 import type { PlayableTrackSearch } from "@/lib/ytmusic-import/types";
 
-const SEARCH_RESULT_LIMIT = 8;
+const SEARCH_RESULT_LIMIT = 15;
 
 export class TidalPlayableTrackSearch implements PlayableTrackSearch {
   async searchPlayableTracks(query: string): Promise<Track[]> {
