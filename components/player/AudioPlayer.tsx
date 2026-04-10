@@ -69,7 +69,6 @@ const StatsForNerds = dynamic(
 );
 import { useLyrics } from "@/hooks/useLyrics";
 import Image from "next/image";
-import { QualityBadge } from "./QualityBadge";
 
 const SEGMENT_COUNT = 300;
 
@@ -91,7 +90,6 @@ export function AudioPlayer() {
  } = useAudioPlayer();
 
  const progressBarRef = useRef<HTMLDivElement>(null);
- const [isDragging, setIsDragging] = useState(false);
  const [isQueueOpen, setIsQueueOpen] = useState(false);
  const [isStatsOpen, setIsStatsOpen] = useState(false);
  const [isLyricsOpen, setIsLyricsOpen] = useState(false);
@@ -215,7 +213,6 @@ export function AudioPlayer() {
          sizes="48px"
          quality={85}
          className="object-cover"
-         priority={true}
         />
        </div>
       )}

@@ -1,6 +1,6 @@
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import { useCallback } from "react";
+import { startTransition, useCallback } from "react";
 import { useSearchContext } from "@/contexts/SearchContext";
 import type { SearchResponse, Track, Album, Artist } from "@/lib/api/types";
 
@@ -17,41 +17,18 @@ export function useSearch() {
   queryFn: async ({ pageParam, signal }) => {
    if (!query) return { items: [], totalNumberOfItems: 0, offset: 0, limit: 0 };
    const offset = pageParam ?? 0;
-   console.log("[Tracks] Fetching with offset:", offset);
    const result = await api.searchTracks(query, { offset, limit: 25, signal });
-   console.log(
-    "[Tracks] Received:",
-    result.items.length,
-    "items, API returned offset:",
-    result.offset,
-    "but we requested:",
-    offset,
-   );
    // Override the offset with what we actually requested since API returns wrong offset
    return { ...result, offset };
   },
-  getNextPageParam: (lastPage, allPages) => {
+  getNextPageParam: (lastPage) => {
    const currentOffset = lastPage.offset ?? 0;
    const currentLimit = lastPage.limit ?? 25;
    const totalItems = lastPage.totalNumberOfItems ?? 0;
    const nextOffset = currentOffset + currentLimit;
 
-   console.log(
-    "[Tracks] getNextPageParam - current:",
-    currentOffset,
-    "limit:",
-    currentLimit,
-    "total:",
-    totalItems,
-    "next:",
-    nextOffset,
-    "pages so far:",
-    allPages.length,
-   );
-
    // Return undefined if we've reached the end
    if (nextOffset >= totalItems) {
-    console.log("[Tracks] No more pages");
     return undefined;
    }
    return nextOffset;
@@ -109,8 +86,10 @@ export function useSearch() {
  // Search handler - triggers track search and resets to tracks tab
  const handleSearch = useCallback(
   (newQuery: string) => {
-   setQuery(newQuery);
-   setCurrentTab("tracks");
+   startTransition(() => {
+    setQuery(newQuery);
+    setCurrentTab("tracks");
+   });
   },
   [setQuery, setCurrentTab],
  );
@@ -118,46 +97,26 @@ export function useSearch() {
  // Tab change handler - fetches data for the selected tab if needed
  const handleTabChange = useCallback(
   (tab: SearchContentType) => {
-   setCurrentTab(tab);
+   startTransition(() => {
+    setCurrentTab(tab);
+   });
   },
   [setCurrentTab],
  );
 
  // Clear search results
  const clearSearch = useCallback(() => {
-  setQuery("");
-  setCurrentTab("tracks");
-  queryClient.removeQueries({ queryKey: ["search"] });
+  startTransition(() => {
+   setQuery("");
+   setCurrentTab("tracks");
+   queryClient.removeQueries({ queryKey: ["search"] });
+  });
  }, [queryClient, setQuery, setCurrentTab]);
 
  // Flatten paginated results
  const tracks = tracksQuery.data?.pages.flatMap((page) => page.items) || [];
  const albums = albumsQuery.data?.pages.flatMap((page) => page.items) || [];
  const artists = artistsQuery.data?.pages.flatMap((page) => page.items) || [];
-
- // Debug: Check for duplicates
- if (tracks.length > 0) {
-  const trackIds = tracks.map((t) => t.id);
-  const uniqueIds = new Set(trackIds);
-  if (trackIds.length !== uniqueIds.size) {
-   console.warn(
-    "[Tracks] Duplicates detected!",
-    "Total:",
-    trackIds.length,
-    "Unique:",
-    uniqueIds.size,
-   );
-   console.warn(
-    "[Tracks] Pages:",
-    tracksQuery.data?.pages.map((p) => ({
-     offset: p.offset,
-     count: p.items.length,
-    })),
-   );
-  } else {
-   console.log("[Tracks] No duplicates -", "Total tracks:", trackIds.length);
-  }
- }
 
  // Get metadata from the first page
  const firstTracksPage = tracksQuery.data?.pages[0];

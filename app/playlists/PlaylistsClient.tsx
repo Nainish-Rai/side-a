@@ -23,10 +23,11 @@ import {
   PlaylistEditorDialog,
   YtMusicImportDialog,
 } from "@/components/playlists/PlaylistDialogs";
+import { SpotifyImportDialog } from "@/components/playlists/SpotifyImportDialog";
 import { getPlaylistCoverUrl, getPlaylistDuration } from "@/components/playlists/playlist-utils";
 import { formatDuration } from "@/lib/api/utils";
 import type { Playlist, UserPlaylist } from "@/lib/api/types";
-import type { PlaylistImportResult } from "@/lib/ytmusic-import/types";
+import type { PlaylistImportResult } from "@/lib/playlist-import/types";
 
 const DEFAULT_LIMIT = 40;
 
@@ -49,6 +50,7 @@ export function PlaylistsClient() {
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
+  const [isSpotifyImportOpen, setIsSpotifyImportOpen] = useState(false);
   const [playlistBeingEdited, setPlaylistBeingEdited] = useState<UserPlaylist | null>(null);
   const [playlistBeingDeleted, setPlaylistBeingDeleted] = useState<UserPlaylist | null>(null);
   const trimmedQuery = debouncedQuery.trim();
@@ -89,6 +91,14 @@ export function PlaylistsClient() {
               >
                 <Plus className="h-3.5 w-3.5" />
                 Import YTMusic
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsSpotifyImportOpen(true)}
+                className="inline-flex items-center gap-2 border border-foreground/20 px-3 py-2 text-[10px] font-mono uppercase tracking-widest text-foreground/70 transition-colors hover:text-foreground"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Import Spotify
               </button>
               <button
                 type="button"
@@ -423,6 +433,19 @@ export function PlaylistsClient() {
           });
         }}
       />
+      {isSpotifyImportOpen ? (
+        <SpotifyImportDialog
+          isOpen={isSpotifyImportOpen}
+          onClose={() => setIsSpotifyImportOpen(false)}
+          onImport={(result: PlaylistImportResult, sourceDescription: string) => {
+            return createPlaylist({
+              name: result.playlistName,
+              description: sourceDescription,
+              initialTracks: result.matchedTracks,
+            });
+          }}
+        />
+      ) : null}
       <PlaylistEditorDialog
         isOpen={playlistBeingEdited !== null}
         mode="edit"

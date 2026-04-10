@@ -4,6 +4,8 @@ import { prisma } from "@/lib/db/prisma";
 
 const googleClientId = process.env.GOOGLE_CLIENT_ID;
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
+const spotifyClientId = process.env.SPOTIFY_CLIENT_ID;
+const spotifyClientSecret = process.env.SPOTIFY_CLIENT_SECRET;
 const betterAuthUrl = process.env.BETTER_AUTH_URL;
 
 const trustedOrigins = [
@@ -13,6 +15,26 @@ const trustedOrigins = [
   process.env.NODE_ENV === "development" ? "http://localhost:3000" : undefined,
 ].filter((origin): origin is string => Boolean(origin));
 
+const socialProviders = {
+  ...(googleClientId && googleClientSecret
+    ? {
+        google: {
+          clientId: googleClientId,
+          clientSecret: googleClientSecret,
+        },
+      }
+    : {}),
+  ...(spotifyClientId && spotifyClientSecret
+    ? {
+        spotify: {
+          clientId: spotifyClientId,
+          clientSecret: spotifyClientSecret,
+          scope: ["playlist-read-private", "playlist-read-collaborative"],
+        },
+      }
+    : {}),
+};
+
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "postgresql",
@@ -21,15 +43,7 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
   },
-  socialProviders:
-    googleClientId && googleClientSecret
-      ? {
-          google: {
-            clientId: googleClientId,
-            clientSecret: googleClientSecret,
-          },
-        }
-      : {},
+  socialProviders,
   trustedOrigins,
   rateLimit: {
     enabled: true,

@@ -3,6 +3,7 @@ import { ArtistClient } from "./ArtistClient";
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
 import type { Album, Artist, Track } from "@/lib/api/types";
+import { cache } from "react";
 
 interface ArtistPageProps {
   params: Promise<{ id: string }>;
@@ -71,10 +72,10 @@ const hasArtistNameMatch = (
   return false;
 };
 
-async function resolveArtistPageData(
+const resolveArtistPageData = cache(async (
   artistId: number,
   artistNameHint?: string,
-): Promise<ArtistPageData | null> {
+): Promise<ArtistPageData | null> => {
   const normalizedHint = normalizeText(artistNameHint);
 
   const searchQueries = Array.from(
@@ -154,7 +155,7 @@ async function resolveArtistPageData(
     topTracks,
     discography,
   };
-}
+});
 
 export default async function ArtistPage({
   params,
@@ -168,28 +169,29 @@ export default async function ArtistPage({
   }
 
   const resolvedSearchParams = searchParams ? await searchParams : undefined;
+  let data: ArtistPageData | null;
 
   try {
-    const data = await resolveArtistPageData(
+    data = await resolveArtistPageData(
       parsedId,
       resolvedSearchParams?.name,
-    );
-
-    if (!data) {
-      notFound();
-    }
-
-    return (
-      <ArtistClient
-        artist={data.artist}
-        topTracks={data.topTracks}
-        discography={data.discography}
-      />
     );
   } catch (error) {
     console.error("Failed to load artist page:", error);
     notFound();
   }
+
+  if (!data) {
+    notFound();
+  }
+
+  return (
+    <ArtistClient
+      artist={data.artist}
+      topTracks={data.topTracks}
+      discography={data.discography}
+    />
+  );
 }
 
 export async function generateMetadata({

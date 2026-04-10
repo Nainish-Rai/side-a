@@ -1,5 +1,10 @@
 import { APICache } from "./cache";
-import { RATE_LIMIT_ERROR_MESSAGE, deriveTrackQuality, delay } from "./utils";
+import {
+  RATE_LIMIT_ERROR_MESSAGE,
+  createTimeoutSignal,
+  deriveTrackQuality,
+  delay,
+} from "./utils";
 import type {
   APISettings,
   SearchResponse,
@@ -22,6 +27,9 @@ export class LosslessAPI {
   private streamCache: Map<string, string>;
   private lyricsCache: Map<number, LyricsData>;
   private cleanupInterval: ReturnType<typeof setInterval> | null = null;
+  private static readonly DEFAULT_TIMEOUT_MS = 6_000;
+  private static readonly STREAM_TIMEOUT_MS = 8_000;
+  private static readonly LYRICS_TIMEOUT_MS = 5_000;
 
   constructor(settings: APISettings) {
     this.settings = settings;
@@ -73,7 +81,7 @@ private shuffleInstances(instances: string[]): string[] {
 
   private async fetchWithRetry(
     relativePath: string,
-    options: { signal?: AbortSignal } = {}
+    options: { signal?: AbortSignal; timeoutMs?: number } = {}
   ): Promise<Response> {
     const instances = await this.settings.getInstances();
     if (instances.length === 0) {
@@ -90,8 +98,15 @@ private shuffleInstances(instances: string[]): string[] {
         : `${baseUrl}${relativePath}`;
 
       for (let attempt = 1; attempt <= maxRetriesPerInstance; attempt++) {
+        const { signal, cleanup } = createTimeoutSignal(
+          options.timeoutMs ?? LosslessAPI.DEFAULT_TIMEOUT_MS,
+          options.signal
+        );
         try {
-          const response = await fetch(url, { signal: options.signal });
+          const response = await fetch(url, {
+            signal,
+            cache: "no-store",
+          });
 
           if (response.status === 429) {
             throw new Error(RATE_LIMIT_ERROR_MESSAGE);
@@ -145,6 +160,8 @@ private shuffleInstances(instances: string[]): string[] {
           if (attempt < maxRetriesPerInstance) {
             await delay(200 * attempt);
           }
+        } finally {
+          cleanup();
         }
       }
     }
@@ -485,8 +502,6 @@ private shuffleInstances(instances: string[]): string[] {
       );
       const data = await response.json();
 
-      console.log("Album API Response:", JSON.stringify(data, null, 2));
-
       // Parse album and tracks from response
       let album: Album | undefined;
       let tracks: Track[] = [];
@@ -553,7 +568,8 @@ private shuffleInstances(instances: string[]): string[] {
 
     try {
       const response = await this.fetchWithRetry(
-        `/track/?id=${trackId}&quality=${quality}`
+        `/track/?id=${trackId}&quality=${quality}`,
+        { timeoutMs: LosslessAPI.STREAM_TIMEOUT_MS }
       );
       const data = await response.json();
 
@@ -605,6 +621,11 @@ private shuffleInstances(instances: string[]): string[] {
       return this.lyricsCache.get(track.id)!;
     }
 
+    const { signal, cleanup } = createTimeoutSignal(
+      LosslessAPI.LYRICS_TIMEOUT_MS,
+      options.signal
+    );
+
     try {
       // Build query parameters for LyricsPlus API
       const title = encodeURIComponent(track.title);
@@ -617,7 +638,10 @@ private shuffleInstances(instances: string[]): string[] {
 
       const lyricsUrl = `https://lyricsplus.prjktla.workers.dev/v2/lyrics/get?title=${title}&artist=${artist}&album=${album}&duration=${duration}&source=${source}`;
 
-      const response = await fetch(lyricsUrl, { signal: options.signal });
+      const response = await fetch(lyricsUrl, {
+        signal,
+        cache: "no-store",
+      });
 
       if (!response.ok) {
         console.warn(`Lyrics API returned ${response.status}`);
@@ -639,6 +663,8 @@ private shuffleInstances(instances: string[]): string[] {
     } catch (error) {
       if (error instanceof Error && error.name === "AbortError") throw error;
       console.error("Failed to fetch lyrics:", error);
+    } finally {
+      cleanup();
     }
     return null;
   }

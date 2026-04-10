@@ -136,7 +136,11 @@ async function fetchRemoteState(
   const url = new URL(endpoint, window.location.origin);
   url.searchParams.set("deviceId", deviceId);
 
-  const response = await fetch(url.toString(), { method: "GET", signal });
+  const response = await fetch(url.toString(), {
+    method: "GET",
+    signal,
+    cache: "no-store",
+  });
   if (!response.ok) return null;
 
   const data = (await response.json()) as unknown;
@@ -159,6 +163,7 @@ async function pushRemoteState(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ deviceId, state }),
     signal,
+    cache: "no-store",
   });
 
   return response.ok;

@@ -41,6 +41,41 @@ export const RATE_LIMIT_ERROR_MESSAGE =
 export const delay = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
+export function createTimeoutSignal(
+  timeoutMs: number,
+  externalSignal?: AbortSignal
+): { signal: AbortSignal; cleanup: () => void } {
+  const controller = new AbortController();
+  let timeoutId: ReturnType<typeof setTimeout> | null = setTimeout(() => {
+    controller.abort(new Error(`Request timed out after ${timeoutMs}ms`));
+  }, timeoutMs);
+
+  const abortFromExternal = () => {
+    controller.abort(externalSignal?.reason);
+  };
+
+  if (externalSignal) {
+    if (externalSignal.aborted) {
+      abortFromExternal();
+    } else {
+      externalSignal.addEventListener("abort", abortFromExternal, {
+        once: true,
+      });
+    }
+  }
+
+  return {
+    signal: controller.signal,
+    cleanup: () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+      externalSignal?.removeEventListener("abort", abortFromExternal);
+    },
+  };
+}
+
 export const formatTime = (seconds: number): string => {
   if (isNaN(seconds)) return "0:00";
   const m = Math.floor(seconds / 60);

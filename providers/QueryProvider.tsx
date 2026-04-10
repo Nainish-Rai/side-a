@@ -13,8 +13,8 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
             staleTime: 1000 * 60 * 5,
             // Cache persists for 30 minutes
             gcTime: 1000 * 60 * 30,
-            // Retry failed requests 1 time
-            retry: 1,
+            // Upstream API clients already retry; avoid doubling latency in React Query
+            retry: 0,
             // Don't refetch on window focus by default
             refetchOnWindowFocus: false,
             // Don't refetch on mount if data is available

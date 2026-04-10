@@ -1,4 +1,5 @@
 import staticInstances from "@/instances.json";
+import { createTimeoutSignal } from "./utils";
 
 const UPTIME_URLS = [
   "https://tidal-uptime.jiffy-puffs-1j.workers.dev/",
@@ -37,10 +38,12 @@ export async function getLiveInstances(): Promise<string[]> {
   }
 
   const fetchPromises = UPTIME_URLS.map(async (url) => {
+    const { signal, cleanup } = createTimeoutSignal(3_000);
     try {
       const res = await fetch(url, {
-        next: { revalidate: 600 },
+        cache: "no-store",
         headers: { "User-Agent": "SideA/1.0" },
+        signal,
       });
 
       if (!res.ok) return null;
@@ -48,6 +51,8 @@ export async function getLiveInstances(): Promise<string[]> {
       return extractInstances(data);
     } catch {
       return null;
+    } finally {
+      cleanup();
     }
   });
 

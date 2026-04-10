@@ -383,6 +383,7 @@ async function streamYtMusicPlaylistImport(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ url }),
     signal: options.signal,
+    cache: "no-store",
   });
 
   if (!response.ok) {

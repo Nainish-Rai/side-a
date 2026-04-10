@@ -2,27 +2,31 @@ import { api } from "@/lib/api";
 import { AlbumClient } from "./AlbumClient";
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
+import { cache } from "react";
 
 interface AlbumPageProps {
   params: Promise<{ id: string }>;
 }
 
+const getAlbumPageData = cache(async (albumId: number) => api.getAlbum(albumId));
+
 export default async function AlbumPage({ params }: AlbumPageProps) {
   const { id } = await params;
   const albumId = parseInt(id);
+  let pageData: Awaited<ReturnType<typeof getAlbumPageData>> | null = null;
 
   try {
-    const { album, tracks } = await api.getAlbum(albumId);
-
-    if (!album) {
-      notFound();
-    }
-
-    return <AlbumClient album={album} tracks={tracks} />;
+    pageData = await getAlbumPageData(albumId);
   } catch (error) {
     console.error("Failed to load album:", error);
     notFound();
   }
+
+  if (!pageData?.album) {
+    notFound();
+  }
+
+  return <AlbumClient album={pageData.album} tracks={pageData.tracks} />;
 }
 
 export async function generateMetadata({
@@ -32,7 +36,7 @@ export async function generateMetadata({
   const albumId = parseInt(id);
 
   try {
-    const { album } = await api.getAlbum(albumId);
+    const { album } = await getAlbumPageData(albumId);
     const artistName =
       album.artist?.name || album.artists?.[0]?.name || "Unknown Artist";
 

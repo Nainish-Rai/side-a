@@ -1,5 +1,5 @@
 import { APICache } from "./cache";
-import { delay } from "./utils";
+import { createTimeoutSignal, delay } from "./utils";
 import type { Track, Album, Artist, SearchResponse, CacheStats } from "./types";
 
 const QOBUZ_API_BASE = "https://www.qobuz.com/api.json/0.2";
@@ -88,6 +88,7 @@ export class QobuzAPI {
   private appSecret?: string;
   private userAuthToken?: string;
   private cleanupInterval: ReturnType<typeof setInterval> | null = null;
+  private static readonly DEFAULT_TIMEOUT_MS = 6_000;
 
   constructor(options: {
     appId?: string;
@@ -133,6 +134,10 @@ export class QobuzAPI {
     let lastError: Error | null = null;
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      const { signal, cleanup } = createTimeoutSignal(
+        QobuzAPI.DEFAULT_TIMEOUT_MS,
+        options.signal
+      );
       try {
         const headers: Record<string, string> = {};
         if (this.userAuthToken) {
@@ -140,8 +145,9 @@ export class QobuzAPI {
         }
 
         const response = await fetch(url.toString(), {
-          signal: options.signal,
+          signal,
           headers,
+          cache: "no-store",
         });
 
         if (response.ok) {
@@ -177,6 +183,8 @@ export class QobuzAPI {
         if (attempt < maxRetries) {
           await delay(200 * attempt);
         }
+      } finally {
+        cleanup();
       }
     }
 

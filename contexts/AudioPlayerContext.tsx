@@ -32,7 +32,7 @@ interface AudioPlayerState {
   streamUrl: string | null;
 }
 
-interface AudioPlayerContextValue extends AudioPlayerState {
+interface AudioPlayerActions {
   playTrack: (track: Track, streamUrl: string) => void;
   addToQueue: (track: Track) => void;
   playNextInQueue: (track: Track) => void;
@@ -53,7 +53,8 @@ interface AudioPlayerContextValue extends AudioPlayerState {
   getAudioElement: () => HTMLAudioElement | null;
 }
 
-const AudioPlayerContext = createContext<AudioPlayerContextValue | null>(null);
+const AudioPlayerStateContext = createContext<AudioPlayerState | null>(null);
+const AudioPlayerActionsContext = createContext<AudioPlayerActions | null>(null);
 
 const STORAGE_KEY = "audio-player-state";
 
@@ -89,6 +90,13 @@ interface PersistedState {
   currentTime: number;
 }
 
+interface PendingCrossfadeTrack {
+  track: Track;
+  index: number;
+  quality: string;
+  streamUrl: string;
+}
+
 // Helper function to load persisted state from localStorage
 function getPersistedState(): Partial<PersistedState> {
   if (typeof window === "undefined") {
@@ -116,6 +124,9 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const crossfadeControllerRef = useRef<CrossfadeController | null>(null);
   const crossfadeCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const currentPlayPromiseRef = useRef<Promise<void> | null>(null);
+  const pendingCrossfadeTrackRef = useRef<PendingCrossfadeTrack | null>(null);
+  const lastProgressCommitRef = useRef(0);
+  const [activeAudioVersion, setActiveAudioVersion] = useState(0);
 
   // Initialize state from localStorage using lazy initialization
   const [state, setState] = useState<AudioPlayerState>(() => {
@@ -142,12 +153,85 @@ const preloadCache = useRef<Map<number, string>>(new Map());
   const playNextRef = useRef<(() =>Promise<void>)| null>(null);
   const persistTimerRef = useRef<NodeJS.Timeout | null>(null);
   const volumeRef = useRef(state.volume);
+  const mutedRef = useRef(state.isMuted);
 
   const insertTrackAt = useCallback((tracks: Track[], index: number, track: Track) => {
     const nextTracks = [...tracks];
     nextTracks.splice(index, 0, track);
     return nextTracks;
   }, []);
+
+  const updateMediaSessionMetadata = useCallback((track: Track) => {
+    if (!("mediaSession" in navigator)) return;
+
+    const coverId = track.album?.cover || track.album?.id;
+    const artwork = getMediaSessionArtwork(coverId);
+    const artistName =
+      track.artist?.name ||
+      track.artists?.find((a) => a.type === "MAIN")?.name ||
+      track.artists?.[0]?.name ||
+      "Unknown Artist";
+
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: track.title,
+      artist: artistName,
+      album: track.album?.title || "Unknown Album",
+      artwork,
+    });
+  }, []);
+
+  const resetCrossfadeState = useCallback(() => {
+    pendingCrossfadeTrackRef.current = null;
+    crossfadeControllerRef.current?.cancelCrossfade();
+  }, []);
+
+  const finalizeCrossfade = useCallback(() => {
+    const nextTrack = pendingCrossfadeTrackRef.current;
+    const currentAudio = audioRef.current;
+    const secondaryAudio = secondaryAudioRef.current;
+
+    if (!nextTrack || !currentAudio || !secondaryAudio) {
+      resetCrossfadeState();
+      return;
+    }
+
+    currentAudio.pause();
+    currentAudio.currentTime = 0;
+    currentAudio.src = "";
+
+    audioRef.current = secondaryAudio;
+    secondaryAudioRef.current = currentAudio;
+
+    audioRef.current.volume = volumeRef.current;
+    audioRef.current.muted = mutedRef.current;
+
+    secondaryAudioRef.current.pause();
+    secondaryAudioRef.current.currentTime = 0;
+    secondaryAudioRef.current.src = "";
+    secondaryAudioRef.current.volume = 0;
+    secondaryAudioRef.current.muted = mutedRef.current;
+
+    crossfadeControllerRef.current?.setAudioElements(
+      audioRef.current,
+      secondaryAudioRef.current
+    );
+
+    setState((prev) => ({
+      ...prev,
+      currentTrack: nextTrack.track,
+      currentQueueIndex: nextTrack.index,
+      currentQuality: nextTrack.quality,
+      streamUrl: nextTrack.streamUrl,
+      currentTime: audioRef.current?.currentTime ?? 0,
+      duration: audioRef.current?.duration || 0,
+      isPlaying: !(audioRef.current?.paused ?? true),
+    }));
+
+    updateMediaSessionMetadata(nextTrack.track);
+    pendingCrossfadeTrackRef.current = null;
+    lastProgressCommitRef.current = audioRef.current?.currentTime ?? 0;
+    setActiveAudioVersion((prev) => prev + 1);
+  }, [resetCrossfadeState, updateMediaSessionMetadata]);
 
   // Helper function to safely play audio, handling AbortError from interrupted loads
   const safePlay = useCallback(async (audio: HTMLAudioElement) => {
@@ -220,43 +304,6 @@ const preloadCache = useRef<Map<number, string>>(new Map());
     state.currentTime,
   ]);
 
-  // Restore the audio element state from persisted data
-  useEffect(() => {
-    const currentTrack = state.currentTrack;
-    if (!audioRef.current || !currentTrack) return;
-
-    let cancelled = false;
-    const restoreAudioState = async () => {
-      try {
-        // Get stream URL for the persisted track
-        const streamUrl = await api.getStreamUrl(
-          currentTrack.id,
-          state.currentQuality
-        );
-        if (streamUrl && !cancelled && audioRef.current) {
-          audioRef.current.src = streamUrl;
-          audioRef.current.currentTime = state.currentTime;
-          audioRef.current.volume = state.volume;
-          audioRef.current.muted = state.isMuted;
-
-          setState((prev) => ({
-            ...prev,
-            streamUrl: streamUrl,
-            duration: audioRef.current?.duration || 0,
-          }));
-        }
-      } catch (error) {
-        console.error("Failed to restore audio state:", error);
-      }
-    };
-
-    restoreAudioState();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []); // Empty deps array - only restore on mount
-
 // Create Audio element once on mount
   useEffect(() => {
     const audio = new Audio();
@@ -290,11 +337,7 @@ const preloadCache = useRef<Map<number, string>>(new Map());
       crossfadeControllerRef.current = new CrossfadeController({
         duration: settings.crossfade.duration,
         prebufferTime: settings.crossfade.prebufferTime,
-        onCrossfadeEnd: () => {
-          if (audioRef.current) {
-            audioRef.current.volume = volumeRef.current;
-          }
-        },
+        onCrossfadeEnd: finalizeCrossfade,
       });
       crossfadeControllerRef.current.setAudioElements(
         audioRef.current,
@@ -308,7 +351,50 @@ const preloadCache = useRef<Map<number, string>>(new Map());
         crossfadeControllerRef.current = null;
       }
     };
-  }, []);
+  }, [finalizeCrossfade]);
+
+  // Restore the audio element state from persisted data once audio is ready
+  useEffect(() => {
+    const currentTrack = state.currentTrack;
+    if (!audioRef.current || !currentTrack || state.streamUrl) return;
+
+    let cancelled = false;
+    const restoreAudioState = async () => {
+      try {
+        const streamUrl = await api.getStreamUrl(
+          currentTrack.id,
+          state.currentQuality
+        );
+        if (streamUrl && !cancelled && audioRef.current) {
+          audioRef.current.src = streamUrl;
+          audioRef.current.currentTime = state.currentTime;
+          audioRef.current.volume = state.volume;
+          audioRef.current.muted = state.isMuted;
+
+          setState((prev) => ({
+            ...prev,
+            streamUrl,
+            duration: audioRef.current?.duration || 0,
+          }));
+        }
+      } catch (error) {
+        console.error("Failed to restore audio state:", error);
+      }
+    };
+
+    void restoreAudioState();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    state.currentQuality,
+    state.currentTime,
+    state.currentTrack,
+    state.isMuted,
+    state.streamUrl,
+    state.volume,
+  ]);
 
   // Monitor for crossfade trigger point
   useEffect(() => {
@@ -323,7 +409,11 @@ const preloadCache = useRef<Map<number, string>>(new Map());
       const { currentTime, duration } = audioRef.current;
       const triggerTime = duration - settings.crossfade.prebufferTime;
       
-      if (currentTime >= triggerTime && !crossfadeControllerRef.current?.isActive()) {
+      if (
+        currentTime >= triggerTime &&
+        !crossfadeControllerRef.current?.isActive() &&
+        !pendingCrossfadeTrackRef.current
+      ) {
         // Get next track
         const currentQueue = state.shuffleActive
           ? shuffledQueue.current
@@ -340,7 +430,14 @@ const preloadCache = useRef<Map<number, string>>(new Map());
             try {
               const streamUrl = await api.getStreamUrl(nextTrack.id, state.currentQuality);
               if (streamUrl && secondaryAudioRef.current) {
+                pendingCrossfadeTrackRef.current = {
+                  track: nextTrack,
+                  index: nextIndex,
+                  quality: nextTrack.audioQuality || "HIGH",
+                  streamUrl,
+                };
                 secondaryAudioRef.current.src = streamUrl;
+                secondaryAudioRef.current.muted = state.isMuted;
                 // Start crossfade at duration - settings.crossfade.duration
                 const crossfadeStart = duration - settings.crossfade.duration;
                 if (currentTime >= crossfadeStart) {
@@ -363,7 +460,7 @@ const preloadCache = useRef<Map<number, string>>(new Map());
         clearInterval(crossfadeCheckIntervalRef.current);
       }
     };
-  }, [state.shuffleActive, state.queue, state.currentQueueIndex, state.repeatMode, state.currentQuality]);
+  }, [state.shuffleActive, state.queue, state.currentQueueIndex, state.repeatMode, state.currentQuality, state.isMuted]);
 
   // Set up event listeners with stable refs
   useEffect(() => {
@@ -371,10 +468,18 @@ const preloadCache = useRef<Map<number, string>>(new Map());
     if (!audio) return;
 
     const handleTimeUpdate = () => {
+      const nextTime = audio.currentTime;
+      const nextDuration = audio.duration || 0;
+
+      if (Math.abs(nextTime - lastProgressCommitRef.current) < 0.25) {
+        return;
+      }
+
+      lastProgressCommitRef.current = nextTime;
       setState((prev) => ({
         ...prev,
-        currentTime: audio.currentTime,
-        duration: audio.duration || 0,
+        currentTime: nextTime,
+        duration: nextDuration,
       }));
     };
 
@@ -423,13 +528,10 @@ const preloadCache = useRef<Map<number, string>>(new Map());
       audio.removeEventListener("error", handleError);
       audio.removeEventListener("canplay", handleCanPlay);
     };
-  }, []); // Empty deps - listeners are stable
+  }, [activeAudioVersion]);
 
 const playTrack = useCallback((track: Track, streamUrl: string) => {
-  // Cancel any ongoing crossfade
-  if (crossfadeControllerRef.current?.isActive()) {
-    crossfadeControllerRef.current.cancelCrossfade();
-  }
+  resetCrossfadeState();
 
   if (!audioRef.current || !streamUrl) return;
 
@@ -448,24 +550,8 @@ const playTrack = useCallback((track: Track, streamUrl: string) => {
       streamUrl: streamUrl,
     }));
 
-    // Update Media Session metadata with multiple artwork sizes
-    if ("mediaSession" in navigator) {
-      const coverId = track.album?.cover || track.album?.id;
-      const artwork = getMediaSessionArtwork(coverId);
-      const artistName =
-        track.artist?.name ||
-        track.artists?.find((a) => a.type === "MAIN")?.name ||
-        track.artists?.[0]?.name ||
-        "Unknown Artist";
-
-      navigator.mediaSession.metadata = new MediaMetadata({
-        title: track.title,
-        artist: artistName,
-        album: track.album?.title || "Unknown Album",
-        artwork,
-      });
-    }
-  }, [safePlay]);
+    updateMediaSessionMetadata(track);
+  }, [resetCrossfadeState, safePlay, updateMediaSessionMetadata]);
 
   const play = useCallback(async () => {
     if (!audioRef.current) return;
@@ -478,6 +564,7 @@ const playTrack = useCallback((track: Track, streamUrl: string) => {
           state.currentQuality
         );
         if (streamUrl && audioRef.current) {
+          resetCrossfadeState();
           audioRef.current.src = streamUrl;
           setState((prev) => ({ ...prev, streamUrl }));
         } else {
@@ -496,7 +583,7 @@ const playTrack = useCallback((track: Track, streamUrl: string) => {
     }
 
     await safePlay(audioRef.current);
-  }, [state.currentTrack, state.currentQuality, safePlay]);
+  }, [resetCrossfadeState, state.currentTrack, state.currentQuality, safePlay]);
 
   const pause = useCallback(() => {
     if (!audioRef.current) return;
@@ -521,12 +608,18 @@ const playTrack = useCallback((track: Track, streamUrl: string) => {
     if (!audioRef.current) return;
     const clampedVolume = Math.max(0, Math.min(1, volume));
     audioRef.current.volume = clampedVolume;
+    if (secondaryAudioRef.current) {
+      secondaryAudioRef.current.volume = clampedVolume;
+    }
     setState((prev) => ({ ...prev, volume: clampedVolume }));
   }, []);
 
   const toggleMute = useCallback(() => {
     if (!audioRef.current) return;
     audioRef.current.muted = !state.isMuted;
+    if (secondaryAudioRef.current) {
+      secondaryAudioRef.current.muted = !state.isMuted;
+    }
     setState((prev) => ({ ...prev, isMuted: !prev.isMuted }));
   }, [state.isMuted]);
 
@@ -605,6 +698,7 @@ const playTrack = useCallback((track: Track, streamUrl: string) => {
 
   const setQueue = useCallback(
     async (tracks: Track[], startIndex: number = 0) => {
+      resetCrossfadeState();
       setState((prev) => {
         const quality = prev.currentQuality;
 
@@ -650,10 +744,11 @@ const playTrack = useCallback((track: Track, streamUrl: string) => {
         };
       });
     },
-    [safePlay]
+    [resetCrossfadeState, safePlay]
   );
 
   const playNext = useCallback(async () => {
+    resetCrossfadeState();
     setState((prev) => {
       // Handle repeat-one mode
       if (prev.repeatMode === "one" && audioRef.current) {
@@ -707,23 +802,7 @@ const playTrack = useCallback((track: Track, streamUrl: string) => {
 
             await safePlay(audioRef.current);
 
-            // Update Media Session metadata with multiple artwork sizes
-            if ("mediaSession" in navigator) {
-              const coverId = track.album?.cover || track.album?.id;
-              const artwork = getMediaSessionArtwork(coverId);
-              const artistName =
-                track.artist?.name ||
-                track.artists?.find((a) => a.type === "MAIN")?.name ||
-                track.artists?.[0]?.name ||
-                "Unknown Artist";
-
-              navigator.mediaSession.metadata = new MediaMetadata({
-                title: track.title,
-                artist: artistName,
-                album: track.album?.title || "Unknown Album",
-                artwork,
-              });
-            }
+            updateMediaSessionMetadata(track);
           }
         } catch (error) {
           console.error("Error playing next track:", error);
@@ -732,7 +811,7 @@ const playTrack = useCallback((track: Track, streamUrl: string) => {
 
       return prev;
     });
-  }, [safePlay]);
+  }, [resetCrossfadeState, safePlay, updateMediaSessionMetadata]);
 
   // Keep ref updated
 useEffect(() => {
@@ -743,7 +822,12 @@ useEffect(() => {
     volumeRef.current = state.volume;
   }, [state.volume]);
 
+  useEffect(() => {
+    mutedRef.current = state.isMuted;
+  }, [state.isMuted]);
+
   const playPrev = useCallback(async () => {
+    resetCrossfadeState();
     setState((prev) => {
       const currentQueue = prev.shuffleActive
         ? shuffledQueue.current
@@ -803,7 +887,7 @@ useEffect(() => {
 
       return prev;
     });
-  }, [safePlay]);
+  }, [resetCrossfadeState, safePlay]);
 
   const toggleShuffle = useCallback(() => {
     setState((prev) => {
@@ -874,13 +958,14 @@ useEffect(() => {
   }, []);
 
   const clearQueue = useCallback(() => {
+    resetCrossfadeState();
     setState((prev) => ({
       ...prev,
       queue: [],
       currentQueueIndex: -1,
     }));
     preloadCache.current.clear();
-  }, []);
+  }, [resetCrossfadeState]);
 
   // Setup Media Session API for hardware controls
   useEffect(() => {
@@ -957,7 +1042,7 @@ useEffect(() => {
           playbackRate: 1,
           position: Math.min(state.currentTime, state.duration),
         });
-      } catch (error) {
+      } catch {
         // Some browsers may not support setPositionState
       }
     }
@@ -967,8 +1052,7 @@ useEffect(() => {
     return audioRef.current;
   }, []);
 
-  const value: AudioPlayerContextValue = {
-    ...state,
+  const actions = useMemo<AudioPlayerActions>(() => ({
     playTrack,
     addToQueue,
     playNextInQueue,
@@ -987,17 +1071,38 @@ useEffect(() => {
     removeFromQueue,
     clearQueue,
     getAudioElement,
-  };
+  }), [
+    addToQueue,
+    clearQueue,
+    getAudioElement,
+    pause,
+    play,
+    playNext,
+    playNextInQueue,
+    playPrev,
+    playTrack,
+    removeFromQueue,
+    reorderQueue,
+    seek,
+    setQueue,
+    setVolume,
+    toggleMute,
+    togglePlayPause,
+    toggleRepeat,
+    toggleShuffle,
+  ]);
 
   return (
-    <AudioPlayerContext.Provider value={value}>
-      {children}
-    </AudioPlayerContext.Provider>
+    <AudioPlayerActionsContext.Provider value={actions}>
+      <AudioPlayerStateContext.Provider value={state}>
+        {children}
+      </AudioPlayerStateContext.Provider>
+    </AudioPlayerActionsContext.Provider>
   );
 }
 
 export function useAudioPlayer() {
-  const context = useContext(AudioPlayerContext);
+  const context = useContext(AudioPlayerActionsContext);
   if (!context) {
     throw new Error("useAudioPlayer must be used within AudioPlayerProvider");
   }
@@ -1007,7 +1112,7 @@ export function useAudioPlayer() {
 // Convenience hooks for accessing specific parts of the audio player state
 // These replace the old split contexts and avoid event-based synchronization
 export function usePlaybackState() {
-  const context = useContext(AudioPlayerContext);
+  const context = useContext(AudioPlayerStateContext);
   if (!context) {
     throw new Error("usePlaybackState must be used within AudioPlayerProvider");
   }
@@ -1031,7 +1136,7 @@ export function usePlaybackState() {
 }
 
 export function useQueue() {
-  const context = useContext(AudioPlayerContext);
+  const context = useContext(AudioPlayerStateContext);
   if (!context) {
     throw new Error("useQueue must be used within AudioPlayerProvider");
   }
