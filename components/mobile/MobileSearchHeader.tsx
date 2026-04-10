@@ -10,6 +10,7 @@ interface MobileSearchHeaderProps {
   query: string;
   onQueryChange: (query: string) => void;
   onSearch: (query: string) => void;
+  onClear?: () => void;
   isLoading?: boolean;
   defaultExpanded?: boolean;
 }
@@ -18,6 +19,7 @@ export function MobileSearchHeader({
   query,
   onQueryChange,
   onSearch,
+  onClear,
   isLoading = false,
   defaultExpanded = false,
 }: MobileSearchHeaderProps) {
@@ -36,9 +38,14 @@ export function MobileSearchHeader({
   );
 
   const handleClear = useCallback(() => {
-    onQueryChange("");
+    if (onClear) {
+      onClear();
+    } else {
+      onQueryChange("");
+    }
+
     inputRef.current?.focus();
-  }, [onQueryChange]);
+  }, [onClear, onQueryChange]);
 
   const handleExpand = useCallback(() => {
     setIsExpanded(true);

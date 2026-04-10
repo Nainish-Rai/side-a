@@ -284,32 +284,6 @@ export function SearchResults({
     console.log("Playlist clicked:", playlist);
   };
 
-  if (isLoading) {
-    return (
-      <div className="w-full border-t border-foreground/10">
-        <TableHeader />
-        <div>
-          {[...Array(12)].map((_, i) => (
-            <div
-              key={i}
-              className="grid grid-cols-[50px_40px_1fr_180px_120px_80px] lg:grid-cols-[50px_40px_1fr_180px_120px_80px] md:grid-cols-[40px_40px_1fr_60px] gap-4 items-center px-6 py-3 border-b border-foreground/10 animate-pulse"
-            >
-              <div className="h-3 w-6 bg-foreground/10 mx-auto" />
-              <div className="w-10 h-10 bg-foreground/10 border border-foreground/10" />
-              <div className="space-y-2">
-                <div className="h-4 w-2/3 bg-foreground/10" />
-                <div className="h-3 w-1/2 bg-foreground/10" />
-              </div>
-              <div className="hidden lg:block h-3 w-3/4 bg-foreground/10" />
-              <div className="hidden lg:block h-3 w-16 bg-foreground/10" />
-              <div className="h-3 w-12 bg-foreground/10 ml-auto" />
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
   const items =
     contentType === "tracks"
       ? tracks
@@ -318,22 +292,6 @@ export function SearchResults({
         : contentType === "artists"
           ? artists
           : playlists;
-
-  if (!items || items.length === 0) {
-    return (
-      <div className="flex min-h-[38vh] items-center justify-center px-8 py-14 text-center">
-        <div>
-          <Search className="mx-auto mb-4 h-8 w-8 text-foreground/25" />
-          <p className="text-sm font-mono uppercase tracking-widest text-foreground/90">
-            NO RESULTS FOUND
-          </p>
-          <p className="mt-2 text-[11px] font-mono uppercase tracking-wider text-foreground/60">
-            Try another search term
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="w-full">
@@ -385,18 +343,58 @@ export function SearchResults({
       {/* Results Count Block */}
       <div className="border-b border-foreground/10 px-4 lg:px-6 py-3">
         <div className="text-[10px] font-mono uppercase tracking-widest text-foreground/60">
-          {totalNumberOfItems !== undefined
+          {isLoading
+            ? `Searching ${contentType}`
+            : totalNumberOfItems !== undefined
             ? `${totalNumberOfItems.toLocaleString()} ${contentType}`
-            : `${items.length} ${contentType}`}
+            : `${items?.length ?? 0} ${contentType}`}
         </div>
       </div>
 
       {/* Content Block */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-      >
+      <div className="min-h-[38vh]">
+        {isLoading ? (
+          <div className="w-full border-b border-foreground/10">
+            {contentType === "tracks" && (
+              <div className="sticky top-[3.8rem] z-10 hidden lg:block">
+                <TableHeader />
+              </div>
+            )}
+            {[...Array(12)].map((_, i) => (
+              <div
+                key={i}
+                className="grid grid-cols-[50px_40px_1fr_180px_120px_80px] gap-4 items-center border-b border-foreground/10 px-6 py-3 animate-pulse md:grid-cols-[40px_40px_1fr_60px] lg:grid-cols-[50px_40px_1fr_180px_120px_80px]"
+              >
+                <div className="mx-auto h-3 w-6 bg-foreground/10" />
+                <div className="h-10 w-10 border border-foreground/10 bg-foreground/10" />
+                <div className="space-y-2">
+                  <div className="h-4 w-2/3 bg-foreground/10" />
+                  <div className="h-3 w-1/2 bg-foreground/10" />
+                </div>
+                <div className="hidden h-3 w-3/4 bg-foreground/10 lg:block" />
+                <div className="hidden h-3 w-16 bg-foreground/10 lg:block" />
+                <div className="ml-auto h-3 w-12 bg-foreground/10" />
+              </div>
+            ))}
+          </div>
+        ) : !items || items.length === 0 ? (
+          <div className="flex min-h-[38vh] items-center justify-center px-8 py-14 text-center">
+            <div>
+              <Search className="mx-auto mb-4 h-8 w-8 text-foreground/25" />
+              <p className="text-sm font-mono uppercase tracking-widest text-foreground/90">
+                NO RESULTS FOUND
+              </p>
+              <p className="mt-2 text-[11px] font-mono uppercase tracking-wider text-foreground/60">
+                Try another search term
+              </p>
+            </div>
+          </div>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+          >
         {contentType === "tracks" ? (
           <div className="border-b border-foreground/10">
             {/* Table header - desktop only */}
@@ -661,7 +659,9 @@ export function SearchResults({
             })}
           </div>
         )}
-      </motion.div>
+          </motion.div>
+        )}
+      </div>
 
       {/* DISABLED: Infinite Scroll Loading Indicator */}
       {/* {isFetchingMore && (

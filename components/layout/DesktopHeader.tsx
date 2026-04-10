@@ -1,13 +1,28 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 import { Library, ListMusic, Search } from "lucide-react";
 import { AnimatedLogoMark } from "@/components/layout/AnimatedLogoMark";
 import { SearchBar } from "@/components/search/SearchBar";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AuthStatusButton } from "@/components/auth/AuthStatusButton";
-import { useSearchContext } from "@/contexts/SearchContext";
+
+function createSearchHref(
+  query: string,
+  tab: "tracks" | "albums" | "artists" = "tracks",
+) {
+  const params = new URLSearchParams();
+
+  if (query.trim()) {
+    params.set("q", query.trim());
+    params.set("tab", tab);
+  }
+
+  const search = params.toString();
+  return search ? `/?${search}` : "/";
+}
 
 const NAV_TABS = [
   { href: "/", label: "SEARCH", icon: Search, exact: true },
@@ -17,7 +32,14 @@ const NAV_TABS = [
 
 export function DesktopHeader() {
   const pathname = usePathname();
-  const { handleSearch, query, setQuery } = useSearchContext();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const urlQuery = searchParams.get("q") ?? "";
+  const [draftQuery, setDraftQuery] = useState(urlQuery);
+
+  useEffect(() => {
+    setDraftQuery(urlQuery);
+  }, [urlQuery]);
 
   const isActive = (href: string, exact: boolean) => {
     if (exact) return pathname === href;
@@ -25,13 +47,15 @@ export function DesktopHeader() {
   };
 
   const isSearchPage = pathname === "/";
+  const isSearching = isSearchPage && urlQuery.length > 0;
+  const subtitle = isSearching ? "HI-FI SEARCH" : isSearchPage ? "HI-FI PLAYER" : "HI-FI SEARCH";
+  const submitHref = useMemo(() => createSearchHref(draftQuery), [draftQuery]);
 
   return (
     <header className="sticky top-0 z-30 hidden border-foreground/10 bg-background lg:block">
       <div className="mx-auto max-w-6xl px-6 pt-4">
         <div className="border border-foreground/10">
           <div className="grid grid-cols-[220px_auto_minmax(300px,1fr)_auto] items-center">
-            {/* Logo */}
             <div className="flex h-full items-center border-r border-foreground/10 px-5">
               <Link
                 href="/"
@@ -44,13 +68,12 @@ export function DesktopHeader() {
                     SIDE A
                   </h1>
                   <p className="text-[10px] font-mono uppercase tracking-[0.18em] text-foreground/70">
-                    HI-FI SEARCH
+                    {subtitle}
                   </p>
                 </div>
               </Link>
             </div>
 
-            {/* Nav tabs */}
             <div className="flex h-full items-center border-r border-foreground/10 px-5">
               <div className="flex items-center gap-6">
                 {NAV_TABS.map(({ href, label, icon: Icon, exact }) => {
@@ -77,13 +100,19 @@ export function DesktopHeader() {
               </div>
             </div>
 
-            {/* Search bar (only on search page) or spacer */}
             <div className="min-w-0 border-r border-foreground/10 px-5">
               {isSearchPage ? (
                 <SearchBar
-                  query={query}
-                  onQueryChange={setQuery}
-                  onSearch={handleSearch}
+                  query={draftQuery}
+                  onQueryChange={setDraftQuery}
+                  onSearch={(nextQuery) => {
+                    router.push(createSearchHref(nextQuery));
+                  }}
+                  onClear={() => {
+                    setDraftQuery("");
+                    router.push("/");
+                  }}
+                  submitHref={submitHref}
                   isLoading={false}
                 />
               ) : (
@@ -91,7 +120,6 @@ export function DesktopHeader() {
               )}
             </div>
 
-            {/* Auth + Theme */}
             <div className="px-5 py-4">
               <div className="flex h-full items-center gap-4">
                 <AuthStatusButton />

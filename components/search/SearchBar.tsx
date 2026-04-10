@@ -7,6 +7,8 @@ interface SearchBarProps {
   query: string;
   onQueryChange: (query: string) => void;
   onSearch: (query: string) => void;
+  onClear?: () => void;
+  submitHref?: string;
   isLoading?: boolean;
 }
 
@@ -14,6 +16,8 @@ export function SearchBar({
   query,
   onQueryChange,
   onSearch,
+  onClear,
+  submitHref,
   isLoading = false,
 }: SearchBarProps) {
   const [isFocused, setIsFocused] = useState(false);
@@ -28,20 +32,28 @@ export function SearchBar({
     [query, onSearch],
   );
 
-  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    onQueryChange(e.target.value);
-  }, [onQueryChange]);
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      onQueryChange(e.target.value);
+    },
+    [onQueryChange],
+  );
 
   const handleClear = useCallback(() => {
+    if (onClear) {
+      onClear();
+      return;
+    }
+
     onQueryChange("");
-  }, [onQueryChange]);
+  }, [onClear, onQueryChange]);
 
   return (
     <form onSubmit={handleSubmit} className="w-full max-w-3xl" role="search">
       <div className="relative">
-        <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none">
+        <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2">
           <Search
-            className={`w-4 h-4 transition-colors duration-200 ${
+            className={`h-4 w-4 transition-colors duration-200 ${
               isFocused ? "text-foreground" : "text-foreground/40"
             }`}
           />
@@ -57,11 +69,10 @@ export function SearchBar({
           aria-label="Search music"
           placeholder="Search music"
           disabled={isLoading}
-          className={`w-full pl-11 pr-32 py-3 text-[15px] font-sans tracking-[-0.01em]
-                     bg-transparent  transition-colors duration-200
-                     text-foreground placeholder-foreground/50
+          className={`w-full bg-transparent py-3 pl-11 pr-32 text-[15px] font-sans tracking-[-0.01em]
+                     text-foreground placeholder-foreground/50 transition-colors duration-200
                      focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2
-                     disabled:opacity-50 disabled:cursor-not-allowed
+                     disabled:cursor-not-allowed disabled:opacity-50
                      ${isFocused ? "border-foreground" : "border-foreground/20"}
                      hover:border-foreground/40`}
         />
@@ -70,29 +81,29 @@ export function SearchBar({
           <button
             type="button"
             onClick={handleClear}
-            className="absolute right-24 top-1/2 -translate-y-1/2 text-foreground/60 hover:text-foreground transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2"
+            className="absolute right-24 top-1/2 -translate-y-1/2 text-foreground/60 transition-colors duration-200 hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2"
             aria-label="Clear search"
           >
-            <X className="w-4 h-4" />
+            <X className="h-4 w-4" />
           </button>
         )}
 
         <button
           type="submit"
+          formAction={submitHref}
           disabled={isLoading || !query.trim()}
           className={`absolute right-0 top-1/2 -translate-y-1/2
-                     px-4 py-1.5 border
-                     text-[11px] font-mono uppercase tracking-[0.16em]
+                     border px-4 py-1.5 text-[11px] font-mono uppercase tracking-[0.16em]
                      transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2
                      ${
                        query.trim() && !isLoading
-                         ? "bg-foreground text-background border-foreground hover:opacity-90"
-                         : "bg-transparent text-foreground/30 border-foreground/20 cursor-not-allowed"
+                         ? "border-foreground bg-foreground text-background hover:opacity-90"
+                         : "cursor-not-allowed border-foreground/20 bg-transparent text-foreground/30"
                      }`}
         >
           {isLoading ? (
             <span className="flex items-center gap-2">
-              <span className="inline-block w-3 h-3 border border-foreground/30 border-t-foreground animate-spin" />
+              <span className="inline-block h-3 w-3 animate-spin border border-foreground/30 border-t-foreground" />
               SEARCHING
             </span>
           ) : (
