@@ -39,7 +39,8 @@ import {
   PlaylistEditorDialog,
 } from "@/components/playlists/PlaylistDialogs";
 import { getPlaylistCoverUrl, getPlaylistDuration } from "@/components/playlists/playlist-utils";
-import { formatDuration, formatTime, getTrackArtists, getTrackTitle } from "@/lib/api/utils";
+import { formatDuration, formatTime, getTrackTitle } from "@/lib/api/utils";
+import { TrackAlbumLink, TrackArtistLinks } from "@/components/tracks/TrackMetaLinks";
 
 function shuffleTracks<T>(items: T[]): T[] {
   const result = [...items];
@@ -128,16 +129,22 @@ function SortablePlaylistTrack({
           </span>
         )}
       </button>
-      <button type="button" onClick={onPlay} className="min-w-0 text-left">
-        <span className="block truncate text-[13px] font-medium text-foreground/90">
-          {String(index + 1).padStart(2, "0")} {getTrackTitle(track)}
-        </span>
+      <div className="min-w-0 text-left">
+        <button type="button" onClick={onPlay} className="block w-full text-left">
+          <span className="block truncate text-[13px] font-medium text-foreground/90">
+            {String(index + 1).padStart(2, "0")} {getTrackTitle(track)}
+          </span>
+        </button>
         <span className="block truncate text-[12px] text-foreground/50">
-          {getTrackArtists(track)}
+          <TrackArtistLinks track={track} className="hover:text-foreground/75 transition-colors" />
         </span>
-      </button>
+      </div>
       <div className="truncate text-right text-[12px] text-foreground/35">
-        {track.album?.title || "-"}
+        <TrackAlbumLink
+          track={track}
+          fallbackAlbum="-"
+          className="hover:text-foreground/60 transition-colors"
+        />
       </div>
       <div className="text-right text-[12px] font-mono text-foreground/40 tabular-nums">
         {formatTime(track.duration || 0)}

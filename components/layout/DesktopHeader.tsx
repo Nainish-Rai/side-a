@@ -17,7 +17,7 @@ const NAV_TABS = [
 
 export function DesktopHeader() {
   const pathname = usePathname();
-  const { handleSearch, query } = useSearchContext();
+  const { handleSearch, query, setQuery } = useSearchContext();
 
   const isActive = (href: string, exact: boolean) => {
     if (exact) return pathname === href;
@@ -33,17 +33,21 @@ export function DesktopHeader() {
           <div className="grid grid-cols-[220px_auto_minmax(300px,1fr)_auto] items-center">
             {/* Logo */}
             <div className="flex h-full items-center border-r border-foreground/10 px-5">
-              <div className="flex items-center gap-3">
+              <Link
+                href="/"
+                className="flex items-center gap-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2"
+                aria-label="Go to homepage"
+              >
                 <AnimatedLogoMark className="text-foreground" />
                 <div>
-                  <h1 className="text-base font-mono uppercase leading-tight tracking-widest text-foreground">
+                  <h1 className="text-base font-mono uppercase leading-tight tracking-[0.2em] text-foreground">
                     SIDE A
                   </h1>
-                  <p className="text-[9px] font-mono uppercase tracking-widest text-foreground/40">
+                  <p className="text-[10px] font-mono uppercase tracking-[0.18em] text-foreground/70">
                     HI-FI SEARCH
                   </p>
                 </div>
-              </div>
+              </Link>
             </div>
 
             {/* Nav tabs */}
@@ -54,7 +58,7 @@ export function DesktopHeader() {
                   return active ? (
                     <span
                       key={href}
-                      className="relative inline-flex items-center gap-2 text-xs font-mono uppercase tracking-widest text-foreground"
+                      className="relative inline-flex items-center gap-2 text-[11px] font-mono uppercase tracking-[0.18em] text-foreground"
                     >
                       <Icon className="h-3.5 w-3.5" />
                       {label}
@@ -63,7 +67,7 @@ export function DesktopHeader() {
                     <Link
                       key={href}
                       href={href}
-                      className="inline-flex items-center gap-2 text-xs font-mono uppercase tracking-widest text-foreground/55 transition-colors hover:text-foreground/75"
+                      className="inline-flex items-center gap-2 text-[11px] font-mono uppercase tracking-[0.18em] text-foreground/65 transition-colors hover:text-foreground/85"
                     >
                       <Icon className="h-3.5 w-3.5" />
                       {label}
@@ -76,7 +80,12 @@ export function DesktopHeader() {
             {/* Search bar (only on search page) or spacer */}
             <div className="min-w-0 border-r border-foreground/10 px-5">
               {isSearchPage ? (
-                <SearchBar onSearch={handleSearch} isLoading={false} />
+                <SearchBar
+                  query={query}
+                  onQueryChange={setQuery}
+                  onSearch={handleSearch}
+                  isLoading={false}
+                />
               ) : (
                 <div className="h-[52px]" />
               )}

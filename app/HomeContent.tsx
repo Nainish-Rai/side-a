@@ -14,6 +14,8 @@ export function HomeContent() {
     searchMetadata,
     isLoading,
     currentTab,
+    lastQuery,
+    setQuery,
     handleSearch,
     handleTabChange,
     hasNextPage,
@@ -37,13 +39,25 @@ export function HomeContent() {
       {/* Mobile Header — shown only below lg breakpoint */}
       <div className="lg:hidden">
         <MobileSearchHeader
+          query={lastQuery}
+          onQueryChange={setQuery}
           onSearch={handleSearchWithTracking}
           isLoading={isLoading}
+          defaultExpanded
         />
       </div>
 
       {/* Content Area */}
       <div className="mx-auto max-w-6xl px-6 py-6 lg:py-8">
+        <div className="sr-only" aria-live="polite" aria-atomic="true">
+          {isLoading
+            ? `Searching for ${lastQuery || "music"}`
+            : hasResults
+              ? `${searchMetadata?.totalNumberOfItems ?? tracks.length + albums.length + artists.length} results for ${lastQuery || "music"}`
+                : hasSearched || !!lastQuery
+                ? `No results found for ${lastQuery}`
+                : "Ready to search music"}
+        </div>
         {hasResults || isLoading ? (
           <section className="border border-foreground/10">
             <SearchResults
@@ -69,10 +83,10 @@ export function HomeContent() {
                 <Search className="w-10 h-10 text-foreground/20 mx-auto" />
               </div>
               <h3 className="text-sm font-mono uppercase tracking-widest text-foreground/90 mb-2">
-                {hasSearched ? "NO RESULTS" : "SEARCH MUSIC"}
+                {hasSearched || lastQuery ? "NO RESULTS" : "SEARCH MUSIC"}
               </h3>
-              <p className="text-[11px] font-mono uppercase tracking-wider text-foreground/40">
-                {hasSearched
+              <p className="text-[11px] font-mono uppercase tracking-wider text-foreground/60">
+                {hasSearched || lastQuery
                   ? "Try different keywords"
                   : "Enter a song, album, or artist"}
               </p>

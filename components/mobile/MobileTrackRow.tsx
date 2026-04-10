@@ -17,6 +17,7 @@ import {
  SkipForward,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { TrackArtistLinks } from "@/components/tracks/TrackMetaLinks";
 
 interface MobileTrackRowProps {
  track: Track;
@@ -59,15 +60,6 @@ function MobileTrackRow({
   const coverId = track.album?.cover || track.album?.id;
   return coverId ? api.getCoverUrl(coverId, "160") : undefined;
  }, [track.album?.cover, track.album?.id]);
-
- // Memoize artist display computation
- const displayArtist = useMemo(() => {
-  const allArtists = track.artists || (track.artist ? [track.artist] : []);
-  const mainArtists = allArtists.filter((a) => a.type === "MAIN");
-  return mainArtists.length > 0
-   ? mainArtists.map((a) => a.name).join(", ")
-   : track.artist?.name || "Unknown Artist";
- }, [track.artists, track.artist]);
 
  // Memoize quality tags computation
  const qualityInfo = useMemo(() => {
@@ -231,7 +223,7 @@ function MobileTrackRow({
 
      <div className="flex items-center gap-2">
      <span className="text-[13px] text-foreground/50 truncate">
-      {displayArtist}
+      <TrackArtistLinks track={track} className="hover:text-foreground/70 transition-colors" />
      </span>
       {playlists.length > 0 && (
        <span
@@ -331,7 +323,9 @@ function MobileTrackRow({
          <div className="font-medium text-sm text-white truncate">
           {getTrackTitle(track)}
          </div>
-         <div className="text-xs text-white/50 truncate">{displayArtist}</div>
+         <div className="text-xs text-white/50 truncate">
+          <TrackArtistLinks track={track} className="hover:text-white/80 transition-colors" />
+         </div>
         </div>
        </div>
 

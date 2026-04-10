@@ -1,7 +1,7 @@
 "use client";
 
 import { useAudioPlayer, useQueue } from "@/contexts/AudioPlayerContext";
-import { getTrackTitle, getTrackArtists, formatTime } from "@/lib/api/utils";
+import { getTrackTitle, formatTime } from "@/lib/api/utils";
 import { X, Music2, GripVertical } from "lucide-react";
 import { useMemo, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
@@ -25,6 +25,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { TrackArtistLinks } from "@/components/tracks/TrackMetaLinks";
 
 interface QueueProps {
   isOpen: boolean;
@@ -34,7 +35,6 @@ interface QueueProps {
 interface SortableQueueItemProps {
   id: string;
   track: Track;
-  index: number;
   isCurrent: boolean;
   onPlay: () => void;
   onRemove: () => void;
@@ -43,7 +43,6 @@ interface SortableQueueItemProps {
 function SortableQueueItem({
   id,
   track,
-  index,
   isCurrent,
   onPlay,
   onRemove,
@@ -115,7 +114,7 @@ function SortableQueueItem({
           {getTrackTitle(track)}
         </div>
         <div className="text-xs text-foreground/50 truncate">
-          {getTrackArtists(track)}
+          <TrackArtistLinks track={track} className="hover:text-foreground/75 transition-colors" />
         </div>
       </div>
 
@@ -303,7 +302,6 @@ export function Queue({ isOpen, onClose }: QueueProps) {
                         key={sortableIds[index]}
                         id={sortableIds[index]}
                         track={track}
-                        index={index}
                         isCurrent={index === currentQueueIndex}
                         onPlay={() =>
                           index !== currentQueueIndex &&

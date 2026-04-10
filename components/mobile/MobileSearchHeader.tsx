@@ -7,18 +7,21 @@ import { AuthStatusButton } from "@/components/auth/AuthStatusButton";
 import { AnimatedLogoMark } from "@/components/layout/AnimatedLogoMark";
 
 interface MobileSearchHeaderProps {
+  query: string;
+  onQueryChange: (query: string) => void;
   onSearch: (query: string) => void;
   isLoading?: boolean;
-  initialQuery?: string;
+  defaultExpanded?: boolean;
 }
 
 export function MobileSearchHeader({
+  query,
+  onQueryChange,
   onSearch,
   isLoading = false,
-  initialQuery = "",
+  defaultExpanded = false,
 }: MobileSearchHeaderProps) {
-  const [query, setQuery] = useState(initialQuery);
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = useCallback(
@@ -26,21 +29,19 @@ export function MobileSearchHeader({
       e.preventDefault();
       if (query.trim()) {
         onSearch(query.trim());
-        // Blur input after search on mobile
         inputRef.current?.blur();
       }
     },
-    [query, onSearch]
+    [query, onSearch],
   );
 
   const handleClear = useCallback(() => {
-    setQuery("");
+    onQueryChange("");
     inputRef.current?.focus();
-  }, []);
+  }, [onQueryChange]);
 
   const handleExpand = useCallback(() => {
     setIsExpanded(true);
-    // Focus input after animation
     setTimeout(() => inputRef.current?.focus(), 100);
   }, []);
 
@@ -49,7 +50,6 @@ export function MobileSearchHeader({
     inputRef.current?.blur();
   }, []);
 
-  // Close on escape key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && isExpanded) {
@@ -63,107 +63,107 @@ export function MobileSearchHeader({
   return (
     <header className="sticky top-0 z-30 border-b border-foreground/10 bg-background lg:hidden">
       <div className="px-4 pt-3">
-          {isExpanded ? (
-            <form
-              onSubmit={handleSubmit}
-              className="flex items-center gap-3 border border-foreground/10 px-2 py-2"
+        {isExpanded ? (
+          <form
+            onSubmit={handleSubmit}
+            className="flex items-center gap-3 border border-foreground/10 px-2 py-2"
+            role="search"
+          >
+            <button
+              type="button"
+              onClick={handleCollapse}
+              className="flex h-10 w-10 items-center justify-center text-foreground/70 active:bg-foreground/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2"
+              aria-label="Close search"
             >
-              {/* Back button */}
-              <button
-                type="button"
-                onClick={handleCollapse}
-                className="w-10 h-10 flex items-center justify-center text-foreground/70 active:bg-foreground/10"
-                aria-label="Close search"
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+
+            <div className="relative flex-1">
+              <input
+                ref={inputRef}
+                type="text"
+                value={query}
+                onChange={(e) => onQueryChange(e.target.value)}
+                placeholder="Search music"
+                aria-label="Search music"
+                disabled={isLoading}
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck={false}
+                enterKeyHint="search"
+                className="w-full border-b-2 border-foreground bg-transparent py-2 text-base font-mono text-foreground placeholder-foreground/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2 disabled:opacity-50"
+              />
+
+              {query && !isLoading && (
+                <button
+                  type="button"
+                  onClick={handleClear}
+                  className="absolute right-0 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center text-foreground/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2"
+                  aria-label="Clear search"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              )}
+            </div>
+          </form>
+        ) : (
+          <div className="border border-foreground/10">
+            <div className="grid grid-cols-[1fr_auto]">
+              <Link
+                href="/"
+                className="flex items-center gap-3 border-r border-foreground/10 px-3 py-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2"
+                aria-label="Go to homepage"
               >
-                <ArrowLeft className="w-5 h-5" />
-              </button>
+                <AnimatedLogoMark className="text-foreground" />
 
-              {/* Input container */}
-              <div className="flex-1 relative">
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search music"
-                  disabled={isLoading}
-                  autoComplete="off"
-                  autoCorrect="off"
-                  autoCapitalize="off"
-                  spellCheck={false}
-                  enterKeyHint="search"
-                  className="w-full py-2 text-base font-mono
-                           bg-transparent border-b-2 border-foreground
-                           text-foreground placeholder-foreground/30
-                           focus:outline-none
-                           disabled:opacity-50"
-                />
-
-                {/* Clear button */}
-                {query && !isLoading && (
-                  <button
-                    type="button"
-                    onClick={handleClear}
-                    className="absolute right-0 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center text-foreground/40"
-                    aria-label="Clear search"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                )}
-              </div>
-            </form>
-          ) : (
-            <div className="border border-foreground/10">
-              {/* Logo */}
-              <div className="grid grid-cols-[1fr_auto]">
-                <div className="flex items-center gap-3 px-3 py-3 border-r border-foreground/10">
-                  <AnimatedLogoMark className="text-foreground" />
-
-                  <div>
-                    <h1 className="text-sm font-mono uppercase tracking-widest text-foreground leading-tight">
-                      SIDE A
-                    </h1>
-                    <p className="text-[10px] font-mono uppercase tracking-widest text-foreground/40">
-                      HI-FI SEARCH
-                    </p>
-                  </div>
+                <div>
+                  <h1 className="text-sm font-mono uppercase leading-tight tracking-widest text-foreground">
+                    SIDE A
+                  </h1>
+                  <p className="text-[10px] font-mono uppercase tracking-widest text-foreground/60">
+                    HI-FI SEARCH
+                  </p>
                 </div>
+              </Link>
 
-                {/* Search button */}
-                <div className="flex items-center px-1">
-                  <div className="pr-1">
-                    <AuthStatusButton />
-                  </div>
-                  <Link
-                    href="/library"
-                    className="w-10 h-10 flex items-center justify-center text-foreground/60"
-                    aria-label="Open library"
-                  >
-                    <Library className="w-5 h-5" />
-                  </Link>
-                  <Link
-                    href="/playlists"
-                    className="w-10 h-10 flex items-center justify-center text-foreground/60"
-                    aria-label="Open playlists"
-                  >
-                    <ListMusic className="w-5 h-5" />
-                  </Link>
-                  <button
-                    onClick={handleExpand}
-                    className="relative flex h-10 w-10 items-center justify-center text-foreground"
-                    aria-label="Open search"
-                  >
-                    <Search className="w-5 h-5" />
-                    <span className="absolute bottom-0 left-2 right-2 h-[2px] bg-foreground" />
-                  </button>
+              <div className="flex items-center px-1">
+                <div className="pr-1">
+                  <AuthStatusButton />
                 </div>
+                <Link
+                  href="/library"
+                  className="flex h-10 w-10 items-center justify-center text-foreground/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2"
+                  aria-label="Open library"
+                >
+                  <Library className="h-5 w-5" />
+                </Link>
+                <Link
+                  href="/playlists"
+                  className="flex h-10 w-10 items-center justify-center text-foreground/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2"
+                  aria-label="Open playlists"
+                >
+                  <ListMusic className="h-5 w-5" />
+                </Link>
+                <button
+                  type="button"
+                  onClick={handleExpand}
+                  className="relative flex h-10 w-10 items-center justify-center text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2"
+                  aria-label="Open search"
+                >
+                  <Search className="h-5 w-5" />
+                  <span className="absolute bottom-0 left-2 right-2 h-[2px] bg-foreground" />
+                </button>
               </div>
             </div>
-          )}
+          </div>
+        )}
 
-        {/* Loading indicator */}
         {isLoading && (
-          <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-foreground/10 overflow-hidden">
+          <div
+            className="absolute bottom-0 left-0 right-0 h-[2px] overflow-hidden bg-foreground/10"
+            aria-hidden="true"
+          >
             <div className="h-full w-1/3 animate-[loading-line_1s_linear_infinite] bg-foreground" />
           </div>
         )}

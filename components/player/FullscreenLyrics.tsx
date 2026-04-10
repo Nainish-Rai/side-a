@@ -3,9 +3,9 @@
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
-import { useLyrics } from "@/hooks/useLyrics";
 import { Track, LyricsData } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
+import { TrackArtistLinks } from "@/components/tracks/TrackMetaLinks";
 import "@/styles/lyrics.css";
 
 interface KaraokeViewProps {
@@ -25,8 +25,6 @@ export function FullscreenLyrics({
   track,
   lyrics,
   currentLineIndex,
-  isLoading,
-  error,
   onSeek,
 }: KaraokeViewProps) {
   const activeLineRef = useRef<HTMLDivElement>(null);
@@ -139,15 +137,12 @@ export function FullscreenLyrics({
                     {track.title}
                   </h2>
                   <p className="text-sm text-foreground/60 line-clamp-1">
-                    {track.artists?.map((a) => a.name).join(", ") ||
-                      track.artist?.name ||
-                      "Unknown Artist"}
+                    <TrackArtistLinks track={track} className="hover:text-foreground/80 transition-colors" />
                   </p>
                 </div>
               </div>
               {lyrics.parsed.map((line, index) => {
                 const isActive = index === currentLineIndex;
-                const isPast = index < currentLineIndex;
 
                 return (
                   <div

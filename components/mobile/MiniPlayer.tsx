@@ -1,11 +1,12 @@
 "use client";
 
 import { usePlaybackState, useQueue, useAudioPlayer } from "@/contexts/AudioPlayerContext";
-import { getTrackTitle, getTrackArtists } from "@/lib/api/utils";
+import { getTrackTitle } from "@/lib/api/utils";
 import { Play, Pause, SkipForward, ChevronUp } from "lucide-react";
 import { motion, PanInfo, useAnimation } from "motion/react";
 import Image from "next/image";
 import { useCallback } from "react";
+import { TrackArtistLinks } from "@/components/tracks/TrackMetaLinks";
 
 interface MiniPlayerProps {
   onExpand: () => void;
@@ -95,14 +96,16 @@ export function MiniPlayer({ onExpand }: MiniPlayerProps) {
         )}
 
         {/* Title & Artist */}
-        <button onClick={onExpand} className="flex-1 min-w-0 text-left">
-          <p className="text-[13px] font-medium text-foreground/90 truncate leading-tight">
-            {getTrackTitle(currentTrack)}
-          </p>
+        <div className="flex-1 min-w-0">
+          <button onClick={onExpand} className="w-full text-left">
+            <p className="text-[13px] font-medium text-foreground/90 truncate leading-tight">
+              {getTrackTitle(currentTrack)}
+            </p>
+          </button>
           <p className="text-[11px] text-foreground/50 truncate leading-tight">
-            {getTrackArtists(currentTrack)}
+            <TrackArtistLinks track={currentTrack} className="hover:text-foreground/80 transition-colors" />
           </p>
-        </button>
+        </div>
 
         {/* Play/Pause */}
         <button

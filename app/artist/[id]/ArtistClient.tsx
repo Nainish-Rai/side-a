@@ -10,11 +10,12 @@ import {
   useQueue,
 } from "@/contexts/AudioPlayerContext";
 import { ArrowLeft, Pause, Play, User2, FolderPlus } from "lucide-react";
-import { getTrackArtists, getTrackTitle, formatTime } from "@/lib/api/utils";
+import { getTrackTitle, formatTime } from "@/lib/api/utils";
 import { AudioPlayer } from "@/components/player/AudioPlayer";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { TrackPlaylistPickerDialog } from "@/components/playlists/PlaylistDialogs";
 import { useLibrary } from "@/contexts/LibraryContext";
+import { TrackAlbumLink, TrackArtistLinks } from "@/components/tracks/TrackMetaLinks";
 
 interface ArtistClientProps {
   artist: Artist;
@@ -241,7 +242,11 @@ export function ArtistClient({ artist, topTracks, discography }: ArtistClientPro
                               : "text-foreground/50 hover:text-foreground/70"
                           }`}
                         >
-                          {getTrackArtists(track, { fallback: artist.name || "Unknown Artist" })}
+                          <TrackArtistLinks
+                            track={track}
+                            fallbackArtist={artist.name || "Unknown Artist"}
+                            className="hover:text-foreground/80 transition-colors"
+                          />
                         </p>
                         {playlists.length > 0 && (
                           <p
@@ -255,7 +260,11 @@ export function ArtistClient({ artist, topTracks, discography }: ArtistClientPro
 
                       <div className="hidden md:block min-w-0 text-right">
                         <span className="text-[13px] text-foreground/30 italic truncate block">
-                          {albumTitle}
+                          <TrackAlbumLink
+                            track={track}
+                            fallbackAlbum={albumTitle}
+                            className="hover:text-foreground/55 transition-colors"
+                          />
                         </span>
                       </div>
 

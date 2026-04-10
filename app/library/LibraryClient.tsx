@@ -51,10 +51,10 @@ function TrackSection({
  return (
   <section className="space-y-3">
    <div className="flex items-center justify-between">
-    <h2 className="text-xs font-mono uppercase tracking-widest text-foreground/90">
+    <h2 className="text-xs font-mono uppercase tracking-[0.18em] text-foreground/90">
      {title}
     </h2>
-    <span className="text-[10px] font-mono uppercase tracking-widest text-foreground/40">
+    <span className="text-[11px] font-mono uppercase tracking-[0.16em] text-foreground/55">
      {tracks.length}
     </span>
    </div>
@@ -70,20 +70,20 @@ function TrackSection({
      {!isMobile && (
       <div className="border-b border-foreground/10">
        <div className="grid grid-cols-[50px_40px_1fr_180px_120px_80px] gap-4 px-6 py-3">
-        <span className="text-center text-[10px] font-mono uppercase tracking-widest text-foreground/40">
+        <span className="text-center text-[11px] font-mono uppercase tracking-[0.16em] text-foreground/55">
          #
         </span>
         <span />
-        <span className="text-[10px] font-mono uppercase tracking-widest text-foreground/40">
+        <span className="text-[11px] font-mono uppercase tracking-[0.16em] text-foreground/55">
          Title
         </span>
-        <span className="text-[10px] font-mono uppercase tracking-widest text-foreground/40">
+        <span className="text-[11px] font-mono uppercase tracking-[0.16em] text-foreground/55">
          Album
         </span>
-        <span className="text-[10px] font-mono uppercase tracking-widest text-foreground/40">
+        <span className="text-[11px] font-mono uppercase tracking-[0.16em] text-foreground/55">
          Quality
         </span>
-        <span className="text-right text-[10px] font-mono uppercase tracking-widest text-foreground/40">
+        <span className="text-right text-[11px] font-mono uppercase tracking-[0.16em] text-foreground/55">
          Time
         </span>
        </div>

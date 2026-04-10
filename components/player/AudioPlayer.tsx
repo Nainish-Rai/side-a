@@ -5,7 +5,7 @@ import {
  usePlaybackState,
  useQueue,
 } from "@/contexts/AudioPlayerContext";
-import { formatTime, getTrackTitle, getTrackArtists } from "@/lib/api/utils";
+import { formatTime, getTrackTitle } from "@/lib/api/utils";
 import {
  Play,
  Pause,
@@ -69,6 +69,7 @@ const StatsForNerds = dynamic(
 );
 import { useLyrics } from "@/hooks/useLyrics";
 import Image from "next/image";
+import { TrackArtistLinks } from "@/components/tracks/TrackMetaLinks";
 
 const SEGMENT_COUNT = 300;
 
@@ -219,20 +220,20 @@ export function AudioPlayer() {
 
       <div className="flex-1 min-w-0">
        <div className="flex items-center gap-2">
-        <div className=" text-xs truncate text-foreground tracking-tight">
+        <div className="text-[13px] font-medium truncate text-foreground tracking-tight">
          {getTrackTitle(currentTrack)}
         </div>
         {currentQuality && (
          <button
           onClick={() => setIsStatsOpen(true)}
-          className="px-1.5 py-0.5 bg-foreground/10 hover:bg-foreground/20 transition-colors text-[10px] text-foreground/60 tracking-wider border border-foreground/20 flex-shrink-0"
+          className="px-1.5 py-0.5 bg-foreground/10 hover:bg-foreground/20 transition-colors text-[11px] font-mono uppercase text-foreground/65 tracking-[0.12em] border border-foreground/20 flex-shrink-0"
          >
           {currentQuality}
          </button>
         )}
        </div>
-       <div className=" text-[10px] text-foreground/40 truncate tracking-tight">
-        {getTrackArtists(currentTrack)}
+       <div className="text-[11px] text-foreground/60 truncate tracking-tight">
+        <TrackArtistLinks track={currentTrack} className="hover:text-foreground/80 transition-colors" />
        </div>
       </div>
      </div>

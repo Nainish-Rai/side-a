@@ -3,10 +3,11 @@
 import React, { memo, useMemo } from "react";
 import { Track } from "@/lib/api/types";
 import { getTrackTitle, formatTime } from "@/lib/api/utils";
-import { Play, Pause, Disc, TrendingUp, Clock } from "lucide-react";
+import { Play, Disc } from "lucide-react";
 import { api } from "@/lib/api";
 import Image from "next/image";
 import { motion } from "motion/react";
+import { TrackAlbumLink, TrackArtistLinks } from "@/components/tracks/TrackMetaLinks";
 
 interface SearchResultCardProps {
   track: Track;
@@ -29,15 +30,6 @@ function SearchResultCard({
     return coverId ? api.getCoverUrl(coverId, "320") : undefined;
   }, [track.album?.cover, track.album?.id]);
 
-  // Memoize artist display computation
-  const displayArtist = useMemo(() => {
-    const allArtists = track.artists || (track.artist ? [track.artist] : []);
-    const mainArtists = allArtists.filter((a) => a.type === "MAIN");
-    return mainArtists.length > 0
-      ? mainArtists.map(a => a.name).join(", ")
-      : track.artist?.name || "Unknown Artist";
-  }, [track.artists, track.artist]);
-
   const isExplicit = track.explicit;
 
   // Memoize quality tags computation
@@ -50,7 +42,7 @@ function SearchResultCard({
     };
   }, [track.mediaMetadata?.tags]);
 
-  const { hasHiRes, hasLossless, hasDolbyAtmos } = qualityInfo;
+  const { hasHiRes, hasDolbyAtmos } = qualityInfo;
 
   return (
     <motion.div
@@ -121,7 +113,7 @@ function SearchResultCard({
         </div>
         <div className="flex items-center gap-2 text-sm text-foreground/50">
            <span className="truncate hover:text-foreground/70 transition-colors">
-               {displayArtist}
+               <TrackArtistLinks track={track} className="hover:text-foreground/70 transition-colors" />
            </span>
            {/* Quality Badges - Inline */}
            {hasDolbyAtmos && (
@@ -139,7 +131,7 @@ function SearchResultCard({
 
       {/* Album (Hidden on small screens) */}
       <div className="hidden lg:flex flex-1 min-w-0 items-center text-sm text-foreground/40 truncate group-hover:text-foreground/60 transition-colors">
-        {track.album?.title}
+        <TrackAlbumLink track={track} className="hover:text-foreground/70 transition-colors" />
       </div>
 
       {/* Duration */}

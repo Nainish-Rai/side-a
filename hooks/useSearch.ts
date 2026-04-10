@@ -223,11 +223,12 @@ export function useSearch() {
    }
   },
 
-  // State
+ // State
   currentTab: currentTab,
   lastQuery: query,
 
   // Actions
+  setQuery,
   handleSearch,
   handleTabChange,
   clearSearch,

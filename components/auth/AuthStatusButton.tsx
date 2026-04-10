@@ -10,7 +10,7 @@ export function AuthStatusButton() {
 
   if (isPending) {
     return (
-      <span className="text-[10px] font-mono uppercase tracking-widest text-foreground/40">
+      <span className="text-[11px] font-mono uppercase tracking-[0.16em] text-foreground/65">
         AUTH LOADING
       </span>
     );
@@ -20,7 +20,7 @@ export function AuthStatusButton() {
     return (
       <Link
         href="/login"
-        className="text-[10px] font-mono uppercase tracking-widest text-foreground/40 hover:text-foreground/70"
+        className="text-[11px] font-mono uppercase tracking-[0.16em] text-foreground/65 transition-colors hover:text-foreground/85"
       >
         Login
       </Link>
@@ -34,7 +34,7 @@ export function AuthStatusButton() {
         await authClient.signOut();
         router.refresh();
       }}
-      className="text-[10px] font-mono uppercase tracking-widest text-foreground/40 hover:text-foreground/70"
+      className="text-[11px] font-mono uppercase tracking-[0.16em] text-foreground/65 transition-colors hover:text-foreground/85"
       title={data.user.email || "Signed in"}
     >
       Logout

@@ -10,11 +10,12 @@ import {
  useQueue,
 } from "@/contexts/AudioPlayerContext";
 import { Play, Pause, ArrowLeft, Music2, Heart, FolderPlus } from "lucide-react";
-import { getTrackTitle, getTrackArtists, formatTime } from "@/lib/api/utils";
+import { getTrackTitle, formatTime } from "@/lib/api/utils";
 import { AudioPlayer } from "@/components/player/AudioPlayer";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useLibrary } from "@/contexts/LibraryContext";
 import { TrackPlaylistPickerDialog } from "@/components/playlists/PlaylistDialogs";
+import { TrackAlbumLink, TrackArtistLinks } from "@/components/tracks/TrackMetaLinks";
 
 interface AlbumClientProps {
  album: Album;
@@ -252,7 +253,7 @@ export function AlbumClient({ album, tracks }: AlbumClientProps) {
           <p
            className={`text-[13px] truncate transition-colors ${isCurrent ? "text-foreground/70" : "text-foreground/50 hover:text-foreground/70"}`}
           >
-           {getTrackArtists(track)}
+           <TrackArtistLinks track={track} className="hover:text-foreground/80 transition-colors" />
           </p>
           {playlists.length > 0 && (
            <p
@@ -267,7 +268,7 @@ export function AlbumClient({ album, tracks }: AlbumClientProps) {
          {/* Album - Hidden on mobile */}
          <div className="hidden md:block min-w-0">
           <span className="text-[13px] text-foreground/30 italic truncate">
-           {album.title}
+           <TrackAlbumLink track={track} fallbackAlbum={album.title} className="hover:text-foreground/55 transition-colors" />
           </span>
          </div>
 

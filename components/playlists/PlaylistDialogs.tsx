@@ -18,7 +18,8 @@ import {
 import { toast } from "sonner";
 import type { Track, UserPlaylist } from "@/lib/api/types";
 import { useLibrary } from "@/contexts/LibraryContext";
-import { getTrackArtists, getTrackTitle } from "@/lib/api/utils";
+import { getTrackTitle } from "@/lib/api/utils";
+import { TrackArtistLinks } from "@/components/tracks/TrackMetaLinks";
 import type {
   ImportedPlaylist,
   ImportedPlaylistTrack,
@@ -994,7 +995,7 @@ function TrackPlaylistPickerDialogBody({
           {getTrackTitle(track)}
         </p>
         <p className="mt-1 truncate text-[12px] text-foreground/50">
-          {getTrackArtists(track)}
+          <TrackArtistLinks track={track} className="hover:text-foreground/75 transition-colors" />
         </p>
       </div>
 

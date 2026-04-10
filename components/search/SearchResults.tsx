@@ -327,7 +327,7 @@ export function SearchResults({
           <p className="text-sm font-mono uppercase tracking-widest text-foreground/90">
             NO RESULTS FOUND
           </p>
-          <p className="mt-2 text-[11px] font-mono uppercase tracking-wider text-foreground/40">
+          <p className="mt-2 text-[11px] font-mono uppercase tracking-wider text-foreground/60">
             Try another search term
           </p>
         </div>
@@ -384,7 +384,7 @@ export function SearchResults({
 
       {/* Results Count Block */}
       <div className="border-b border-foreground/10 px-4 lg:px-6 py-3">
-        <div className="text-[10px] font-mono uppercase tracking-widest text-foreground/40">
+        <div className="text-[10px] font-mono uppercase tracking-widest text-foreground/60">
           {totalNumberOfItems !== undefined
             ? `${totalNumberOfItems.toLocaleString()} ${contentType}`
             : `${items.length} ${contentType}`}

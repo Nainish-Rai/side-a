@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 import { useLibrary } from "@/contexts/LibraryContext";
 import Image from "next/image";
 import { Disc, FolderPlus, Heart, ListPlus, SkipForward } from "lucide-react";
+import { TrackAlbumLink, TrackArtistLinks } from "@/components/tracks/TrackMetaLinks";
 
 interface TrackRowProps {
  track: Track;
@@ -41,15 +42,6 @@ function TrackRow({
   const coverId = track.album?.cover || track.album?.id;
   return coverId ? api.getCoverUrl(coverId, "80") : undefined;
  }, [track.album?.cover, track.album?.id]);
-
- // Memoize artist display computation
- const displayArtist = useMemo(() => {
-  const allArtists = track.artists || (track.artist ? [track.artist] : []);
-  const mainArtists = allArtists.filter((a) => a.type === "MAIN");
-  return mainArtists.length > 0
-   ? mainArtists.map((a) => a.name).join(", ")
-   : track.artist?.name || "Unknown Artist";
- }, [track.artists, track.artist]);
 
  const isExplicit = track.explicit;
 
@@ -129,25 +121,25 @@ function TrackRow({
    <div className="min-w-0">
     <div className="flex items-center gap-2 mb-1">
      <h3
-      className={`font-medium text-[14px] truncate transition-colors tracking-[-0.01em] ${
+      className={`text-[15px] leading-5 font-medium truncate transition-colors tracking-[-0.01em] ${
        isCurrentTrack ? "text-foreground" : "text-foreground/90 group-hover:text-foreground"
       }`}
      >
       {getTrackTitle(track)}
      </h3>
      {isExplicit && (
-      <span className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 border border-foreground/20 text-foreground/60 font-mono uppercase tracking-wider">
+      <span className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 border border-foreground/20 text-foreground/65 font-mono uppercase tracking-[0.12em]">
        E
       </span>
      )}
     </div>
     <div className="flex items-center gap-2 flex-wrap">
-     <span className="text-[12px] text-foreground/50 group-hover:text-foreground/70 transition-colors truncate">
-     {displayArtist}
+     <span className="text-[13px] text-foreground/65 group-hover:text-foreground/80 transition-colors truncate">
+      <TrackArtistLinks track={track} className="hover:text-foreground" />
      </span>
      {playlists.length > 0 && (
       <span
-       className="shrink-0 text-[10px] font-mono uppercase tracking-wider text-foreground/35"
+       className="shrink-0 text-[11px] font-mono uppercase tracking-[0.12em] text-foreground/45"
        title={playlistLabel}
       >
        PL {playlists.length}
@@ -156,12 +148,12 @@ function TrackRow({
      {/* Quality Badges on Mobile */}
      <div className="flex items-center gap-1.5 md:hidden">
       {hasDolbyAtmos && (
-       <span className="text-[10px] font-bold font-mono px-1.5 py-0.5 border border-foreground/20 text-foreground/60 uppercase tracking-wider">
+       <span className="text-[11px] font-bold font-mono px-1.5 py-0.5 border border-foreground/20 text-foreground/65 uppercase tracking-[0.12em]">
         ATMOS
        </span>
       )}
       {hasHiRes && (
-       <span className="text-[10px] font-bold font-mono px-1.5 py-0.5 border border-foreground/20 text-foreground/60 uppercase tracking-wider">
+       <span className="text-[11px] font-bold font-mono px-1.5 py-0.5 border border-foreground/20 text-foreground/65 uppercase tracking-[0.12em]">
         HI-RES
        </span>
       )}
@@ -169,29 +161,29 @@ function TrackRow({
     </div>
     {/* Album name on mobile - shown under artist */}
     <div className="md:block lg:hidden mt-0.5">
-     <span className="text-[12px] text-foreground/30 italic truncate block">
-      {track.album?.title}
+     <span className="text-[13px] text-foreground/45 truncate block">
+      <TrackAlbumLink track={track} className="hover:text-foreground/65 transition-colors" />
      </span>
     </div>
    </div>
 
    {/* Album (Hidden on mobile, shown on desktop) */}
    <div className="hidden lg:block min-w-0">
-    <span className="text-[13px] text-foreground/30 group-hover:text-foreground/50 transition-colors italic truncate block">
-     {track.album?.title}
+    <span className="text-[13px] text-foreground/45 group-hover:text-foreground/65 transition-colors truncate block">
+     <TrackAlbumLink track={track} className="hover:text-foreground/80 transition-colors" />
     </span>
    </div>
 
    {/* Quality Badges (Desktop only) */}
    <div className="hidden lg:flex items-center gap-1.5">
     {hasDolbyAtmos && (
-     <span className="text-[10px] font-bold font-mono px-1.5 py-0.5 border border-foreground/20 text-foreground/60 uppercase tracking-wider">
+     <span className="text-[11px] font-bold font-mono px-1.5 py-0.5 border border-foreground/20 text-foreground/65 uppercase tracking-[0.12em]">
       ATMOS
      </span>
     )}
 
     {track.audioQuality && (
-     <span className="text-[10px] font-bold font-mono px-1.5 py-0.5 border border-foreground/20 text-foreground/60 uppercase tracking-wider">
+     <span className="text-[11px] font-bold font-mono px-1.5 py-0.5 border border-foreground/20 text-foreground/65 uppercase tracking-[0.12em]">
       {track.audioQuality}
      </span>
     )}
@@ -206,7 +198,7 @@ function TrackRow({
         event.stopPropagation();
         onPlayNext();
        }}
-       className="text-foreground/30 hover:text-foreground/80 transition-colors opacity-0 group-hover:opacity-100"
+       className="text-foreground/45 hover:text-foreground/80 transition-colors opacity-0 group-hover:opacity-100"
        aria-label="Play next"
       >
        <SkipForward className="w-3.5 h-3.5" />
@@ -219,7 +211,7 @@ function TrackRow({
         event.stopPropagation();
         onAddToPlaylist();
        }}
-       className="text-foreground/30 hover:text-foreground/80 transition-colors opacity-0 group-hover:opacity-100"
+       className="text-foreground/45 hover:text-foreground/80 transition-colors opacity-0 group-hover:opacity-100"
        aria-label="Add to playlist"
       >
        <FolderPlus className="w-3.5 h-3.5" />
@@ -232,7 +224,7 @@ function TrackRow({
         event.stopPropagation();
         onAddToQueue();
        }}
-       className="text-foreground/30 hover:text-foreground/80 transition-colors opacity-0 group-hover:opacity-100"
+       className="text-foreground/45 hover:text-foreground/80 transition-colors opacity-0 group-hover:opacity-100"
        aria-label="Add to queue"
       >
        <ListPlus className="w-3.5 h-3.5" />
@@ -245,7 +237,7 @@ function TrackRow({
         event.stopPropagation();
         onToggleLike();
        }}
-       className="text-foreground/40 hover:text-foreground/80 transition-colors"
+       className="text-foreground/50 hover:text-foreground/80 transition-colors"
        aria-label={isLiked ? "Unlike track" : "Like track"}
       >
       <Heart
@@ -253,7 +245,7 @@ function TrackRow({
       />
      </button>
     )}
-    <span className="text-[12px] font-mono text-foreground/40 group-hover:text-foreground/60 transition-colors tabular-nums">
+    <span className="text-[12px] font-mono text-foreground/55 group-hover:text-foreground/70 transition-colors tabular-nums">
      {formatTime(track.duration)}
     </span>
    </div>

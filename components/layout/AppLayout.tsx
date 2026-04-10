@@ -55,6 +55,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
    {/* Desktop: margin for sidebar + padding for audio player */}
    {/* Mobile: padding for mini player */}
    <main
+    id="main-content"
     className="min-h-screen "
     style={{
      paddingBottom: currentTrack

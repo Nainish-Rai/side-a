@@ -5,7 +5,7 @@ import {
  usePlaybackState,
  useQueue,
 } from "@/contexts/AudioPlayerContext";
-import { getTrackTitle, getTrackArtists, formatTime } from "@/lib/api/utils";
+import { getTrackTitle, formatTime } from "@/lib/api/utils";
 import {
  ChevronDown,
  ChevronLeft,
@@ -44,6 +44,7 @@ import {
  verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { TrackArtistLinks } from "@/components/tracks/TrackMetaLinks";
 
 interface FullscreenPlayerProps {
  isOpen: boolean;
@@ -56,13 +57,11 @@ type Tab = "queue" | "lyrics" | null;
 function DesktopSortableQueueItem({
  id,
  track,
- index,
  isCurrent,
  onPlay,
 }: {
  id: string;
  track: Track;
- index: number;
  isCurrent: boolean;
  onPlay: () => void;
 }) {
@@ -126,7 +125,7 @@ function DesktopSortableQueueItem({
      {getTrackTitle(track)}
     </div>
     <div className="text-xs text-foreground/50 truncate">
-     {getTrackArtists(track)}
+     <TrackArtistLinks track={track} className="hover:text-foreground/75 transition-colors" />
     </div>
    </div>
 
@@ -141,13 +140,11 @@ function DesktopSortableQueueItem({
 function MobileSortableQueueItem({
  id,
  track,
- index,
  isCurrent,
  onPlay,
 }: {
  id: string;
  track: Track;
- index: number;
  isCurrent: boolean;
  onPlay: () => void;
 }) {
@@ -206,7 +203,7 @@ function MobileSortableQueueItem({
      {getTrackTitle(track)}
     </div>
     <div className="text-xs text-foreground/50 truncate">
-     {getTrackArtists(track)}
+     <TrackArtistLinks track={track} className="hover:text-foreground/75 transition-colors" />
     </div>
    </div>
 
@@ -238,8 +235,6 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
 
  const [activeTab, setActiveTab] = useState<"queue" | "lyrics">("queue");
  const [expandedTab, setExpandedTab] = useState<Tab>(null); // Mobile only
- const [autoPlay, setAutoPlay] = useState(true);
-
  const {
   lyrics,
   currentLineIndex,
@@ -457,7 +452,7 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
            {getTrackTitle(currentTrack)}
           </h1>
           <p className="text-sm md:text-base text-foreground/50 line-clamp-1">
-           {getTrackArtists(currentTrack)}
+           <TrackArtistLinks track={currentTrack} className="hover:text-foreground/75 transition-colors" />
           </p>
          </div>
 
@@ -563,7 +558,6 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
              key={sortableIds[index]}
              id={sortableIds[index]}
              track={track}
-             index={index}
              isCurrent={index === currentQueueIndex}
              onPlay={() => handleTrackPlay(track, index)}
             />
@@ -625,7 +619,7 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
            {getTrackTitle(currentTrack)}
           </h1>
           <p className="text-sm text-foreground/60 truncate mt-0.5">
-           {getTrackArtists(currentTrack)}
+           <TrackArtistLinks track={currentTrack} className="hover:text-foreground/80 transition-colors" />
           </p>
          </div>
 
@@ -740,7 +734,6 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
               key={sortableIds[index]}
               id={sortableIds[index]}
               track={track}
-              index={index}
               isCurrent={index === currentQueueIndex}
               onPlay={() => handleTrackPlay(track, index)}
              />
