@@ -27,6 +27,7 @@ import { createPortal } from "react-dom";
 import { useLyrics } from "@/hooks/useLyrics";
 import { LyricsPanel } from "./LyricsPanel";
 import type { Track } from "@/lib/api/types";
+import type { RecommendationSection } from "@/lib/recommendations/types";
 import {
  DndContext,
  closestCenter,
@@ -45,6 +46,9 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { TrackArtistLinks } from "@/components/tracks/TrackMetaLinks";
+import { toast } from "sonner";
+import { musicApi } from "@/lib/api";
+import { fetchRecommendationSections } from "@/lib/recommendations/client";
 
 interface FullscreenPlayerProps {
  isOpen: boolean;
@@ -52,6 +56,167 @@ interface FullscreenPlayerProps {
 }
 
 type Tab = "queue" | "lyrics" | null;
+
+function getPrimaryArtistName(track: Track): string {
+ return (
+  track.artist?.name ||
+  track.artists?.find((artist) => artist.type === "MAIN")?.name ||
+  track.artists?.[0]?.name ||
+  "Unknown Artist"
+ );
+}
+
+function inferTrackProvider(track: Track): "tidal" | "qobuz" {
+ return String(track.id).startsWith("q:") ? "qobuz" : "tidal";
+}
+
+function getRecommendationCoverUrl(track: Track): string | null {
+ const coverId = track.album?.cover || track.album?.id;
+ if (!coverId) return null;
+ return musicApi.getCoverUrl(coverId, "160", inferTrackProvider(track));
+}
+
+function RecommendationRows({
+ sections,
+ loading,
+ error,
+ currentTrackId,
+ onPlaySectionTrack,
+ onAddToQueue,
+ onPlayNext,
+}: {
+ sections: RecommendationSection[];
+ loading: boolean;
+ error: string | null;
+ currentTrackId?: number | string;
+ onPlaySectionTrack: (section: RecommendationSection, index: number) => void;
+ onAddToQueue: (track: Track) => void;
+ onPlayNext: (track: Track) => void;
+}) {
+ if (loading) {
+  return (
+    <div className="border-t border-foreground/10 px-6 py-6">
+     <div className="text-[10px] font-mono uppercase tracking-[0.16em] text-foreground/40">
+     Building recommendations...
+     </div>
+    </div>
+  );
+ }
+
+ if (error) {
+  return (
+   <div className="border-t border-foreground/10 px-6 py-6">
+    <div className="text-[10px] font-mono uppercase tracking-[0.16em] text-foreground/40">
+     {error}
+    </div>
+   </div>
+  );
+ }
+
+ if (sections.length === 0) {
+  return (
+   <div className="border-t border-foreground/10 px-6 py-6">
+    <div className="text-[10px] font-mono uppercase tracking-[0.16em] text-foreground/40">
+     No track-context recommendations yet.
+    </div>
+   </div>
+  );
+ }
+
+ return (
+  <div className="border-t border-foreground/10">
+   {sections.map((section) => (
+    <section key={section.id} className="border-b border-foreground/10 last:border-b-0">
+     <div className="px-6 py-4">
+      <div className="flex items-start justify-between gap-4">
+       <div>
+        <h3 className="text-[10px] font-mono uppercase tracking-[0.18em] text-foreground/75">
+         {section.title}
+        </h3>
+        {section.subtitle ? (
+         <p className="mt-1 text-xs text-foreground/45 leading-relaxed">
+          {section.subtitle}
+         </p>
+        ) : null}
+       </div>
+       <span className="text-[10px] font-mono uppercase tracking-[0.16em] text-foreground/35">
+        {section.items.length}
+       </span>
+      </div>
+     </div>
+
+     <div>
+      {section.items.map((item, index) => {
+       const coverUrl = getRecommendationCoverUrl(item.track);
+       const isCurrent = String(currentTrackId) === String(item.track.id);
+
+       return (
+        <div
+         key={`${section.id}-${item.track.id}-${index}`}
+         className={`flex items-center gap-3 px-6 py-3 border-t border-foreground/10 ${
+          isCurrent ? "bg-foreground/[0.03]" : "hover:bg-foreground/[0.02]"
+         }`}
+        >
+         <div
+          onClick={() => onPlaySectionTrack(section, index)}
+          className="relative w-11 h-11 shrink-0 bg-foreground/5 border border-foreground/10 overflow-hidden cursor-pointer"
+         >
+          {coverUrl ? (
+           <Image
+            src={coverUrl}
+            alt=""
+            fill
+            sizes="44px"
+            className="object-cover"
+           />
+          ) : (
+           <div className="w-full h-full flex items-center justify-center">
+            <Music2 className="w-4 h-4 text-foreground/25" />
+           </div>
+          )}
+         </div>
+
+         <div
+          onClick={() => onPlaySectionTrack(section, index)}
+          className="min-w-0 flex-1 cursor-pointer"
+         >
+          <div className="text-sm text-foreground/90 truncate">
+           {getTrackTitle(item.track)}
+          </div>
+          <div className="text-xs text-foreground/50 truncate">
+           {getPrimaryArtistName(item.track)}
+          </div>
+         </div>
+
+         <div className="flex items-center gap-2 shrink-0">
+          <button
+           onClick={(event) => {
+            event.stopPropagation();
+            onPlayNext(item.track);
+           }}
+           className="px-2 py-1 text-[10px] font-mono uppercase tracking-[0.14em] text-foreground/55 border border-foreground/10 hover:text-foreground hover:border-foreground/25 transition-colors"
+          >
+           Next
+          </button>
+          <button
+           onClick={(event) => {
+            event.stopPropagation();
+            onAddToQueue(item.track);
+           }}
+           className="px-2 py-1 text-[10px] font-mono uppercase tracking-[0.14em] text-foreground/55 border border-foreground/10 hover:text-foreground hover:border-foreground/25 transition-colors"
+          >
+           Queue
+          </button>
+         </div>
+        </div>
+       );
+      })}
+     </div>
+    </section>
+   ))}
+  </div>
+ );
+}
 
 // Desktop sortable queue item
 function DesktopSortableQueueItem({
@@ -231,10 +396,15 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
   reorderQueue,
   toggleShuffle,
   toggleRepeat,
+  addToQueue,
+  playNextInQueue,
  } = useAudioPlayer();
 
  const [activeTab, setActiveTab] = useState<"queue" | "lyrics">("queue");
  const [expandedTab, setExpandedTab] = useState<Tab>(null); // Mobile only
+ const [recommendations, setRecommendations] = useState<RecommendationSection[]>([]);
+ const [recommendationsLoading, setRecommendationsLoading] = useState(false);
+ const [recommendationsError, setRecommendationsError] = useState<string | null>(null);
  const {
   lyrics,
   currentLineIndex,
@@ -254,6 +424,11 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
   }),
  );
 
+ const currentArtistName = useMemo(
+  () => (currentTrack ? getPrimaryArtistName(currentTrack) : ""),
+  [currentTrack],
+ );
+
  // Lock body scroll when open
  useEffect(() => {
   if (isOpen) {
@@ -265,6 +440,83 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
    document.body.style.overflow = "";
   };
  }, [isOpen]);
+
+ useEffect(() => {
+  if (!currentTrack || !currentArtistName) {
+    return;
+  }
+
+  const initialController = new AbortController();
+  const backgroundController = new AbortController();
+  let isActive = true;
+
+  queueMicrotask(() => {
+   if (!isActive) return;
+   setRecommendationsLoading(true);
+   setRecommendationsError(null);
+  });
+
+  const requestBase = {
+   title: getTrackTitle(currentTrack),
+   artist: currentArtistName,
+   album: currentTrack.album?.title,
+   duration: currentTrack.duration,
+   provider: inferTrackProvider(currentTrack),
+  } as const;
+
+  void fetchRecommendationSections(
+   {
+    ...requestBase,
+    perSectionLimit: 10,
+   },
+   initialController.signal,
+  )
+   .then((sections) => {
+    if (!isActive) return;
+    setRecommendations(sections);
+    void fetchRecommendationSections(
+     {
+      ...requestBase,
+      perSectionLimit: 20,
+     },
+     backgroundController.signal,
+    )
+     .then((backgroundSections) => {
+      if (!isActive) return;
+      setRecommendations(backgroundSections);
+     })
+     .catch((error: unknown) => {
+      if (!isActive) return;
+      if (error instanceof Error && error.name === "AbortError") return;
+      console.error("Failed to load extended recommendations:", error);
+     });
+   })
+   .catch((error: unknown) => {
+    if (!isActive) return;
+    if (error instanceof Error && error.name === "AbortError") return;
+
+    console.error("Failed to fetch recommendations:", error);
+    setRecommendations([]);
+    setRecommendationsError("Recommendations unavailable right now.");
+   })
+   .finally(() => {
+    if (!isActive) return;
+    setRecommendationsLoading(false);
+   });
+
+  return () => {
+   isActive = false;
+   initialController.abort();
+   backgroundController.abort();
+  };
+ }, [
+  currentArtistName,
+  currentTrack,
+  currentTrack?.album?.title,
+  currentTrack?.duration,
+  currentTrack?.id,
+  currentTrack?.title,
+ ]);
 
  // Create sortable IDs
  const sortableIds = useMemo(
@@ -326,6 +578,52 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
    setQueue(queue, index);
   }
  };
+
+ const handleRecommendationPlay = useCallback(
+  (section: RecommendationSection, index: number) => {
+   void setQueue(
+    section.items.map((item) => item.track),
+    index,
+   );
+  },
+  [setQueue],
+ );
+
+ const handleRecommendationAddToQueue = useCallback(
+  (track: Track) => {
+   if (!track?.id) {
+    toast.error("DECK JAMMED");
+    return;
+   }
+
+   try {
+    addToQueue(track);
+    toast.success("QUEUED");
+   } catch (error) {
+    console.error("Error adding recommendation to queue:", error);
+    toast.error("DECK JAMMED");
+   }
+  },
+  [addToQueue],
+ );
+
+ const handleRecommendationPlayNext = useCallback(
+  (track: Track) => {
+   if (!track?.id) {
+    toast.error("DECK JAMMED");
+    return;
+   }
+
+   try {
+    playNextInQueue(track);
+    toast.success("NEXT IN LINE");
+   } catch (error) {
+    console.error("Error inserting recommendation as next:", error);
+    toast.error("DECK JAMMED");
+   }
+  },
+  [playNextInQueue],
+ );
 
  const handleTabClick = (tab: "queue" | "lyrics") => {
   setExpandedTab(expandedTab === tab ? null : tab);
@@ -563,6 +861,15 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
             />
            ))}
           </SortableContext>
+          <RecommendationRows
+           sections={recommendations}
+           loading={recommendationsLoading}
+           error={recommendationsError}
+           currentTrackId={currentTrack.id}
+           onPlaySectionTrack={handleRecommendationPlay}
+           onAddToQueue={handleRecommendationAddToQueue}
+           onPlayNext={handleRecommendationPlayNext}
+          />
          </div>
         </DndContext>
        )}
@@ -728,8 +1035,8 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
            <SortableContext
             items={sortableIds}
             strategy={verticalListSortingStrategy}
-           >
-            {queue.map((track, index) => (
+         >
+           {queue.map((track, index) => (
              <MobileSortableQueueItem
               key={sortableIds[index]}
               id={sortableIds[index]}
@@ -739,6 +1046,15 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
              />
             ))}
            </SortableContext>
+           <RecommendationRows
+            sections={recommendations}
+            loading={recommendationsLoading}
+            error={recommendationsError}
+            currentTrackId={currentTrack.id}
+            onPlaySectionTrack={handleRecommendationPlay}
+            onAddToQueue={handleRecommendationAddToQueue}
+            onPlayNext={handleRecommendationPlayNext}
+           />
           </DndContext>
          </div>
         </motion.div>

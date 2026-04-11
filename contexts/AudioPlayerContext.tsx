@@ -12,8 +12,13 @@ import {
 } from "react";
 import { Track } from "@/lib/api/types";
 import { api } from "@/lib/api";
+import { getTrackTitle } from "@/lib/api/utils";
 import { CrossfadeController } from '@/lib/crossfade';
 import { getSettings } from '@/lib/settings';
+import {
+  fetchRecommendationSections,
+  flattenRecommendationTracks,
+} from "@/lib/recommendations/client";
 
 type RepeatMode = "off" | "all" | "one";
 
@@ -95,6 +100,22 @@ interface PendingCrossfadeTrack {
   index: number;
   quality: string;
   streamUrl: string;
+}
+
+function getPrimaryArtistName(track: Track | null): string {
+  if (!track) return "";
+
+  return (
+    track.artist?.name ||
+    track.artists?.find((artist) => artist.type === "MAIN")?.name ||
+    track.artists?.[0]?.name ||
+    ""
+  );
+}
+
+function inferTrackProvider(track: Track | null): "tidal" | "qobuz" {
+  if (!track) return "tidal";
+  return String(track.id).startsWith("q:") ? "qobuz" : "tidal";
 }
 
 // Helper function to load persisted state from localStorage
@@ -257,6 +278,61 @@ const preloadCache = useRef<Map<number, string>>(new Map());
 
     return playPromise;
   }, []);
+
+  const continueWithRecommendations = useCallback(
+    async (seedTrack: Track, quality: string) => {
+      try {
+        const sections = await fetchRecommendationSections({
+          title: getTrackTitle(seedTrack),
+          artist: getPrimaryArtistName(seedTrack),
+          album: seedTrack.album?.title,
+          duration: seedTrack.duration,
+          provider: inferTrackProvider(seedTrack),
+          perSectionLimit: 20,
+          sectionIds: ["up-next"],
+        });
+        const tracks = flattenRecommendationTracks(sections);
+        const nextTrack = tracks[0];
+
+        if (!nextTrack) {
+          setState((prev) => ({ ...prev, isPlaying: false }));
+          return;
+        }
+
+        const streamUrl =
+          preloadCache.current.get(nextTrack.id) ||
+          (await api.getStreamUrl(nextTrack.id, quality));
+
+        if (!streamUrl) {
+          setState((prev) => ({ ...prev, isPlaying: false }));
+          return;
+        }
+
+        if (audioRef.current) {
+          audioRef.current.src = streamUrl;
+
+          setState((prev) => ({
+            ...prev,
+            queue: tracks,
+            currentTrack: nextTrack,
+            currentQueueIndex: 0,
+            currentTime: 0,
+            currentQuality: nextTrack.audioQuality || "HIGH",
+            streamUrl,
+            shuffleActive: false,
+            isPlaying: true,
+          }));
+
+          await safePlay(audioRef.current);
+          updateMediaSessionMetadata(nextTrack);
+        }
+      } catch (error) {
+        console.error("Failed to continue with recommendations:", error);
+        setState((prev) => ({ ...prev, isPlaying: false }));
+      }
+    },
+    [safePlay, updateMediaSessionMetadata],
+  );
 
   // Debounce persistence to avoid frequent localStorage writes
   useEffect(() => {
@@ -768,6 +844,10 @@ const playTrack = useCallback((track: Track, streamUrl: string) => {
       } else {
         nextIndex = prev.currentQueueIndex + 1;
         if (nextIndex >= currentQueue.length) {
+          if (prev.currentTrack) {
+            void continueWithRecommendations(prev.currentTrack, prev.currentQuality);
+            return prev;
+          }
           return { ...prev, isPlaying: false };
         }
       }
@@ -811,7 +891,7 @@ const playTrack = useCallback((track: Track, streamUrl: string) => {
 
       return prev;
     });
-  }, [resetCrossfadeState, safePlay, updateMediaSessionMetadata]);
+  }, [continueWithRecommendations, resetCrossfadeState, safePlay, updateMediaSessionMetadata]);
 
   // Keep ref updated
 useEffect(() => {

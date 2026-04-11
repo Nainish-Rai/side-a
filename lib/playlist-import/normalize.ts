@@ -26,20 +26,22 @@ const VS_PATTERN = /\bvs\.?\b/gi;
 const X_PATTERN = /\s+x\s+/gi;
 const MULTIPLE_WHITESPACE_PATTERN = /\s+/g;
 
-function stripNoise(value: string, patterns: RegExp[]): string {
+function stripNoise(value: string | null | undefined, patterns: RegExp[]): string {
+  const safeValue = value ?? "";
   return patterns.reduce(
     (currentValue, pattern) => currentValue.replace(pattern, " "),
-    value,
+    safeValue,
   );
 }
 
-function collapseWhitespace(value: string): string {
-  return value.replace(MULTIPLE_WHITESPACE_PATTERN, " ").trim();
+function collapseWhitespace(value: string | null | undefined): string {
+  return (value ?? "").replace(MULTIPLE_WHITESPACE_PATTERN, " ").trim();
 }
 
-function normalizeForComparison(value: string): string {
+function normalizeForComparison(value: string | null | undefined): string {
+  const safeValue = value ?? "";
   return collapseWhitespace(
-    value
+    safeValue
       .toLowerCase()
       .replace(QUOTE_PATTERN, "")
       .replace(BRACKET_PATTERN, " ")
@@ -53,9 +55,10 @@ function normalizeForComparison(value: string): string {
   );
 }
 
-function normalizeForSearch(value: string): string {
+function normalizeForSearch(value: string | null | undefined): string {
+  const safeValue = value ?? "";
   return collapseWhitespace(
-    value
+    safeValue
       .replace(BRACKET_PATTERN, " ")
       .replace(DASH_PATTERN, " ")
       .replace(PIPE_PATTERN, " ")
@@ -64,11 +67,12 @@ function normalizeForSearch(value: string): string {
   );
 }
 
-function removeFeaturedArtists(value: string): string {
-  return collapseWhitespace(value.split(/\b(?:feat|ft)\.?\b/i)[0] || value);
+function removeFeaturedArtists(value: string | null | undefined): string {
+  const safeValue = value ?? "";
+  return collapseWhitespace(safeValue.split(/\b(?:feat|ft)\.?\b/i)[0] || safeValue);
 }
 
-function extractPrimaryTitleSegment(value: string): string {
+function extractPrimaryTitleSegment(value: string | null | undefined): string {
   const withoutNoise = stripNoise(value, SEARCH_TITLE_NOISE_PATTERNS);
   const [pipeLead] = withoutNoise.split("|");
   const dashSegments = pipeLead
@@ -79,15 +83,15 @@ function extractPrimaryTitleSegment(value: string): string {
   return dashSegments[0] || collapseWhitespace(pipeLead);
 }
 
-function normalizeSearchTrackTitle(title: string): string {
+function normalizeSearchTrackTitle(title: string | null | undefined): string {
   return normalizeForSearch(stripNoise(title, SEARCH_TITLE_NOISE_PATTERNS));
 }
 
-export function normalizeTrackTitle(title: string): string {
+export function normalizeTrackTitle(title: string | null | undefined): string {
   return normalizeForComparison(stripNoise(title, COMPARISON_TITLE_NOISE_PATTERNS));
 }
 
-export function normalizeArtistName(name: string): string {
+export function normalizeArtistName(name: string | null | undefined): string {
   return normalizeForComparison(name);
 }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Disc, Heart, Music2 } from "lucide-react";
@@ -13,6 +13,10 @@ import {
 import { useLibrary } from "@/contexts/LibraryContext";
 import { api } from "@/lib/api";
 import type { Album, Track } from "@/lib/api/types";
+import {
+  fetchRecommendationSections,
+  flattenRecommendationTracks,
+} from "@/lib/recommendations/client";
 
 function getTrackCoverUrl(track: Track, size = "160") {
   const coverId = track.album?.cover || track.album?.imageCover?.[0];
@@ -250,8 +254,11 @@ export function HomeHub() {
   } = useLibrary();
 
   const [loadingTrackId, setLoadingTrackId] = useState<number | null>(null);
+  const [recommendedTracks, setRecommendedTracks] = useState<Track[]>([]);
+  const [recommendationsLoading, setRecommendationsLoading] = useState(false);
 
   const recentSlice = useMemo(() => recentlyPlayed.slice(0, 10), [recentlyPlayed]);
+  const recentSeeds = useMemo(() => recentlyPlayed.slice(0, 5), [recentlyPlayed]);
   const favoritesSlice = useMemo(() => likedTracks.slice(0, 8), [likedTracks]);
   const albumsSlice = useMemo(() => savedAlbums.slice(0, 10), [savedAlbums]);
 
@@ -275,6 +282,82 @@ export function HomeHub() {
     },
     [setQueue, addRecentlyPlayed, loadingTrackId],
   );
+
+  useEffect(() => {
+    if (recentSeeds.length === 0) {
+      setRecommendedTracks([]);
+      setRecommendationsLoading(false);
+      return;
+    }
+
+    const initialController = new AbortController();
+    const backgroundController = new AbortController();
+    let isActive = true;
+
+    queueMicrotask(() => {
+      if (!isActive) return;
+      setRecommendationsLoading(true);
+    });
+
+    const seeds = recentSeeds.map((track) => ({
+      title: track.title,
+      artist: track.artist?.name || track.artists?.[0]?.name || "",
+      album: track.album?.title,
+      duration: track.duration,
+    }));
+    const provider = String(recentSeeds[0]?.id).startsWith("q:") ? "qobuz" : "tidal";
+
+    void fetchRecommendationSections(
+      {
+        title: seeds[0]?.title || "Unknown Title",
+        artist: seeds[0]?.artist || "Unknown Artist",
+        seeds,
+        provider,
+        perSectionLimit: 10,
+      },
+      initialController.signal,
+    )
+      .then((sections) => {
+        if (!isActive) return;
+        setRecommendedTracks(flattenRecommendationTracks(sections));
+
+        void fetchRecommendationSections(
+          {
+            title: seeds[0]?.title || "Unknown Title",
+            artist: seeds[0]?.artist || "Unknown Artist",
+            seeds,
+            provider,
+            perSectionLimit: 20,
+          },
+          backgroundController.signal,
+        )
+          .then((backgroundSections) => {
+            if (!isActive) return;
+            setRecommendedTracks(flattenRecommendationTracks(backgroundSections));
+          })
+          .catch((error: unknown) => {
+            if (!isActive) return;
+            if (error instanceof Error && error.name === "AbortError") return;
+            console.error("Failed to load extended home recommendations:", error);
+          });
+      })
+      .catch((error: unknown) => {
+        if (!isActive) return;
+        if (error instanceof Error && error.name === "AbortError") return;
+        console.error("Failed to load home recommendations:", error);
+        setRecommendedTracks([]);
+      })
+      .finally(() => {
+        if (!isActive) return;
+        setRecommendationsLoading(false);
+      });
+
+    return () => {
+      isActive = false;
+      initialController.abort();
+      backgroundController.abort();
+    };
+  }, [recentSeeds]);
 
   if (!hasContent) {
     return <EmptyHub />;
@@ -308,6 +391,36 @@ export function HomeHub() {
                 isLiked={isTrackLiked(track.id)}
               />
             ))}
+          </div>
+        </section>
+      )}
+
+      {(recommendedTracks.length > 0 || recommendationsLoading) && (
+        <section>
+          <SectionHeader
+            title="For You"
+            count={recommendedTracks.length}
+          />
+          <div className="mt-3 border border-foreground/10">
+            {recommendationsLoading && recommendedTracks.length === 0 ? (
+              <div className="px-6 py-8 text-[11px] font-mono uppercase tracking-[0.16em] text-foreground/40">
+                Building picks from your last 5 plays...
+              </div>
+            ) : (
+              recommendedTracks.slice(0, 10).map((track, index) => (
+                <CompactTrackRow
+                  key={`rec-${track.id}-${index}`}
+                  track={track}
+                  index={index}
+                  isCurrentTrack={currentTrack?.id === track.id}
+                  isPlaying={isPlaying}
+                  isLoading={loadingTrackId === track.id}
+                  onPlay={() => handlePlayTrack(recommendedTracks.slice(0, 10), index)}
+                  onToggleLike={() => toggleTrackLike(track)}
+                  isLiked={isTrackLiked(track.id)}
+                />
+              ))
+            )}
           </div>
         </section>
       )}

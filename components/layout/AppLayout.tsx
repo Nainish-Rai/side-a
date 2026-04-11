@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useState } from "react";
+import { ReactNode, Suspense, useState } from "react";
 import dynamic from "next/dynamic";
 import { InstallPrompt } from "@/components/mobile/InstallPrompt";
 import { useQueue } from "@/contexts/AudioPlayerContext";
@@ -49,7 +49,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
   return (
    <div className="min-h-screen bg-background transition-colors duration-300">
     {/* Shared desktop navigation header — hidden on mobile */}
-    <DesktopHeader />
+    <Suspense fallback={null}>
+     <DesktopHeader />
+    </Suspense>
 
     {/* Main Content */}
    {/* Desktop: margin for sidebar + padding for audio player */}
