@@ -31,7 +31,7 @@ export function normalizeSpotifyPlaylistUrl(url: string): string {
     throw new InvalidSpotifyPlaylistUrlError("Spotify URL must point to a playlist.");
   }
 
-  return parsedSpotifyUri.toURL();
+  return parsedSpotifyUri.toOpenURL();
 }
 
 export function extractSpotifyPlaylistId(url: string): string {
