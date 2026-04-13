@@ -50,10 +50,19 @@ async function parseRequestBody(
 }
 
 export async function POST(request: NextRequest) {
+  const startedAt = performance.now();
   try {
     const body = await parseRequestBody(request);
     const useCase = new GetTrackRecommendations();
     const result = await useCase.execute(body);
+    console.info("[recommendations] request-success", {
+      title: body.title,
+      artist: body.artist,
+      seedCount: body.seeds?.length ?? 1,
+      totalMs: Number((performance.now() - startedAt).toFixed(1)),
+      cacheHit: result.cacheHit,
+      sectionCount: result.sections.length,
+    });
 
     return NextResponse.json(result, {
       headers: {
@@ -68,6 +77,11 @@ export async function POST(request: NextRequest) {
     const isValidationError =
       message === "Request body must be valid JSON." ||
       message === "Body must include non-empty title and artist fields.";
+    console.error("[recommendations] request-failed", {
+      totalMs: Number((performance.now() - startedAt).toFixed(1)),
+      error: message,
+      status: isValidationError ? 400 : 500,
+    });
 
     return NextResponse.json(
       { error: message },

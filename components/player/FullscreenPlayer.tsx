@@ -49,6 +49,11 @@ import { TrackArtistLinks } from "@/components/tracks/TrackMetaLinks";
 import { toast } from "sonner";
 import { musicApi } from "@/lib/api";
 import { fetchRecommendationSections } from "@/lib/recommendations/client";
+import {
+ buildTrackRecommendationCacheKey,
+ readTrackRecommendationCache,
+ writeTrackRecommendationCache,
+} from "@/lib/recommendations/ui-cache";
 
 interface FullscreenPlayerProps {
  isOpen: boolean;
@@ -79,6 +84,7 @@ function getRecommendationCoverUrl(track: Track): string | null {
 function RecommendationRows({
  sections,
  loading,
+ updating,
  error,
  currentTrackId,
  onPlaySectionTrack,
@@ -87,13 +93,14 @@ function RecommendationRows({
 }: {
  sections: RecommendationSection[];
  loading: boolean;
+ updating: boolean;
  error: string | null;
  currentTrackId?: number | string;
  onPlaySectionTrack: (section: RecommendationSection, index: number) => void;
  onAddToQueue: (track: Track) => void;
  onPlayNext: (track: Track) => void;
 }) {
- if (loading) {
+ if (loading && sections.length === 0) {
   return (
     <div className="border-t border-foreground/10 px-6 py-6">
      <div className="text-[10px] font-mono uppercase tracking-[0.16em] text-foreground/40">
@@ -103,7 +110,7 @@ function RecommendationRows({
   );
  }
 
- if (error) {
+ if (error && sections.length === 0) {
   return (
    <div className="border-t border-foreground/10 px-6 py-6">
     <div className="text-[10px] font-mono uppercase tracking-[0.16em] text-foreground/40">
@@ -125,6 +132,11 @@ function RecommendationRows({
 
  return (
   <div className="border-t border-foreground/10">
+   {updating ? (
+    <div className="border-b border-foreground/10 px-6 py-3 text-[10px] font-mono uppercase tracking-[0.16em] text-foreground/35">
+     Updating for this track...
+    </div>
+   ) : null}
    {sections.map((section) => (
     <section key={section.id} className="border-b border-foreground/10 last:border-b-0">
      <div className="px-6 py-4">
@@ -404,6 +416,7 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
  const [expandedTab, setExpandedTab] = useState<Tab>(null); // Mobile only
  const [recommendations, setRecommendations] = useState<RecommendationSection[]>([]);
  const [recommendationsLoading, setRecommendationsLoading] = useState(false);
+ const [recommendationsUpdating, setRecommendationsUpdating] = useState(false);
  const [recommendationsError, setRecommendationsError] = useState<string | null>(null);
  const {
   lyrics,
@@ -441,29 +454,45 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
   };
  }, [isOpen]);
 
- useEffect(() => {
-  if (!currentTrack || !currentArtistName) {
-    return;
+useEffect(() => {
+ if (!currentTrack || !currentArtistName) {
+  setRecommendations([]);
+  setRecommendationsLoading(false);
+  setRecommendationsUpdating(false);
+  setRecommendationsError(null);
+  return;
+ }
+
+ const initialController = new AbortController();
+ const backgroundController = new AbortController();
+ let isActive = true;
+
+ const requestBase = {
+  title: getTrackTitle(currentTrack),
+  artist: currentArtistName,
+  album: currentTrack.album?.title,
+  duration: currentTrack.duration,
+  provider: inferTrackProvider(currentTrack),
+ } as const;
+ const cacheKey = buildTrackRecommendationCacheKey(requestBase.provider, requestBase);
+ const cachedSections = readTrackRecommendationCache(cacheKey);
+ const shouldKeepVisibleRecommendations =
+  cachedSections !== null || recommendations.length > 0;
+
+ queueMicrotask(() => {
+  if (!isActive) return;
+  if (cachedSections) {
+   setRecommendations(cachedSections);
+   setRecommendationsLoading(false);
+   setRecommendationsUpdating(true);
+  } else {
+   setRecommendationsLoading(!shouldKeepVisibleRecommendations);
+   setRecommendationsUpdating(shouldKeepVisibleRecommendations);
   }
+  setRecommendationsError(null);
+ });
 
-  const initialController = new AbortController();
-  const backgroundController = new AbortController();
-  let isActive = true;
-
-  queueMicrotask(() => {
-   if (!isActive) return;
-   setRecommendationsLoading(true);
-   setRecommendationsError(null);
-  });
-
-  const requestBase = {
-   title: getTrackTitle(currentTrack),
-   artist: currentArtistName,
-   album: currentTrack.album?.title,
-   duration: currentTrack.duration,
-   provider: inferTrackProvider(currentTrack),
-  } as const;
-
+ const fetchTimer = window.setTimeout(() => {
   void fetchRecommendationSections(
    {
     ...requestBase,
@@ -474,6 +503,8 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
    .then((sections) => {
     if (!isActive) return;
     setRecommendations(sections);
+    writeTrackRecommendationCache(cacheKey, sections);
+    setRecommendationsUpdating(false);
     void fetchRecommendationSections(
      {
       ...requestBase,
@@ -484,6 +515,8 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
      .then((backgroundSections) => {
       if (!isActive) return;
       setRecommendations(backgroundSections);
+      writeTrackRecommendationCache(cacheKey, backgroundSections);
+      setRecommendationsUpdating(false);
      })
      .catch((error: unknown) => {
       if (!isActive) return;
@@ -496,19 +529,24 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
     if (error instanceof Error && error.name === "AbortError") return;
 
     console.error("Failed to fetch recommendations:", error);
-    setRecommendations([]);
-    setRecommendationsError("Recommendations unavailable right now.");
+    if (!cachedSections && recommendations.length === 0) {
+     setRecommendations([]);
+     setRecommendationsError("Recommendations unavailable right now.");
+    }
+    setRecommendationsUpdating(false);
    })
    .finally(() => {
     if (!isActive) return;
     setRecommendationsLoading(false);
    });
+ }, 180);
 
-  return () => {
-   isActive = false;
-   initialController.abort();
-   backgroundController.abort();
-  };
+ return () => {
+  isActive = false;
+  window.clearTimeout(fetchTimer);
+  initialController.abort();
+  backgroundController.abort();
+ };
  }, [
   currentArtistName,
   currentTrack,
@@ -864,6 +902,7 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
           <RecommendationRows
            sections={recommendations}
            loading={recommendationsLoading}
+           updating={recommendationsUpdating}
            error={recommendationsError}
            currentTrackId={currentTrack.id}
            onPlaySectionTrack={handleRecommendationPlay}
@@ -1049,6 +1088,7 @@ export function FullscreenPlayer({ isOpen, onClose }: FullscreenPlayerProps) {
            <RecommendationRows
             sections={recommendations}
             loading={recommendationsLoading}
+            updating={recommendationsUpdating}
             error={recommendationsError}
             currentTrackId={currentTrack.id}
             onPlaySectionTrack={handleRecommendationPlay}

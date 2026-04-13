@@ -11,6 +11,19 @@ import type {
 
 const MAX_QUERIES_PER_CANDIDATE = 3;
 const SEARCH_RESULT_LIMIT = 15;
+const RESOLUTION_CONCURRENCY = 4;
+
+interface RecommendationResolverMetrics {
+  candidateCount: number;
+  resolvedCount: number;
+  totalMs: number;
+  sectionTimings: Array<{
+    id: RecommendationSectionCandidate["id"];
+    attempted: number;
+    resolved: number;
+    ms: number;
+  }>;
+}
 
 function toImportedTrack(
   candidate: RecommendationCandidate,
@@ -98,29 +111,57 @@ export async function resolveRecommendationSections(
   sections: RecommendationSectionCandidate[],
   provider: Provider,
   perSectionLimit = 4,
-): Promise<RecommendationSection[]> {
+): Promise<{
+  sections: RecommendationSection[];
+  metrics: RecommendationResolverMetrics;
+}> {
+  const startedAt = performance.now();
   const globalSeen = new Set<string>();
   const resolvedSections: RecommendationSection[] = [];
+  const sectionTimings: RecommendationResolverMetrics["sectionTimings"] = [];
+  let resolvedCount = 0;
+  let candidateCount = 0;
 
   for (const section of sections) {
+    const sectionStartedAt = performance.now();
     const resolvedItems: RecommendationSection["items"] = [];
+    let attempted = 0;
 
-    for (const candidate of section.items) {
-      if (resolvedItems.length >= perSectionLimit) break;
+    for (
+      let startIndex = 0;
+      startIndex < section.items.length && resolvedItems.length < perSectionLimit;
+      startIndex += RESOLUTION_CONCURRENCY
+    ) {
+      const batch = section.items.slice(
+        startIndex,
+        startIndex + RESOLUTION_CONCURRENCY,
+      );
+      attempted += batch.length;
+      candidateCount += batch.length;
 
-      const resolvedTrack = await resolveCandidate(candidate, provider);
-      if (!resolvedTrack) continue;
+      const batchResults = await Promise.all(
+        batch.map(async (candidate) => ({
+          candidate,
+          resolvedTrack: await resolveCandidate(candidate, provider),
+        })),
+      );
 
-      const key = normalizeRecommendationKey(resolvedTrack);
-      if (globalSeen.has(key)) continue;
+      for (const { candidate, resolvedTrack } of batchResults) {
+        if (resolvedItems.length >= perSectionLimit) break;
+        if (!resolvedTrack) continue;
 
-      globalSeen.add(key);
-      resolvedItems.push({
-        reason: section.reason,
-        score: candidate.score,
-        source: "ytmusic",
-        track: resolvedTrack,
-      });
+        const key = normalizeRecommendationKey(resolvedTrack);
+        if (globalSeen.has(key)) continue;
+
+        globalSeen.add(key);
+        resolvedCount += 1;
+        resolvedItems.push({
+          reason: section.reason,
+          score: candidate.score,
+          source: "ytmusic",
+          track: resolvedTrack,
+        });
+      }
     }
 
     if (resolvedItems.length > 0) {
@@ -131,7 +172,22 @@ export async function resolveRecommendationSections(
         items: resolvedItems,
       });
     }
+
+    sectionTimings.push({
+      id: section.id,
+      attempted,
+      resolved: resolvedItems.length,
+      ms: Number((performance.now() - sectionStartedAt).toFixed(1)),
+    });
   }
 
-  return resolvedSections;
+  return {
+    sections: resolvedSections,
+    metrics: {
+      candidateCount,
+      resolvedCount,
+      totalMs: Number((performance.now() - startedAt).toFixed(1)),
+      sectionTimings,
+    },
+  };
 }

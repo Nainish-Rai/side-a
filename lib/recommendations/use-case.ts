@@ -9,6 +9,22 @@ import type {
   RecommendationResponse,
 } from "@/lib/recommendations/types";
 import { getYtMusicRecommendationSections } from "@/lib/recommendations/ytmusic-source";
+import { getYoutubeRecommendationSections } from "@/lib/recommendations/youtubei-source";
+
+interface RecommendationSourceMetric {
+  seed: string;
+  source: "youtubei.js" | "ytmusic-api";
+  sectionCount: number;
+  candidateCount: number;
+  ms: number;
+}
+
+const FAST_PATH_SECTION_CANDIDATE_LIMIT = 8;
+const ENRICHMENT_SECTION_CANDIDATE_LIMIT = 14;
+
+function formatSeedLabel(seed: RecommendationSeed): string {
+  return `${seed.artist} - ${seed.title}`;
+}
 
 function normalizeSeedKey(seed: RecommendationSeed): string {
   return [
@@ -98,10 +114,26 @@ function mergeCandidateSections(
   });
 }
 
+function limitSectionCandidates(
+  sections: RecommendationSectionCandidate[],
+  perSectionLimit: number,
+): RecommendationSectionCandidate[] {
+  const maxCandidatesPerSection =
+    perSectionLimit <= 10
+      ? FAST_PATH_SECTION_CANDIDATE_LIMIT
+      : ENRICHMENT_SECTION_CANDIDATE_LIMIT;
+
+  return sections.map((section) => ({
+    ...section,
+    items: section.items.slice(0, maxCandidatesPerSection),
+  }));
+}
+
 export class GetTrackRecommendations {
   async execute(
     request: RecommendationRequest,
   ): Promise<RecommendationResponse> {
+    const startedAt = performance.now();
     const provider = request.provider ?? "tidal";
     const perSectionLimit = request.perSectionLimit ?? 10;
     const seeds = (
@@ -125,12 +157,44 @@ export class GetTrackRecommendations {
 
     const cached = getCachedRecommendations(cacheKey);
     if (cached) {
+      console.info("[recommendations] cache-hit", {
+        provider,
+        perSectionLimit,
+        seedCount: seeds.length,
+        totalMs: Number((performance.now() - startedAt).toFixed(1)),
+      });
       return cached;
     }
 
+    const sourceMetrics: RecommendationSourceMetric[] = [];
     const candidateSectionGroups = await Promise.all(
-      seeds.map((seed) => getYtMusicRecommendationSections(seed)),
+      seeds.map(async (seed) => {
+        const seedStartedAt = performance.now();
+        try {
+          const sections = await getYoutubeRecommendationSections(seed);
+          sourceMetrics.push({
+            seed: formatSeedLabel(seed),
+            source: "youtubei.js",
+            sectionCount: sections.length,
+            candidateCount: sections.reduce((sum, section) => sum + section.items.length, 0),
+            ms: Number((performance.now() - seedStartedAt).toFixed(1)),
+          });
+          return sections;
+        } catch (error) {
+          console.error("youtubei.js recommendation source failed, falling back:", error);
+          const sections = await getYtMusicRecommendationSections(seed);
+          sourceMetrics.push({
+            seed: formatSeedLabel(seed),
+            source: "ytmusic-api",
+            sectionCount: sections.length,
+            candidateCount: sections.reduce((sum, section) => sum + section.items.length, 0),
+            ms: Number((performance.now() - seedStartedAt).toFixed(1)),
+          });
+          return sections;
+        }
+      }),
     );
+    const mergedStartedAt = performance.now();
     let candidateSections = mergeCandidateSections(
       candidateSectionGroups,
       seeds.length > 1,
@@ -141,11 +205,14 @@ export class GetTrackRecommendations {
         allowed.has(section.id),
       );
     }
-    const sections = await resolveRecommendationSections(
+    candidateSections = limitSectionCandidates(candidateSections, perSectionLimit);
+    const resolveStartedAt = performance.now();
+    const { sections, metrics: resolverMetrics } = await resolveRecommendationSections(
       candidateSections,
       provider,
       perSectionLimit,
     );
+    const totalMs = Number((performance.now() - startedAt).toFixed(1));
 
     const response: RecommendationResponse = {
       generatedAt: new Date().toISOString(),
@@ -154,6 +221,17 @@ export class GetTrackRecommendations {
     };
 
     setCachedRecommendations(cacheKey, response);
+    console.info("[recommendations] built", {
+      provider,
+      perSectionLimit,
+      seedCount: seeds.length,
+      mergedSectionCount: candidateSections.length,
+      finalSectionCount: sections.length,
+      sourceMetrics,
+      mergeMs: Number((resolveStartedAt - mergedStartedAt).toFixed(1)),
+      resolverMetrics,
+      totalMs,
+    });
     return response;
   }
 }

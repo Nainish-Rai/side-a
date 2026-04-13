@@ -34,6 +34,7 @@
     "spotify-uri": "^4.1.0",
     "spotify-url-info": "^3.3.0",
     "tailwind-merge": "^3.4.0",
+    "youtubei.js": "^17.0.1",
     "ytmusic-api": "^5.3.1"
   },
   "devDependencies": {

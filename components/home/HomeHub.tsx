@@ -17,6 +17,12 @@ import {
   fetchRecommendationSections,
   flattenRecommendationTracks,
 } from "@/lib/recommendations/client";
+import {
+  buildHomeRecommendationCacheKey,
+  readHomeRecommendationCache,
+  readLatestHomeRecommendationCache,
+  writeHomeRecommendationCache,
+} from "@/lib/recommendations/ui-cache";
 
 function getTrackCoverUrl(track: Track, size = "160") {
   const coverId = track.album?.cover || track.album?.imageCover?.[0];
@@ -91,13 +97,24 @@ function CompactTrackRow({
     track.artist?.name || track.artists?.[0]?.name || "Unknown Artist";
 
   return (
-    <button
-      type="button"
-      onClick={onPlay}
-      disabled={isLoading}
+    <div
+      role="button"
+      tabIndex={isLoading ? -1 : 0}
+      aria-disabled={isLoading}
+      onClick={() => {
+        if (isLoading) return;
+        onPlay();
+      }}
+      onKeyDown={(event) => {
+        if (isLoading) return;
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onPlay();
+        }
+      }}
       className={`group grid w-full grid-cols-[40px_40px_1fr_auto_32px] items-center gap-4 border-b border-foreground/10 px-6 py-3 text-left transition-colors hover:bg-foreground/[0.02] last:border-b-0 lg:grid-cols-[40px_40px_1fr_180px_100px_auto_32px] ${
         isCurrentTrack ? "border-l-[3px] border-l-foreground" : "border-l-[3px] border-l-transparent"
-      }`}
+      } ${isLoading ? "cursor-default opacity-60" : "cursor-pointer"}`}
     >
       <span className="text-center text-xs font-mono tabular-nums text-foreground/30">
         {isCurrentTrack && isPlaying ? (
@@ -162,9 +179,12 @@ function CompactTrackRow({
         type="button"
         onClick={(e) => {
           e.stopPropagation();
+          if (isLoading) return;
           onToggleLike();
         }}
         className="flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100"
+        disabled={isLoading}
+        aria-label={isLiked ? "Unlike track" : "Like track"}
       >
         <Heart
           className={`h-3.5 w-3.5 ${
@@ -174,7 +194,7 @@ function CompactTrackRow({
           }`}
         />
       </button>
-    </button>
+    </div>
   );
 }
 
@@ -256,6 +276,7 @@ export function HomeHub() {
   const [loadingTrackId, setLoadingTrackId] = useState<number | null>(null);
   const [recommendedTracks, setRecommendedTracks] = useState<Track[]>([]);
   const [recommendationsLoading, setRecommendationsLoading] = useState(false);
+  const [recommendationsUpdating, setRecommendationsUpdating] = useState(false);
 
   const recentSlice = useMemo(() => recentlyPlayed.slice(0, 10), [recentlyPlayed]);
   const recentSeeds = useMemo(() => recentlyPlayed.slice(0, 5), [recentlyPlayed]);
@@ -287,6 +308,7 @@ export function HomeHub() {
     if (recentSeeds.length === 0) {
       setRecommendedTracks([]);
       setRecommendationsLoading(false);
+      setRecommendationsUpdating(false);
       return;
     }
 
@@ -305,13 +327,22 @@ export function HomeHub() {
       album: track.album?.title,
       duration: track.duration,
     }));
+    const initialSeeds = seeds.slice(0, 2);
     const provider = String(recentSeeds[0]?.id).startsWith("q:") ? "qobuz" : "tidal";
+    const cacheKey = buildHomeRecommendationCacheKey(provider, seeds);
+    const cachedSections =
+      readHomeRecommendationCache(cacheKey) ?? readLatestHomeRecommendationCache();
+
+    if (cachedSections) {
+      setRecommendedTracks(flattenRecommendationTracks(cachedSections));
+      setRecommendationsUpdating(true);
+    }
 
     void fetchRecommendationSections(
       {
-        title: seeds[0]?.title || "Unknown Title",
-        artist: seeds[0]?.artist || "Unknown Artist",
-        seeds,
+        title: initialSeeds[0]?.title || "Unknown Title",
+        artist: initialSeeds[0]?.artist || "Unknown Artist",
+        seeds: initialSeeds,
         provider,
         perSectionLimit: 10,
       },
@@ -320,6 +351,8 @@ export function HomeHub() {
       .then((sections) => {
         if (!isActive) return;
         setRecommendedTracks(flattenRecommendationTracks(sections));
+        writeHomeRecommendationCache(cacheKey, sections);
+        setRecommendationsUpdating(false);
 
         void fetchRecommendationSections(
           {
@@ -334,6 +367,8 @@ export function HomeHub() {
           .then((backgroundSections) => {
             if (!isActive) return;
             setRecommendedTracks(flattenRecommendationTracks(backgroundSections));
+            writeHomeRecommendationCache(cacheKey, backgroundSections);
+            setRecommendationsUpdating(false);
           })
           .catch((error: unknown) => {
             if (!isActive) return;
@@ -345,7 +380,10 @@ export function HomeHub() {
         if (!isActive) return;
         if (error instanceof Error && error.name === "AbortError") return;
         console.error("Failed to load home recommendations:", error);
-        setRecommendedTracks([]);
+        if (!cachedSections) {
+          setRecommendedTracks([]);
+        }
+        setRecommendationsUpdating(false);
       })
       .finally(() => {
         if (!isActive) return;
@@ -407,19 +445,26 @@ export function HomeHub() {
                 Building picks from your last 5 plays...
               </div>
             ) : (
-              recommendedTracks.slice(0, 10).map((track, index) => (
-                <CompactTrackRow
-                  key={`rec-${track.id}-${index}`}
-                  track={track}
-                  index={index}
-                  isCurrentTrack={currentTrack?.id === track.id}
-                  isPlaying={isPlaying}
-                  isLoading={loadingTrackId === track.id}
-                  onPlay={() => handlePlayTrack(recommendedTracks.slice(0, 10), index)}
-                  onToggleLike={() => toggleTrackLike(track)}
-                  isLiked={isTrackLiked(track.id)}
-                />
-              ))
+              <>
+                {recommendationsUpdating ? (
+                  <div className="border-b border-foreground/10 px-6 py-3 text-[10px] font-mono uppercase tracking-[0.16em] text-foreground/35">
+                    Refreshing picks from your latest plays...
+                  </div>
+                ) : null}
+                {recommendedTracks.slice(0, 10).map((track, index) => (
+                  <CompactTrackRow
+                    key={`rec-${track.id}-${index}`}
+                    track={track}
+                    index={index}
+                    isCurrentTrack={currentTrack?.id === track.id}
+                    isPlaying={isPlaying}
+                    isLoading={loadingTrackId === track.id}
+                    onPlay={() => handlePlayTrack(recommendedTracks.slice(0, 10), index)}
+                    onToggleLike={() => toggleTrackLike(track)}
+                    isLiked={isTrackLiked(track.id)}
+                  />
+                ))}
+              </>
             )}
           </div>
         </section>
