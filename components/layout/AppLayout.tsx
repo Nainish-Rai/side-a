@@ -3,6 +3,7 @@
 import { ReactNode, Suspense, useState } from "react";
 import dynamic from "next/dynamic";
 import { InstallPrompt } from "@/components/mobile/InstallPrompt";
+import { MobileNav } from "@/components/mobile/MobileNav";
 import { useQueue } from "@/contexts/AudioPlayerContext";
 import { DesktopHeader } from "@/components/layout/DesktopHeader";
 
@@ -38,6 +39,9 @@ interface AppLayoutProps {
  children: ReactNode;
 }
 
+const MOBILE_NAV_HEIGHT = 64;
+const MOBILE_MINI_PLAYER_HEIGHT = 56;
+
 export default function AppLayout({ children }: AppLayoutProps) {
  const [isFullscreenOpen, setIsFullscreenOpen] = useState(false);
  const { currentTrack } = useQueue();
@@ -58,11 +62,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
    {/* Mobile: padding for mini player */}
    <main
     id="main-content"
-    className="min-h-screen "
+    className="min-h-screen pb-[var(--mobile-shell-offset)] lg:pb-0"
     style={{
-     paddingBottom: currentTrack
-      ? "calc(64px + env(safe-area-inset-bottom))" // Mini player + safe area
-      : "env(safe-area-inset-bottom)", // Safe area only
+     ["--mobile-shell-offset" as string]: currentTrack
+      ? `calc(${MOBILE_NAV_HEIGHT + MOBILE_MINI_PLAYER_HEIGHT}px + env(safe-area-inset-bottom))`
+      : `calc(${MOBILE_NAV_HEIGHT}px + env(safe-area-inset-bottom))`,
     }}
     suppressHydrationWarning
    >
@@ -77,10 +81,15 @@ export default function AppLayout({ children }: AppLayoutProps) {
    {/* Mobile Mini Player - positioned at bottom */}
    <div
     className="fixed left-0 right-0 z-40 lg:hidden"
-    style={{ bottom: "env(safe-area-inset-bottom)" }}
+    style={{
+     bottom: `calc(${MOBILE_NAV_HEIGHT}px + env(safe-area-inset-bottom))`,
+    }}
    >
     <MiniPlayer onExpand={handleExpandPlayer} />
    </div>
+
+   {/* Persistent mobile bottom navigation */}
+   <MobileNav />
 
    {/* PWA Install Prompt */}
    <InstallPrompt />

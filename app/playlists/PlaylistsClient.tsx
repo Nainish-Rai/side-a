@@ -74,20 +74,20 @@ export function PlaylistsClient() {
 
   return (
     <div className="min-h-screen">
-      <div className="mx-auto max-w-6xl space-y-10 px-6 py-8">
+      <div className="w-full space-y-8 px-4 py-6 lg:mx-auto lg:max-w-6xl lg:space-y-10 lg:px-6 lg:py-8">
         <section className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xs font-mono uppercase tracking-widest text-foreground/90">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-[1.5rem] font-semibold leading-tight tracking-[-0.02em] text-foreground/92 lg:text-xs lg:font-mono lg:uppercase lg:tracking-widest">
               Your Playlists
             </h2>
-            <div className="flex items-center gap-4">
-              <span className="text-[10px] font-mono uppercase tracking-widest text-foreground/40">
+            <div className="flex flex-wrap items-center gap-2 lg:gap-4">
+              <span className="text-[11px] font-medium tracking-[0.08em] text-foreground/45 lg:text-[10px] lg:font-mono lg:uppercase lg:tracking-widest">
                 {playlists.length}
               </span>
               <button
                 type="button"
                 onClick={() => setIsImportOpen(true)}
-                className="inline-flex items-center gap-2 border border-foreground/20 px-3 py-2 text-[10px] font-mono uppercase tracking-widest text-foreground/70 transition-colors hover:text-foreground"
+                className="inline-flex items-center gap-2 border border-foreground/20 px-3 py-2 text-[11px] font-medium tracking-[0.01em] text-foreground/70 transition-colors hover:text-foreground lg:text-[10px] lg:font-mono lg:uppercase lg:tracking-widest"
               >
                 <Plus className="h-3.5 w-3.5" />
                 Import YTMusic
@@ -95,7 +95,7 @@ export function PlaylistsClient() {
               <button
                 type="button"
                 onClick={() => setIsSpotifyImportOpen(true)}
-                className="inline-flex items-center gap-2 border border-foreground/20 px-3 py-2 text-[10px] font-mono uppercase tracking-widest text-foreground/70 transition-colors hover:text-foreground"
+                className="inline-flex items-center gap-2 border border-foreground/20 px-3 py-2 text-[11px] font-medium tracking-[0.01em] text-foreground/70 transition-colors hover:text-foreground lg:text-[10px] lg:font-mono lg:uppercase lg:tracking-widest"
               >
                 <Plus className="h-3.5 w-3.5" />
                 Import Spotify
@@ -103,7 +103,7 @@ export function PlaylistsClient() {
               <button
                 type="button"
                 onClick={() => setIsCreateOpen(true)}
-                className="inline-flex items-center gap-2 border border-foreground bg-foreground px-3 py-2 text-[10px] font-mono uppercase tracking-widest text-background transition-opacity hover:opacity-90"
+                className="inline-flex items-center gap-2 border border-foreground bg-foreground px-3 py-2 text-[11px] font-medium tracking-[0.01em] text-background transition-opacity hover:opacity-90 lg:text-[10px] lg:font-mono lg:uppercase lg:tracking-widest"
               >
                 <Plus className="h-3.5 w-3.5" />
                 New Playlist

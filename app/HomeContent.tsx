@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { SearchResults } from "@/components/search/SearchResults";
 import { MobileSearchHeader } from "@/components/mobile/MobileSearchHeader";
 import { HomeHub } from "@/components/home/HomeHub";
@@ -17,6 +17,7 @@ function getSearchTab(value: string | null): SearchContentType {
 }
 
 function buildSearchHref(
+  pathname: string,
   query: string,
   tab: SearchContentType = DEFAULT_TAB,
 ) {
@@ -28,11 +29,12 @@ function buildSearchHref(
   }
 
   const search = params.toString();
-  return search ? `/?${search}` : "/";
+  return search ? `${pathname}?${search}` : pathname;
 }
 
 export function HomeContent() {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const query = searchParams.get("q") ?? "";
   const currentTab = getSearchTab(searchParams.get("tab"));
@@ -63,18 +65,18 @@ export function HomeContent() {
           query={draftQuery}
           onQueryChange={setDraftQuery}
           onSearch={(nextQuery) => {
-            router.push(buildSearchHref(nextQuery));
+            router.push(buildSearchHref(pathname, nextQuery));
           }}
           onClear={() => {
             setDraftQuery("");
-            router.push("/");
+            router.push(pathname);
           }}
           isLoading={isLoading}
           defaultExpanded
         />
       </div>
 
-      <div className="mx-auto max-w-6xl px-6 py-6 lg:py-8">
+      <div className="mx-auto max-w-6xl md:px-6 py-6 lg:py-8">
         <div className="sr-only" aria-live="polite" aria-atomic="true">
           {isLoading
             ? `Searching for ${query || "music"}`
@@ -96,7 +98,7 @@ export function HomeContent() {
               offset={searchMetadata?.offset}
               limit={searchMetadata?.limit}
               onTabChange={(tab) => {
-                router.push(buildSearchHref(query, tab));
+                router.push(buildSearchHref(pathname, query, tab));
               }}
               hasNextPage={hasNextPage}
               isFetchingMore={isFetchingMore}

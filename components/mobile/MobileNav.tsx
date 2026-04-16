@@ -13,28 +13,26 @@ interface Tab {
 }
 
 const tabs: Tab[] = [
-  { id: "home", label: "HOME", icon: Home, href: "/" },
-  { id: "search", label: "SEARCH", icon: Search, href: "/search" },
-  { id: "library", label: "LIBRARY", icon: Library, href: "/library" },
-  { id: "settings", label: "SETTINGS", icon: Settings, href: "/settings" },
+  { id: "home", label: "Home", icon: Home, href: "/" },
+  { id: "search", label: "Search", icon: Search, href: "/search" },
+  { id: "library", label: "Library", icon: Library, href: "/library" },
+  { id: "settings", label: "Settings", icon: Settings, href: "/settings" },
 ];
 
 export function MobileNav() {
   const pathname = usePathname();
 
   const isActive = (href: string) => {
-    if (href === "/") {
-      return pathname === "/" || pathname === "/search";
-    }
-    return pathname.startsWith(href);
+    return href === "/" ? pathname === "/" : pathname.startsWith(href);
   };
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 bg-black border-t border-white/10 lg:hidden"
+      className="fixed bottom-0 left-0 right-0 z-50 border-t border-foreground/10 bg-background/95 backdrop-blur-xl lg:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      aria-label="Primary navigation"
     >
-      <div className="flex items-center justify-around h-14">
+      <div className="flex h-16 items-center justify-around">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const active = isActive(tab.href);
@@ -44,19 +42,18 @@ export function MobileNav() {
               key={tab.id}
               href={tab.href}
               className={`
-                relative flex flex-col items-center justify-center
-                flex-1 h-full
+                relative flex h-full flex-1 flex-col items-center justify-center gap-1
                 transition-colors duration-200
-                ${active ? "text-white" : "text-white/40"}
+                ${active ? "text-foreground" : "text-foreground/45"}
               `}
+              aria-current={active ? "page" : undefined}
             >
-              {/* Active indicator - top border */}
               {active && (
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-[2px] bg-white" />
+                <div className="absolute top-2 h-1 w-8 bg-foreground" />
               )}
 
-              <Icon className="w-6 h-6" />
-              <span className="mt-1 text-[9px] font-mono uppercase tracking-widest">
+              <Icon className="h-5 w-5" />
+              <span className="text-[10px] font-medium leading-none tracking-[0.02em]">
                 {tab.label}
               </span>
             </Link>

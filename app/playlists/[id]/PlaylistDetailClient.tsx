@@ -192,7 +192,7 @@ export function PlaylistDetailClient({ playlistId }: PlaylistDetailClientProps) 
   if (!playlist) {
     return (
       <div className="min-h-screen">
-        <div className="mx-auto flex max-w-5xl items-center justify-center px-6 py-24">
+        <div className="flex items-center justify-center px-4 py-20 lg:mx-auto lg:max-w-5xl lg:px-6 lg:py-24">
           <div className="border border-foreground/10 px-10 py-14 text-center">
             <ListMusic className="mx-auto h-8 w-8 text-foreground/20" />
             <p className="mt-4 text-sm font-mono uppercase tracking-widest text-foreground/90">
@@ -216,11 +216,11 @@ export function PlaylistDetailClient({ playlistId }: PlaylistDetailClientProps) 
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-30 border-b border-foreground/10 bg-background lg:top-[73px]">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+        <div className="flex items-center justify-between px-4 py-3 lg:mx-auto lg:max-w-6xl lg:px-6 lg:py-4">
           <button
             type="button"
             onClick={() => router.push("/playlists")}
-            className="inline-flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-foreground/45 transition-colors hover:text-foreground/75"
+            className="inline-flex items-center gap-2 text-[11px] font-medium tracking-[0.01em] text-foreground/60 transition-colors hover:text-foreground/85 lg:text-[10px] lg:font-mono lg:uppercase lg:tracking-widest"
           >
             <ArrowLeft className="h-4 w-4" />
             Playlists
@@ -229,7 +229,7 @@ export function PlaylistDetailClient({ playlistId }: PlaylistDetailClientProps) 
             <button
               type="button"
               onClick={() => setIsEditOpen(true)}
-              className="inline-flex items-center gap-2 border border-foreground/20 px-3 py-2 text-[10px] font-mono uppercase tracking-widest text-foreground/60 transition-colors hover:text-foreground"
+              className="inline-flex items-center gap-2 border border-foreground/20 px-3 py-2 text-[11px] font-medium tracking-[0.01em] text-foreground/70 transition-colors hover:text-foreground lg:text-[10px] lg:font-mono lg:uppercase lg:tracking-widest"
             >
               <Pencil className="h-3.5 w-3.5" />
               Edit
@@ -237,7 +237,7 @@ export function PlaylistDetailClient({ playlistId }: PlaylistDetailClientProps) 
             <button
               type="button"
               onClick={() => setIsDeleteOpen(true)}
-              className="inline-flex items-center gap-2 border border-foreground/20 px-3 py-2 text-[10px] font-mono uppercase tracking-widest text-foreground/60 transition-colors hover:text-foreground"
+              className="inline-flex items-center gap-2 border border-foreground/20 px-3 py-2 text-[11px] font-medium tracking-[0.01em] text-foreground/70 transition-colors hover:text-foreground lg:text-[10px] lg:font-mono lg:uppercase lg:tracking-widest"
             >
               <Trash2 className="h-3.5 w-3.5" />
               Delete
@@ -246,9 +246,9 @@ export function PlaylistDetailClient({ playlistId }: PlaylistDetailClientProps) 
         </div>
       </header>
 
-      <div className="mx-auto max-w-6xl px-6 py-8">
-        <section className="grid gap-8 border-b border-foreground/10 pb-8 md:grid-cols-[240px_1fr]">
-          <div className="relative aspect-square overflow-hidden border border-foreground/10 bg-foreground/5">
+      <div className="w-full px-4 py-6 lg:mx-auto lg:max-w-6xl lg:px-6 lg:py-8">
+        <section className="grid gap-6 border-b border-foreground/10 pb-6 md:grid-cols-[240px_1fr] lg:gap-8 lg:pb-8">
+          <div className="relative aspect-square overflow-hidden border border-foreground/10 bg-foreground/5 md:max-w-[240px]">
             {coverUrl ? (
               <Image
                 src={coverUrl}
@@ -263,40 +263,40 @@ export function PlaylistDetailClient({ playlistId }: PlaylistDetailClientProps) 
               </div>
             )}
           </div>
-          <div className="space-y-6">
+          <div className="space-y-5 lg:space-y-6">
             <div>
-              <p className="text-[10px] font-mono uppercase tracking-widest text-foreground/35">
+              <p className="text-[11px] font-medium tracking-[0.08em] text-foreground/45 lg:text-[10px] lg:font-mono lg:uppercase lg:tracking-widest">
                 Local Playlist
               </p>
-              <h1 className="mt-2 text-3xl font-semibold uppercase tracking-[0.04em] text-foreground/92">
+              <h1 className="mt-2 text-[1.75rem] font-semibold leading-[1.1] tracking-[-0.02em] text-foreground/92 lg:text-3xl lg:uppercase lg:tracking-[0.04em]">
                 {playlist.name}
               </h1>
-              <p className="mt-3 max-w-2xl text-sm leading-relaxed text-foreground/55">
+              <p className="mt-3 max-w-2xl text-[15px] leading-6 text-foreground/60 lg:text-sm lg:leading-relaxed">
                 {playlist.description || "No description set."}
               </p>
             </div>
-            <div className="flex flex-wrap items-center gap-6 border-t border-foreground/10 pt-4">
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-foreground/10 pt-4">
               <div>
-                <p className="text-[9px] font-mono uppercase tracking-widest text-foreground/35">
+                <p className="text-[10px] font-medium tracking-[0.08em] text-foreground/45 lg:text-[9px] lg:font-mono lg:uppercase lg:tracking-widest">
                   Tracks
                 </p>
-                <p className="mt-1 text-sm font-mono tabular-nums text-foreground/70">
+                <p className="mt-1 text-[15px] font-medium tabular-nums text-foreground/75 lg:text-sm lg:font-mono">
                   {playlist.tracks.length}
                 </p>
               </div>
               <div>
-                <p className="text-[9px] font-mono uppercase tracking-widest text-foreground/35">
+                <p className="text-[10px] font-medium tracking-[0.08em] text-foreground/45 lg:text-[9px] lg:font-mono lg:uppercase lg:tracking-widest">
                   Duration
                 </p>
-                <p className="mt-1 text-sm font-mono tabular-nums text-foreground/70">
+                <p className="mt-1 text-[15px] font-medium tabular-nums text-foreground/75 lg:text-sm lg:font-mono">
                   {formatDuration(totalDuration)}
                 </p>
               </div>
               <div>
-                <p className="text-[9px] font-mono uppercase tracking-widest text-foreground/35">
+                <p className="text-[10px] font-medium tracking-[0.08em] text-foreground/45 lg:text-[9px] lg:font-mono lg:uppercase lg:tracking-widest">
                   Updated
                 </p>
-                <p className="mt-1 text-sm font-mono tabular-nums text-foreground/70">
+                <p className="mt-1 text-[15px] font-medium tabular-nums text-foreground/75 lg:text-sm lg:font-mono">
                   {new Date(playlist.updatedAt).toLocaleDateString()}
                 </p>
               </div>
@@ -311,7 +311,7 @@ export function PlaylistDetailClient({ playlistId }: PlaylistDetailClientProps) 
                   }
                   void setQueue(playlist.tracks, 0);
                 }}
-                className="inline-flex items-center gap-2 border border-foreground bg-foreground px-4 py-3 text-[10px] font-mono uppercase tracking-widest text-background transition-opacity hover:opacity-90"
+                className="inline-flex items-center gap-2 border border-foreground bg-foreground px-4 py-3 text-[11px] font-medium tracking-[0.01em] text-background transition-opacity hover:opacity-90 lg:text-[10px] lg:font-mono lg:uppercase lg:tracking-widest"
                 >
                   <Play className="h-3.5 w-3.5 fill-current" />
                   Play Playlist
@@ -328,12 +328,12 @@ export function PlaylistDetailClient({ playlistId }: PlaylistDetailClientProps) 
                   void setQueue(shuffledTracks, 0);
                   toast.success("SHUFFLE MODE ACTIVE");
                 }}
-                className="inline-flex items-center gap-2 border border-foreground/20 px-4 py-3 text-[10px] font-mono uppercase tracking-widest text-foreground/65 transition-colors hover:text-foreground"
+                className="inline-flex items-center gap-2 border border-foreground/20 px-4 py-3 text-[11px] font-medium tracking-[0.01em] text-foreground/70 transition-colors hover:text-foreground lg:text-[10px] lg:font-mono lg:uppercase lg:tracking-widest"
               >
                 <Shuffle className="h-3.5 w-3.5" />
                 Shuffle Playlist
               </button>
-              <p className="text-[10px] font-mono uppercase tracking-widest text-foreground/35">
+              <p className="text-[11px] text-foreground/45 lg:text-[10px] lg:font-mono lg:uppercase lg:tracking-widest">
                 Drag rows to reorder
               </p>
             </div>
@@ -342,7 +342,7 @@ export function PlaylistDetailClient({ playlistId }: PlaylistDetailClientProps) 
 
         <section className="pt-8">
           <div className="border-t border-foreground/10">
-            <div className="sticky top-[57px] z-20 border-b border-foreground/10 bg-background/95 backdrop-blur-xl lg:top-[146px]">
+            <div className="sticky top-[53px] z-20 hidden border-b border-foreground/10 bg-background/95 backdrop-blur-xl lg:top-[146px] lg:block">
               <div className="grid grid-cols-[24px_40px_1fr_90px_72px_24px] gap-4 px-6 py-3">
                 <span className="text-[10px] font-mono uppercase tracking-widest text-foreground/40">
                   Move
@@ -362,7 +362,7 @@ export function PlaylistDetailClient({ playlistId }: PlaylistDetailClientProps) 
             </div>
 
             {playlist.tracks.length === 0 ? (
-              <div className="border-b border-foreground/10 px-8 py-14 text-center">
+              <div className="border-b border-foreground/10 px-6 py-14 text-center">
                 <ListMusic className="mx-auto h-8 w-8 text-foreground/20" />
                 <p className="mt-4 text-sm font-mono uppercase tracking-widest text-foreground/90">
                   No Tracks Yet

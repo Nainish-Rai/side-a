@@ -1,3 +1,4 @@
+import AppLayout from "@/components/layout/AppLayout";
 import { api } from "@/lib/api";
 import { AlbumClient } from "./AlbumClient";
 import { notFound } from "next/navigation";
@@ -26,7 +27,11 @@ export default async function AlbumPage({ params }: AlbumPageProps) {
     notFound();
   }
 
-  return <AlbumClient album={pageData.album} tracks={pageData.tracks} />;
+  return (
+    <AppLayout>
+      <AlbumClient album={pageData.album} tracks={pageData.tracks} />
+    </AppLayout>
+  );
 }
 
 export async function generateMetadata({

@@ -1,3 +1,4 @@
+import AppLayout from "@/components/layout/AppLayout";
 import { api } from "@/lib/api";
 import { ArtistClient } from "./ArtistClient";
 import { notFound } from "next/navigation";
@@ -186,11 +187,13 @@ export default async function ArtistPage({
   }
 
   return (
-    <ArtistClient
-      artist={data.artist}
-      topTracks={data.topTracks}
-      discography={data.discography}
-    />
+    <AppLayout>
+      <ArtistClient
+        artist={data.artist}
+        topTracks={data.topTracks}
+        discography={data.discography}
+      />
+    </AppLayout>
   );
 }
 

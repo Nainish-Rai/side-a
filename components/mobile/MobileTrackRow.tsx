@@ -7,158 +7,160 @@ import { api } from "@/lib/api";
 import { useLibrary } from "@/contexts/LibraryContext";
 import Image from "next/image";
 import {
- Disc,
- MoreVertical,
- Play,
- ListPlus,
- FolderPlus,
- Share2,
- Heart,
- SkipForward,
+  Disc,
+  MoreVertical,
+  Play,
+  ListPlus,
+  FolderPlus,
+  Share2,
+  Heart,
+  SkipForward,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { TrackArtistLinks } from "@/components/tracks/TrackMetaLinks";
 
 interface MobileTrackRowProps {
- track: Track;
- index: number;
- isCurrentTrack: boolean;
- isPlaying: boolean;
- isLoading: boolean;
- onClick: () => void;
- onAddToQueue?: () => void;
- onAddToPlaylist?: () => void;
- onPlayNext?: () => void;
- onShare?: () => void;
- onToggleLike?: () => void;
- isLiked?: boolean;
+  track: Track;
+  index: number;
+  isCurrentTrack: boolean;
+  isPlaying: boolean;
+  isLoading: boolean;
+  onClick: () => void;
+  onAddToQueue?: () => void;
+  onAddToPlaylist?: () => void;
+  onPlayNext?: () => void;
+  onShare?: () => void;
+  onToggleLike?: () => void;
+  isLiked?: boolean;
 }
 
 const LONG_PRESS_DURATION = 500; // ms
 
 function MobileTrackRow({
- track,
- index,
- isCurrentTrack,
- isPlaying,
- isLoading,
- onClick,
- onAddToQueue,
- onAddToPlaylist,
- onPlayNext,
- onShare,
- onToggleLike,
- isLiked = false,
+  track,
+  index,
+  isCurrentTrack,
+  isPlaying,
+  isLoading,
+  onClick,
+  onAddToQueue,
+  onAddToPlaylist,
+  onPlayNext,
+  onShare,
+  onToggleLike,
+  isLiked = false,
 }: MobileTrackRowProps) {
- const { getPlaylistsForTrack } = useLibrary();
- const [showContextMenu, setShowContextMenu] = useState(false);
- const longPressTimer = useRef<NodeJS.Timeout | null>(null);
- const touchStartPos = useRef<{ x: number; y: number } | null>(null);
+  const { getPlaylistsForTrack } = useLibrary();
+  const [showContextMenu, setShowContextMenu] = useState(false);
+  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
+  const touchStartPos = useRef<{ x: number; y: number } | null>(null);
 
- // Memoize cover URL computation
- const coverUrl = useMemo(() => {
-  const coverId = track.album?.cover || track.album?.id;
-  return coverId ? api.getCoverUrl(coverId, "160") : undefined;
- }, [track.album?.cover, track.album?.id]);
+  // Memoize cover URL computation
+  const coverUrl = useMemo(() => {
+    const coverId = track.album?.cover || track.album?.id;
+    return coverId ? api.getCoverUrl(coverId, "160") : undefined;
+  }, [track.album?.cover, track.album?.id]);
 
- // Memoize quality tags computation
- const qualityInfo = useMemo(() => {
-  const qualityTags = track.mediaMetadata?.tags || [];
-  return {
-   hasHiRes: qualityTags.includes("HIRES_LOSSLESS"),
-   hasLossless: qualityTags.includes("LOSSLESS"),
-   hasDolbyAtmos: qualityTags.includes("DOLBY_ATMOS"),
-  };
- }, [track.mediaMetadata?.tags]);
+  // Memoize quality tags computation
+  const qualityInfo = useMemo(() => {
+    const qualityTags = track.mediaMetadata?.tags || [];
+    return {
+      hasHiRes: qualityTags.includes("HIRES_LOSSLESS"),
+      hasLossless: qualityTags.includes("LOSSLESS"),
+      hasDolbyAtmos: qualityTags.includes("DOLBY_ATMOS"),
+    };
+  }, [track.mediaMetadata?.tags]);
 
- const { hasHiRes, hasDolbyAtmos } = qualityInfo;
- const playlists = getPlaylistsForTrack(track.id);
- const playlistLabel =
-  playlists.length > 0 ? playlists.map((playlist) => playlist.name).join(", ") : "";
+  const { hasHiRes, hasDolbyAtmos } = qualityInfo;
+  const playlists = getPlaylistsForTrack(track.id);
+  const playlistLabel =
+    playlists.length > 0
+      ? playlists.map((playlist) => playlist.name).join(", ")
+      : "";
 
- // Long press handlers
- const handleTouchStart = useCallback((e: React.TouchEvent) => {
-  touchStartPos.current = {
-   x: e.touches[0].clientX,
-   y: e.touches[0].clientY,
-  };
-  longPressTimer.current = setTimeout(() => {
-   setShowContextMenu(true);
-   // Haptic feedback if available
-   if (navigator.vibrate) {
-    navigator.vibrate(50);
-   }
-  }, LONG_PRESS_DURATION);
- }, []);
+  // Long press handlers
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartPos.current = {
+      x: e.touches[0].clientX,
+      y: e.touches[0].clientY,
+    };
+    longPressTimer.current = setTimeout(() => {
+      setShowContextMenu(true);
+      // Haptic feedback if available
+      if (navigator.vibrate) {
+        navigator.vibrate(50);
+      }
+    }, LONG_PRESS_DURATION);
+  }, []);
 
- const handleTouchMove = useCallback((e: React.TouchEvent) => {
-  if (!touchStartPos.current) return;
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!touchStartPos.current) return;
 
-  const deltaX = Math.abs(e.touches[0].clientX - touchStartPos.current.x);
-  const deltaY = Math.abs(e.touches[0].clientY - touchStartPos.current.y);
+    const deltaX = Math.abs(e.touches[0].clientX - touchStartPos.current.x);
+    const deltaY = Math.abs(e.touches[0].clientY - touchStartPos.current.y);
 
-  // Cancel long press if user moves finger too much
-  if (deltaX > 10 || deltaY > 10) {
-   if (longPressTimer.current) {
-    clearTimeout(longPressTimer.current);
-    longPressTimer.current = null;
-   }
-  }
- }, []);
+    // Cancel long press if user moves finger too much
+    if (deltaX > 10 || deltaY > 10) {
+      if (longPressTimer.current) {
+        clearTimeout(longPressTimer.current);
+        longPressTimer.current = null;
+      }
+    }
+  }, []);
 
- const handleTouchEnd = useCallback(() => {
-  if (longPressTimer.current) {
-   clearTimeout(longPressTimer.current);
-   longPressTimer.current = null;
-  }
-  touchStartPos.current = null;
- }, []);
+  const handleTouchEnd = useCallback(() => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+    touchStartPos.current = null;
+  }, []);
 
- const handleClick = useCallback(() => {
-  if (!showContextMenu) {
-   onClick();
-  }
- }, [showContextMenu, onClick]);
+  const handleClick = useCallback(() => {
+    if (!showContextMenu) {
+      onClick();
+    }
+  }, [showContextMenu, onClick]);
 
- const handleContextMenuAction = useCallback(
-  (action: "play" | "next" | "queue" | "playlist" | "share" | "like") => {
-   setShowContextMenu(false);
-   switch (action) {
-    case "play":
-     onClick();
-     break;
-    case "next":
-     onPlayNext?.();
-     break;
-    case "queue":
-     onAddToQueue?.();
-     break;
-    case "playlist":
-     onAddToPlaylist?.();
-     break;
-    case "share":
-     onShare?.();
-     break;
-    case "like":
-     onToggleLike?.();
-     break;
-   }
-  },
-  [onClick, onAddToPlaylist, onAddToQueue, onPlayNext, onShare, onToggleLike],
- );
+  const handleContextMenuAction = useCallback(
+    (action: "play" | "next" | "queue" | "playlist" | "share" | "like") => {
+      setShowContextMenu(false);
+      switch (action) {
+        case "play":
+          onClick();
+          break;
+        case "next":
+          onPlayNext?.();
+          break;
+        case "queue":
+          onAddToQueue?.();
+          break;
+        case "playlist":
+          onAddToPlaylist?.();
+          break;
+        case "share":
+          onShare?.();
+          break;
+        case "like":
+          onToggleLike?.();
+          break;
+      }
+    },
+    [onClick, onAddToPlaylist, onAddToQueue, onPlayNext, onShare, onToggleLike],
+  );
 
- return (
-  <>
-   <div
-    onClick={handleClick}
-    onTouchStart={handleTouchStart}
-    onTouchMove={handleTouchMove}
-    onTouchEnd={handleTouchEnd}
-    onTouchCancel={handleTouchEnd}
-    data-track-index={index}
-    className={`
+  return (
+    <>
+      <div
+        onClick={handleClick}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd}
+        data-track-index={index}
+        className={`
           relative flex items-center gap-3
-          px-0 py-3
+          px-4 py-3
           border-b border-foreground/10
           cursor-pointer
           transition-colors duration-150
@@ -166,243 +168,255 @@ function MobileTrackRow({
           ${isCurrentTrack ? "border-l-[3px] border-l-foreground pl-[13px]" : ""}
           ${isLoading ? "opacity-50 pointer-events-none" : ""}
         `}
-   >
-    {/* Cover Art - 48px for better touch */}
-    <div className="relative w-12 h-12 flex-shrink-0 bg-foreground/5 border border-foreground/10 overflow-hidden">
-     {coverUrl ? (
-      <Image
-       src={coverUrl}
-       alt={track.album?.title || "Album cover"}
-       width={48}
-       height={48}
-       className="w-full h-full object-cover"
-      />
-     ) : (
-      <div className="w-full h-full flex items-center justify-center">
-       <Disc className="w-5 h-5 text-foreground/20" />
-      </div>
-     )}
-
-     {/* Playing indicator overlay */}
-     {isCurrentTrack && isPlaying && (
-      <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-       <div className="flex items-end gap-[2px] h-4">
-        <div
-         className="w-[3px] bg-white animate-[wave1_0.6s_ease-in-out_infinite]"
-         style={{ height: "40%" }}
-        />
-        <div
-         className="w-[3px] bg-white animate-[wave2_0.6s_ease-in-out_infinite]"
-         style={{ height: "100%", animationDelay: "0.1s" }}
-        />
-        <div
-         className="w-[3px] bg-white animate-[wave3_0.6s_ease-in-out_infinite]"
-         style={{ height: "60%", animationDelay: "0.2s" }}
-        />
-       </div>
-      </div>
-     )}
-    </div>
-
-    {/* Track Info */}
-    <div className="flex-1 min-w-0">
-     <div className="flex items-center gap-2 mb-0.5">
-      <h3
-       className={`font-medium text-[15px] truncate ${
-        isCurrentTrack ? "text-foreground" : "text-foreground/90"
-       }`}
       >
-       {getTrackTitle(track)}
-      </h3>
-      {track.explicit && (
-       <span className="flex-shrink-0 text-[10px] font-bold px-1 py-0.5 border border-foreground/20 text-foreground/50 font-mono">
-        E
-       </span>
-      )}
-     </div>
+        {/* Cover Art - 48px for better touch */}
+        <div className="relative w-14 h-14 flex-shrink-0 bg-foreground/5 border border-foreground/10 overflow-hidden">
+          {coverUrl ? (
+            <Image
+              src={coverUrl}
+              alt={track.album?.title || "Album cover"}
+              width={60}
+              height={60}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <Disc className="w-5 h-5 text-foreground/20" />
+            </div>
+          )}
 
-     <div className="flex items-center gap-2">
-     <span className="text-[13px] text-foreground/50 truncate">
-      <TrackArtistLinks track={track} className="hover:text-foreground/70 transition-colors" />
-     </span>
-      {playlists.length > 0 && (
-       <span
-        className="shrink-0 text-[10px] font-mono uppercase tracking-wider text-foreground/35"
-        title={playlistLabel}
-       >
-        PL {playlists.length}
-       </span>
-      )}
-     </div>
-
-     {/* Quality badges + Duration row */}
-     <div className="flex items-center gap-2 mt-1">
-      {hasDolbyAtmos && (
-       <span className="text-[10px] font-bold font-mono px-1 py-0.5 border border-foreground/20 text-foreground/50 uppercase tracking-wider">
-        ATMOS
-       </span>
-      )}
-      {hasHiRes && (
-       <span className="text-[10px] font-bold font-mono px-1 py-0.5 border border-foreground/20 text-foreground/50 uppercase tracking-wider">
-        HI-RES
-       </span>
-      )}
-      {track.audioQuality && !hasHiRes && (
-       <span className="text-[10px] font-bold font-mono px-1 py-0.5 border border-foreground/20 text-foreground/50 uppercase tracking-wider">
-        {track.audioQuality}
-       </span>
-      )}
-      <span className="text-[11px] font-mono text-foreground/40 tabular-nums ml-auto">
-       {formatTime(track.duration)}
-      </span>
-     </div>
-    </div>
-
-    <div className="flex items-center -mr-2">
-     {onToggleLike && (
-      <button
-       onClick={(e) => {
-        e.stopPropagation();
-        onToggleLike();
-       }}
-       className="w-10 h-10 flex items-center justify-center text-foreground/40 active:bg-foreground/10"
-       aria-label={isLiked ? "Unlike track" : "Like track"}
-      >
-       <Heart className={`w-4 h-4 ${isLiked ? "fill-foreground text-foreground" : ""}`} />
-      </button>
-     )}
-     <button
-      onClick={(e) => {
-       e.stopPropagation();
-       setShowContextMenu(true);
-      }}
-      className="w-10 h-10 flex items-center justify-center text-foreground/40 active:bg-foreground/10"
-      aria-label="More options"
-     >
-      <MoreVertical className="w-5 h-5" />
-     </button>
-    </div>
-   </div>
-
-   {/* Context Menu */}
-   <AnimatePresence>
-    {showContextMenu && (
-     <>
-      {/* Backdrop */}
-      <motion.div
-       initial={{ opacity: 0 }}
-       animate={{ opacity: 1 }}
-       exit={{ opacity: 0 }}
-       className="fixed inset-0 bg-black/60 z-50"
-       onClick={() => setShowContextMenu(false)}
-      />
-
-      {/* Menu */}
-      <motion.div
-       initial={{ opacity: 0, y: 100 }}
-       animate={{ opacity: 1, y: 0 }}
-       exit={{ opacity: 0, y: 100 }}
-       transition={{ type: "spring", damping: 25, stiffness: 300 }}
-       className="fixed bottom-0 left-0 right-0 z-50 bg-black border-t border-white/10"
-       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
-      >
-       {/* Track preview */}
-       <div className="flex items-center gap-3 px-4 py-4 border-b border-white/10">
-        {coverUrl && (
-         <div className="w-12 h-12 flex-shrink-0 overflow-hidden">
-          <Image
-           src={coverUrl}
-           alt=""
-           width={48}
-           height={48}
-           className="w-full h-full object-cover"
-          />
-         </div>
-        )}
-        <div className="min-w-0 flex-1">
-         <div className="font-medium text-sm text-white truncate">
-          {getTrackTitle(track)}
-         </div>
-         <div className="text-xs text-white/50 truncate">
-          <TrackArtistLinks track={track} className="hover:text-white/80 transition-colors" />
-         </div>
+          {/* Playing indicator overlay */}
+          {isCurrentTrack && isPlaying && (
+            <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+              <div className="flex items-end gap-[2px] h-4">
+                <div
+                  className="w-[3px] bg-white animate-[wave1_0.6s_ease-in-out_infinite]"
+                  style={{ height: "40%" }}
+                />
+                <div
+                  className="w-[3px] bg-white animate-[wave2_0.6s_ease-in-out_infinite]"
+                  style={{ height: "100%", animationDelay: "0.1s" }}
+                />
+                <div
+                  className="w-[3px] bg-white animate-[wave3_0.6s_ease-in-out_infinite]"
+                  style={{ height: "60%", animationDelay: "0.2s" }}
+                />
+              </div>
+            </div>
+          )}
         </div>
-       </div>
 
-       {/* Actions */}
-       <div className="py-2">
-        <button
-         onClick={() => handleContextMenuAction("play")}
-         className="w-full flex items-center gap-4 px-4 py-4 active:bg-white/5"
-         >
-          <Play className="w-5 h-5 text-white/60" />
-          <span className="text-sm text-white">Play Now</span>
-         </button>
+        {/* Track Info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-0.5">
+            <h3
+              className={`font-semibold text-[16px] truncate ${
+                isCurrentTrack ? "text-foreground" : "text-foreground/90"
+              }`}
+            >
+              {getTrackTitle(track)}
+            </h3>
+            {track.explicit && (
+              <span className="flex-shrink-0 text-[10px] font-bold px-1 py-0.5 border border-foreground/20 text-foreground/50 font-mono">
+                E
+              </span>
+            )}
+          </div>
 
-         {onPlayNext && (
+          <div className="flex items-center gap-2">
+            <span className="text-[13px] text-foreground/50 truncate">
+              <TrackArtistLinks
+                track={track}
+                className="hover:text-foreground/70 transition-colors"
+              />
+            </span>
+            {playlists.length > 0 && (
+              <span
+                className="shrink-0 text-[10px] font-mono uppercase tracking-wider text-foreground/35"
+                title={playlistLabel}
+              >
+                PL {playlists.length}
+              </span>
+            )}
+          </div>
+
+          {/* Quality badges + Duration row */}
+          <div className="flex items-center gap-2 mt-1">
+            {hasDolbyAtmos && (
+              <span className="text-[10px] font-bold font-mono px-1 py-0.5 border border-foreground/20 text-foreground/50 uppercase tracking-wider">
+                ATMOS
+              </span>
+            )}
+            {hasHiRes && (
+              <span className="text-[10px] font-bold font-mono px-1 py-0.5 border border-foreground/20 text-foreground/50 uppercase tracking-wider">
+                HI-RES
+              </span>
+            )}
+            {track.audioQuality && !hasHiRes && (
+              <span className="text-[10px] font-bold font-mono px-1 py-0.5 border border-foreground/20 text-foreground/50 uppercase tracking-wider">
+                {track.audioQuality}
+              </span>
+            )}
+            <span className="text-[11px] font-mono text-foreground/40 tabular-nums ml-auto">
+              {formatTime(track.duration)}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-center -mr-2">
+          {onToggleLike && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleLike();
+              }}
+              className="w-10 h-10 flex items-center justify-center text-foreground/40 active:bg-foreground/10"
+              aria-label={isLiked ? "Unlike track" : "Like track"}
+            >
+              <Heart
+                className={`w-4 h-4 ${isLiked ? "fill-foreground text-foreground" : ""}`}
+              />
+            </button>
+          )}
           <button
-           onClick={() => handleContextMenuAction("next")}
-           className="w-full flex items-center gap-4 px-4 py-4 active:bg-white/5"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowContextMenu(true);
+            }}
+            className="w-10 h-10 flex items-center justify-center text-foreground/40 active:bg-foreground/10"
+            aria-label="More options"
           >
-           <SkipForward className="w-5 h-5 text-white/60" />
-           <span className="text-sm text-white">Play Next</span>
+            <MoreVertical className="w-5 h-5" />
           </button>
-         )}
+        </div>
+      </div>
 
-         {onAddToQueue && (
-          <button
-           onClick={() => handleContextMenuAction("queue")}
-           className="w-full flex items-center gap-4 px-4 py-4 active:bg-white/5"
-          >
-           <ListPlus className="w-5 h-5 text-white/60" />
-           <span className="text-sm text-white">Add to Queue</span>
-          </button>
-         )}
+      {/* Context Menu */}
+      <AnimatePresence>
+        {showContextMenu && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/60 z-50"
+              onClick={() => setShowContextMenu(false)}
+            />
 
-         {onAddToPlaylist && (
-          <button
-           onClick={() => handleContextMenuAction("playlist")}
-           className="w-full flex items-center gap-4 px-4 py-4 active:bg-white/5"
-          >
-           <FolderPlus className="w-5 h-5 text-white/60" />
-           <span className="text-sm text-white">Add to Playlist</span>
-          </button>
-         )}
+            {/* Menu */}
+            <motion.div
+              initial={{ opacity: 0, y: 100 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 100 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="fixed bottom-0 left-0 right-0 z-50 bg-black border-t border-white/10"
+              style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+            >
+              {/* Track preview */}
+              <div className="flex items-center gap-3 px-4 py-4 border-b border-white/10">
+                {coverUrl && (
+                  <div className="w-12 h-12 flex-shrink-0 overflow-hidden">
+                    <Image
+                      src={coverUrl}
+                      alt=""
+                      width={48}
+                      height={48}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <div className="font-medium text-sm text-white truncate">
+                    {getTrackTitle(track)}
+                  </div>
+                  <div className="text-xs text-white/50 truncate">
+                    <TrackArtistLinks
+                      track={track}
+                      className="hover:text-white/80 transition-colors"
+                    />
+                  </div>
+                </div>
+              </div>
 
-        <button
-         onClick={() => handleContextMenuAction("share")}
-         className="w-full flex items-center gap-4 px-4 py-4 active:bg-white/5"
-        >
-         <Share2 className="w-5 h-5 text-white/60" />
-         <span className="text-sm text-white">Share</span>
-        </button>
+              {/* Actions */}
+              <div className="py-2">
+                <button
+                  onClick={() => handleContextMenuAction("play")}
+                  className="w-full flex items-center gap-4 px-4 py-4 active:bg-white/5"
+                >
+                  <Play className="w-5 h-5 text-white/60" />
+                  <span className="text-sm text-white">Play Now</span>
+                </button>
 
-        {onToggleLike && (
-         <button
-          onClick={() => handleContextMenuAction("like")}
-          className="w-full flex items-center gap-4 px-4 py-4 active:bg-white/5"
-         >
-          <Heart className={`w-5 h-5 text-white/60 ${isLiked ? "fill-white text-white" : ""}`} />
-          <span className="text-sm text-white">{isLiked ? "Unlike" : "Like"}</span>
-         </button>
+                {onPlayNext && (
+                  <button
+                    onClick={() => handleContextMenuAction("next")}
+                    className="w-full flex items-center gap-4 px-4 py-4 active:bg-white/5"
+                  >
+                    <SkipForward className="w-5 h-5 text-white/60" />
+                    <span className="text-sm text-white">Play Next</span>
+                  </button>
+                )}
+
+                {onAddToQueue && (
+                  <button
+                    onClick={() => handleContextMenuAction("queue")}
+                    className="w-full flex items-center gap-4 px-4 py-4 active:bg-white/5"
+                  >
+                    <ListPlus className="w-5 h-5 text-white/60" />
+                    <span className="text-sm text-white">Add to Queue</span>
+                  </button>
+                )}
+
+                {onAddToPlaylist && (
+                  <button
+                    onClick={() => handleContextMenuAction("playlist")}
+                    className="w-full flex items-center gap-4 px-4 py-4 active:bg-white/5"
+                  >
+                    <FolderPlus className="w-5 h-5 text-white/60" />
+                    <span className="text-sm text-white">Add to Playlist</span>
+                  </button>
+                )}
+
+                <button
+                  onClick={() => handleContextMenuAction("share")}
+                  className="w-full flex items-center gap-4 px-4 py-4 active:bg-white/5"
+                >
+                  <Share2 className="w-5 h-5 text-white/60" />
+                  <span className="text-sm text-white">Share</span>
+                </button>
+
+                {onToggleLike && (
+                  <button
+                    onClick={() => handleContextMenuAction("like")}
+                    className="w-full flex items-center gap-4 px-4 py-4 active:bg-white/5"
+                  >
+                    <Heart
+                      className={`w-5 h-5 text-white/60 ${isLiked ? "fill-white text-white" : ""}`}
+                    />
+                    <span className="text-sm text-white">
+                      {isLiked ? "Unlike" : "Like"}
+                    </span>
+                  </button>
+                )}
+              </div>
+
+              {/* Cancel */}
+              <div className="border-t border-white/10">
+                <button
+                  onClick={() => setShowContextMenu(false)}
+                  className="w-full py-4 text-sm font-medium text-white/60 active:bg-white/5"
+                >
+                  Cancel
+                </button>
+              </div>
+            </motion.div>
+          </>
         )}
-       </div>
-
-       {/* Cancel */}
-       <div className="border-t border-white/10">
-        <button
-         onClick={() => setShowContextMenu(false)}
-         className="w-full py-4 text-sm font-medium text-white/60 active:bg-white/5"
-        >
-         Cancel
-        </button>
-       </div>
-      </motion.div>
-     </>
-    )}
-   </AnimatePresence>
-  </>
- );
+      </AnimatePresence>
+    </>
+  );
 }
 
 MobileTrackRow.displayName = "MobileTrackRow";

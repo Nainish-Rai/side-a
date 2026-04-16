@@ -69,7 +69,7 @@ export function MobileSearchHeader({
 
   return (
     <header className="sticky top-0 z-30 border-b border-foreground/10 bg-background lg:hidden">
-      <div className="px-4 pt-3">
+      <div className="md:px-4 md:pt-3">
         {isExpanded ? (
           <form
             onSubmit={handleSubmit}
@@ -117,28 +117,30 @@ export function MobileSearchHeader({
         ) : (
           <div className="border border-foreground/10">
             <div className="grid grid-cols-[1fr_auto]">
-              <Link
-                href="/"
-                className="flex items-center gap-3 border-r border-foreground/10 px-3 py-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2"
-                aria-label="Go to homepage"
-              >
-                <AnimatedLogoMark className="text-foreground" />
+              <div className="flex gap-2 items-center">
+                <Link
+                  href="/"
+                  className="flex items-center gap-3  border-foreground/10 px-3 py-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2"
+                  aria-label="Go to homepage"
+                >
+                  <AnimatedLogoMark className="text-foreground" />
 
-                <div>
-                  <h1 className="text-sm font-mono uppercase leading-tight tracking-widest text-foreground">
-                    SIDE A
-                  </h1>
-                  <p className="text-[10px] font-mono uppercase tracking-widest text-foreground/60">
-                    HI-FI SEARCH
-                  </p>
-                </div>
-              </Link>
-
-              <div className="flex items-center px-1">
+                  <div>
+                    <h1 className="text-lg font-mono font-semibold uppercase  tracking-widest text-foreground">
+                      SIDE A
+                    </h1>
+                    {/*<p className="text-[12px] font-mono uppercase tracking-widest text-foreground/60">
+                      HI-FI SEARCH
+                    </p>*/}
+                  </div>
+                </Link>
                 <div className="pr-1">
                   <AuthStatusButton />
                 </div>
-                <Link
+              </div>
+
+              <div className="flex items-center px-1">
+                {/*<Link
                   href="/library"
                   className="flex h-10 w-10 items-center justify-center text-foreground/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2"
                   aria-label="Open library"
@@ -151,7 +153,7 @@ export function MobileSearchHeader({
                   aria-label="Open playlists"
                 >
                   <ListMusic className="h-5 w-5" />
-                </Link>
+                </Link>*/}
                 <button
                   type="button"
                   onClick={handleExpand}

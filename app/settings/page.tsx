@@ -1,6 +1,10 @@
-// app/settings/page.tsx
+import AppLayout from "@/components/layout/AppLayout";
 import { SettingsClient } from "./SettingsClient";
 
 export default function SettingsPage() {
-  return <SettingsClient />;
+  return (
+    <AppLayout>
+      <SettingsClient />
+    </AppLayout>
+  );
 }

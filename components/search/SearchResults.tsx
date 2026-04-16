@@ -298,7 +298,7 @@ export function SearchResults({
       {/* Tab Navigation - Block based */}
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-foreground/10">
         <div
-          className="flex items-center gap-1 lg:gap-8 overflow-x-auto no-scrollbar py-2 lg:py-4 px-4 lg:px-6"
+          className="flex items-center gap-1 lg:gap-8 overflow-x-auto no-scrollbar md:py-2 lg:py-4 px-4 lg:px-6"
           style={{ WebkitOverflowScrolling: "touch" }}
         >
           {tabs.map((tab) => (
@@ -346,8 +346,8 @@ export function SearchResults({
           {isLoading
             ? `Searching ${contentType}`
             : totalNumberOfItems !== undefined
-            ? `${totalNumberOfItems.toLocaleString()} ${contentType}`
-            : `${items?.length ?? 0} ${contentType}`}
+              ? `${totalNumberOfItems.toLocaleString()} ${contentType}`
+              : `${items?.length ?? 0} ${contentType}`}
         </div>
       </div>
 
@@ -395,270 +395,270 @@ export function SearchResults({
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
           >
-        {contentType === "tracks" ? (
-          <div className="border-b border-foreground/10">
-            {/* Table header - desktop only */}
-            <div className="sticky top-[3.8rem] z-10 hidden lg:block">
-              <TableHeader />
-            </div>
-            <div>
-              {tracks?.map((track, index) => {
-                const isCurrentTrack = currentTrack?.id === track.id;
+            {contentType === "tracks" ? (
+              <div className="border-b border-foreground/10">
+                {/* Table header - desktop only */}
+                <div className="sticky top-[3.8rem] z-10 hidden lg:block">
+                  <TableHeader />
+                </div>
+                <div>
+                  {tracks?.map((track, index) => {
+                    const isCurrentTrack = currentTrack?.id === track.id;
 
-                // Use MobileTrackRow on mobile, TrackRow on desktop
-                if (isMobile) {
-                  return (
-                    <MobileTrackRow
-                      key={`${track.id}-${index}`}
-                      track={track}
-                      index={index}
-                      isCurrentTrack={isCurrentTrack}
-                      isPlaying={isCurrentTrack && isPlaying}
-                      isLoading={loadingTrackId === track.id}
-                      onClick={() => handleTrackClick(track, index)}
-                      isLiked={isTrackLiked(track.id)}
-                      onToggleLike={() => toggleTrackLike(track)}
-                      onAddToQueue={() => handleAddToQueue(track)}
-                      onAddToPlaylist={() => setPlaylistPickerTrack(track)}
-                      onPlayNext={() => handlePlayNext(track)}
-                      onShare={() => {
-                        // Share functionality
-                        if (navigator.share) {
-                          navigator.share({
-                            title: track.title,
-                            text: `Check out ${track.title} by ${track.artist?.name}`,
-                          });
-                        }
-                      }}
-                    />
-                  );
-                }
-
-                return (
-                  <TrackRow
-                    key={`${track.id}-${index}`}
-                    track={track}
-                    index={index}
-                    isCurrentTrack={isCurrentTrack}
-                    isPlaying={isCurrentTrack && isPlaying}
-                    isLoading={loadingTrackId === track.id}
-                    onClick={() => handleTrackClick(track, index)}
-                    onAddToQueue={() => handleAddToQueue(track)}
-                    onAddToPlaylist={() => setPlaylistPickerTrack(track)}
-                    onPlayNext={() => handlePlayNext(track)}
-                    isLiked={isTrackLiked(track.id)}
-                    onToggleLike={() => toggleTrackLike(track)}
-                  />
-                );
-              })}
-            </div>
-          </div>
-        ) : contentType === "albums" &&
-          albums &&
-          albums.length > 50 &&
-          windowDimensions.width > 0 ? (
-          <div className="px-4 lg:px-6 py-5 border-b border-foreground/10">
-            <VirtualSearchResults
-              albums={albums}
-              height={windowDimensions.height - 200}
-              width={windowDimensions.width}
-            />
-          </div>
-        ) : contentType === "albums" ? (
-          <div className="border-b border-foreground/10">
-            <div className="sticky top-[3.8rem] z-10 hidden lg:block border-b border-foreground/10 bg-background/95 backdrop-blur-xl">
-              <div className="grid grid-cols-[40px_1fr_160px_100px_80px] gap-4 px-6 py-3">
-                <span className="text-center text-[10px] font-mono uppercase tracking-widest text-foreground/40">
-                  #
-                </span>
-                <span className="text-[10px] font-mono uppercase tracking-widest text-foreground/40">
-                  Album
-                </span>
-                <span className="text-[10px] font-mono uppercase tracking-widest text-foreground/40">
-                  Artist
-                </span>
-                <span className="text-[10px] font-mono uppercase tracking-widest text-foreground/40">
-                  Type
-                </span>
-                <span className="text-right text-[10px] font-mono uppercase tracking-widest text-foreground/40">
-                  Year
-                </span>
-              </div>
-            </div>
-            {albums?.map((album, index) => {
-              const coverUrl = getAlbumCoverUrl(album);
-              const artistName = getAlbumArtistName(album);
-              const year = album.releaseDate
-                ? new Date(album.releaseDate).getFullYear()
-                : null;
-
-              return (
-                <Link
-                  key={album.id}
-                  href={`/album/${album.id}`}
-                  className="grid grid-cols-[40px_1fr] items-center gap-4 border-b border-foreground/10 px-4 py-3 transition-colors hover:bg-foreground/[0.02] lg:grid-cols-[40px_1fr_160px_100px_80px] lg:px-6"
-                >
-                  <span className="text-center text-xs font-mono tabular-nums text-foreground/40">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-                  <div className="min-w-0 flex items-center gap-3">
-                    <div className="h-10 w-10 shrink-0 overflow-hidden border border-foreground/10 bg-foreground/5">
-                      {coverUrl ? (
-                        <Image
-                          src={coverUrl}
-                          alt={album.title}
-                          width={40}
-                          height={40}
-                          className="h-full w-full object-cover"
+                    // Use MobileTrackRow on mobile, TrackRow on desktop
+                    if (isMobile) {
+                      return (
+                        <MobileTrackRow
+                          key={`${track.id}-${index}`}
+                          track={track}
+                          index={index}
+                          isCurrentTrack={isCurrentTrack}
+                          isPlaying={isCurrentTrack && isPlaying}
+                          isLoading={loadingTrackId === track.id}
+                          onClick={() => handleTrackClick(track, index)}
+                          isLiked={isTrackLiked(track.id)}
+                          onToggleLike={() => toggleTrackLike(track)}
+                          onAddToQueue={() => handleAddToQueue(track)}
+                          onAddToPlaylist={() => setPlaylistPickerTrack(track)}
+                          onPlayNext={() => handlePlayNext(track)}
+                          onShare={() => {
+                            // Share functionality
+                            if (navigator.share) {
+                              navigator.share({
+                                title: track.title,
+                                text: `Check out ${track.title} by ${track.artist?.name}`,
+                              });
+                            }
+                          }}
                         />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center">
-                          <Disc className="h-4 w-4 text-foreground/25" />
+                      );
+                    }
+
+                    return (
+                      <TrackRow
+                        key={`${track.id}-${index}`}
+                        track={track}
+                        index={index}
+                        isCurrentTrack={isCurrentTrack}
+                        isPlaying={isCurrentTrack && isPlaying}
+                        isLoading={loadingTrackId === track.id}
+                        onClick={() => handleTrackClick(track, index)}
+                        onAddToQueue={() => handleAddToQueue(track)}
+                        onAddToPlaylist={() => setPlaylistPickerTrack(track)}
+                        onPlayNext={() => handlePlayNext(track)}
+                        isLiked={isTrackLiked(track.id)}
+                        onToggleLike={() => toggleTrackLike(track)}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+            ) : contentType === "albums" &&
+              albums &&
+              albums.length > 50 &&
+              windowDimensions.width > 0 ? (
+              <div className="px-4 lg:px-6 py-5 border-b border-foreground/10">
+                <VirtualSearchResults
+                  albums={albums}
+                  height={windowDimensions.height - 200}
+                  width={windowDimensions.width}
+                />
+              </div>
+            ) : contentType === "albums" ? (
+              <div className="border-b border-foreground/10">
+                <div className="sticky top-[3.8rem] z-10 hidden lg:block border-b border-foreground/10 bg-background/95 backdrop-blur-xl">
+                  <div className="grid grid-cols-[40px_1fr_160px_100px_80px] gap-4 px-6 py-3">
+                    <span className="text-center text-[10px] font-mono uppercase tracking-widest text-foreground/40">
+                      #
+                    </span>
+                    <span className="text-[10px] font-mono uppercase tracking-widest text-foreground/40">
+                      Album
+                    </span>
+                    <span className="text-[10px] font-mono uppercase tracking-widest text-foreground/40">
+                      Artist
+                    </span>
+                    <span className="text-[10px] font-mono uppercase tracking-widest text-foreground/40">
+                      Type
+                    </span>
+                    <span className="text-right text-[10px] font-mono uppercase tracking-widest text-foreground/40">
+                      Year
+                    </span>
+                  </div>
+                </div>
+                {albums?.map((album, index) => {
+                  const coverUrl = getAlbumCoverUrl(album);
+                  const artistName = getAlbumArtistName(album);
+                  const year = album.releaseDate
+                    ? new Date(album.releaseDate).getFullYear()
+                    : null;
+
+                  return (
+                    <Link
+                      key={album.id}
+                      href={`/album/${album.id}`}
+                      className="grid grid-cols-[40px_1fr] items-center gap-4 border-b border-foreground/10 px-4 py-3 transition-colors hover:bg-foreground/[0.02] lg:grid-cols-[40px_1fr_160px_100px_80px] lg:px-6"
+                    >
+                      <span className="text-center text-xs font-mono tabular-nums text-foreground/40">
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
+                      <div className="min-w-0 flex items-center gap-3">
+                        <div className="h-10 w-10 shrink-0 overflow-hidden border border-foreground/10 bg-foreground/5">
+                          {coverUrl ? (
+                            <Image
+                              src={coverUrl}
+                              alt={album.title}
+                              width={40}
+                              height={40}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center">
+                              <Disc className="h-4 w-4 text-foreground/25" />
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <h3 className="truncate text-[13px] font-medium tracking-[-0.01em] text-foreground/90">
-                        {album.title}
-                      </h3>
-                      <p className="truncate text-[11px] font-mono uppercase tracking-wider text-foreground/40 lg:hidden">
+                        <div className="min-w-0">
+                          <h3 className="truncate text-[13px] font-medium tracking-[-0.01em] text-foreground/90">
+                            {album.title}
+                          </h3>
+                          <p className="truncate text-[11px] font-mono uppercase tracking-wider text-foreground/40 lg:hidden">
+                            {artistName}
+                          </p>
+                        </div>
+                      </div>
+                      <p className="hidden truncate text-[12px] text-foreground/50 lg:block">
                         {artistName}
                       </p>
-                    </div>
-                  </div>
-                  <p className="hidden truncate text-[12px] text-foreground/50 lg:block">
-                    {artistName}
-                  </p>
-                  <p className="hidden text-[10px] font-mono uppercase tracking-wider text-foreground/40 lg:block">
-                    {album.type || "Album"}
-                  </p>
-                  <p className="hidden text-right text-[12px] font-mono tabular-nums text-foreground/50 lg:block">
-                    {year ?? "-"}
-                  </p>
-                </Link>
-              );
-            })}
-          </div>
-        ) : contentType === "artists" ? (
-          <div className="border-b border-foreground/10">
-            <div className="sticky top-[3.8rem] z-10 hidden lg:block border-b border-foreground/10 bg-background/95 backdrop-blur-xl">
-              <div className="grid grid-cols-[40px_1fr_120px_100px] gap-4 px-6 py-3">
-                <span className="text-center text-[10px] font-mono uppercase tracking-widest text-foreground/40">
-                  #
-                </span>
-                <span className="text-[10px] font-mono uppercase tracking-widest text-foreground/40">
-                  Artist
-                </span>
-                <span className="text-[10px] font-mono uppercase tracking-widest text-foreground/40">
-                  Type
-                </span>
-                <span className="text-right text-[10px] font-mono uppercase tracking-widest text-foreground/40">
-                  Popularity
-                </span>
+                      <p className="hidden text-[10px] font-mono uppercase tracking-wider text-foreground/40 lg:block">
+                        {album.type || "Album"}
+                      </p>
+                      <p className="hidden text-right text-[12px] font-mono tabular-nums text-foreground/50 lg:block">
+                        {year ?? "-"}
+                      </p>
+                    </Link>
+                  );
+                })}
               </div>
-            </div>
-            {artists?.map((artist, index) => {
-              const imageUrl = getArtistImageUrl(artist);
+            ) : contentType === "artists" ? (
+              <div className="border-b border-foreground/10">
+                <div className="sticky top-[3.8rem] z-10 hidden lg:block border-b border-foreground/10 bg-background/95 backdrop-blur-xl">
+                  <div className="grid grid-cols-[40px_1fr_120px_100px] gap-4 px-6 py-3">
+                    <span className="text-center text-[10px] font-mono uppercase tracking-widest text-foreground/40">
+                      #
+                    </span>
+                    <span className="text-[10px] font-mono uppercase tracking-widest text-foreground/40">
+                      Artist
+                    </span>
+                    <span className="text-[10px] font-mono uppercase tracking-widest text-foreground/40">
+                      Type
+                    </span>
+                    <span className="text-right text-[10px] font-mono uppercase tracking-widest text-foreground/40">
+                      Popularity
+                    </span>
+                  </div>
+                </div>
+                {artists?.map((artist, index) => {
+                  const imageUrl = getArtistImageUrl(artist);
 
-              return (
-                <button
-                  key={artist.id}
-                  type="button"
-                  onClick={() => handleArtistClick(artist)}
-                  className="grid w-full grid-cols-[40px_1fr] items-center gap-4 border-b border-foreground/10 px-4 py-3 text-left transition-colors hover:bg-foreground/[0.02] lg:grid-cols-[40px_1fr_120px_100px] lg:px-6"
-                >
-                  <span className="text-center text-xs font-mono tabular-nums text-foreground/40">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-                  <div className="min-w-0 flex items-center gap-3">
-                    <div className="h-10 w-10 shrink-0 overflow-hidden border border-foreground/10 bg-foreground/5">
-                      {imageUrl ? (
-                        <Image
-                          src={imageUrl}
-                          alt={artist.name}
-                          width={40}
-                          height={40}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center">
-                          <Users className="h-4 w-4 text-foreground/25" />
+                  return (
+                    <button
+                      key={artist.id}
+                      type="button"
+                      onClick={() => handleArtistClick(artist)}
+                      className="grid w-full grid-cols-[40px_1fr] items-center gap-4 border-b border-foreground/10 px-4 py-3 text-left transition-colors hover:bg-foreground/[0.02] lg:grid-cols-[40px_1fr_120px_100px] lg:px-6"
+                    >
+                      <span className="text-center text-xs font-mono tabular-nums text-foreground/40">
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
+                      <div className="min-w-0 flex items-center gap-3">
+                        <div className="h-10 w-10 shrink-0 overflow-hidden border border-foreground/10 bg-foreground/5">
+                          {imageUrl ? (
+                            <Image
+                              src={imageUrl}
+                              alt={artist.name}
+                              width={40}
+                              height={40}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center">
+                              <Users className="h-4 w-4 text-foreground/25" />
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <h3 className="truncate text-[13px] font-medium tracking-[-0.01em] text-foreground/90">
-                        {artist.name}
-                      </h3>
-                      <p className="truncate text-[11px] font-mono uppercase tracking-wider text-foreground/40 lg:hidden">
+                        <div className="min-w-0">
+                          <h3 className="truncate text-[13px] font-medium tracking-[-0.01em] text-foreground/90">
+                            {artist.name}
+                          </h3>
+                          <p className="truncate text-[11px] font-mono uppercase tracking-wider text-foreground/40 lg:hidden">
+                            {artist.type || "Artist"}
+                          </p>
+                        </div>
+                      </div>
+                      <p className="hidden text-[10px] font-mono uppercase tracking-wider text-foreground/40 lg:block">
                         {artist.type || "Artist"}
                       </p>
-                    </div>
-                  </div>
-                  <p className="hidden text-[10px] font-mono uppercase tracking-wider text-foreground/40 lg:block">
-                    {artist.type || "Artist"}
-                  </p>
-                  <p className="hidden text-right text-[12px] font-mono tabular-nums text-foreground/50 lg:block">
-                    {artist.popularity ?? "-"}
-                  </p>
-                </button>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="border-b border-foreground/10">
-            {playlists?.map((playlist, index) => {
-              const coverUrl = getPlaylistImageUrl(playlist);
+                      <p className="hidden text-right text-[12px] font-mono tabular-nums text-foreground/50 lg:block">
+                        {artist.popularity ?? "-"}
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="border-b border-foreground/10">
+                {playlists?.map((playlist, index) => {
+                  const coverUrl = getPlaylistImageUrl(playlist);
 
-              return (
-                <button
-                  key={playlist.uuid}
-                  type="button"
-                  onClick={() => handlePlaylistClick(playlist)}
-                  className="grid w-full grid-cols-[40px_1fr_70px] items-center gap-4 border-b border-foreground/10 px-4 py-3 text-left transition-colors hover:bg-foreground/[0.02] lg:grid-cols-[40px_1fr_160px_80px] lg:px-6"
-                >
-                  <span className="text-center text-xs font-mono tabular-nums text-foreground/40">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-                  <div className="min-w-0 flex items-center gap-3">
-                    <div className="h-10 w-10 shrink-0 overflow-hidden border border-foreground/10 bg-foreground/5">
-                      {coverUrl ? (
-                        <Image
-                          src={coverUrl}
-                          alt={playlist.title}
-                          width={40}
-                          height={40}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center">
-                          <ListMusic className="h-4 w-4 text-foreground/25" />
+                  return (
+                    <button
+                      key={playlist.uuid}
+                      type="button"
+                      onClick={() => handlePlaylistClick(playlist)}
+                      className="grid w-full grid-cols-[40px_1fr_70px] items-center gap-4 border-b border-foreground/10 px-4 py-3 text-left transition-colors hover:bg-foreground/[0.02] lg:grid-cols-[40px_1fr_160px_80px] lg:px-6"
+                    >
+                      <span className="text-center text-xs font-mono tabular-nums text-foreground/40">
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
+                      <div className="min-w-0 flex items-center gap-3">
+                        <div className="h-10 w-10 shrink-0 overflow-hidden border border-foreground/10 bg-foreground/5">
+                          {coverUrl ? (
+                            <Image
+                              src={coverUrl}
+                              alt={playlist.title}
+                              width={40}
+                              height={40}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center">
+                              <ListMusic className="h-4 w-4 text-foreground/25" />
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <h3 className="truncate text-[13px] font-medium tracking-[-0.01em] text-foreground/90">
-                        {playlist.title}
-                      </h3>
-                      <p className="truncate text-[11px] font-mono uppercase tracking-wider text-foreground/40 lg:hidden">
+                        <div className="min-w-0">
+                          <h3 className="truncate text-[13px] font-medium tracking-[-0.01em] text-foreground/90">
+                            {playlist.title}
+                          </h3>
+                          <p className="truncate text-[11px] font-mono uppercase tracking-wider text-foreground/40 lg:hidden">
+                            {getPlaylistCreator(playlist)}
+                          </p>
+                        </div>
+                      </div>
+                      <p className="text-right text-[12px] font-mono tabular-nums text-foreground/50 lg:hidden">
+                        {playlist.numberOfTracks ?? "-"}
+                      </p>
+                      <p className="hidden truncate text-[12px] text-foreground/50 lg:block">
                         {getPlaylistCreator(playlist)}
                       </p>
-                    </div>
-                  </div>
-                  <p className="text-right text-[12px] font-mono tabular-nums text-foreground/50 lg:hidden">
-                    {playlist.numberOfTracks ?? "-"}
-                  </p>
-                  <p className="hidden truncate text-[12px] text-foreground/50 lg:block">
-                    {getPlaylistCreator(playlist)}
-                  </p>
-                  <p className="hidden text-right text-[12px] font-mono tabular-nums text-foreground/50 lg:block">
-                    {playlist.numberOfTracks ?? "-"}
-                  </p>
-                </button>
-              );
-            })}
-          </div>
-        )}
+                      <p className="hidden text-right text-[12px] font-mono tabular-nums text-foreground/50 lg:block">
+                        {playlist.numberOfTracks ?? "-"}
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </motion.div>
         )}
       </div>
