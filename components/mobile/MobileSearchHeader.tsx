@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import Link from "next/link";
-import { Search, X, ArrowLeft, ListMusic, Library } from "lucide-react";
+import { Search, X, ArrowLeft } from "lucide-react";
 import { AuthStatusButton } from "@/components/auth/AuthStatusButton";
 import { AnimatedLogoMark } from "@/components/layout/AnimatedLogoMark";
 

@@ -1,9 +1,14 @@
 import { APICache } from "./cache";
 import {
+  getQobuzInstances,
+  rankInstancesByHealth,
+  recordInstanceHealth,
+} from "./discovery";
+import {
   RATE_LIMIT_ERROR_MESSAGE,
   createTimeoutSignal,
   deriveTrackQuality,
-  delay,
+  normalizeQualityToken,
 } from "./utils";
 import type {
   APISettings,
@@ -30,6 +35,7 @@ export class LosslessAPI {
   private static readonly DEFAULT_TIMEOUT_MS = 6_000;
   private static readonly STREAM_TIMEOUT_MS = 8_000;
   private static readonly LYRICS_TIMEOUT_MS = 5_000;
+  private static readonly HEDGED_BATCH_SIZE = 2;
 
   constructor(settings: APISettings) {
     this.settings = settings;
@@ -70,13 +76,159 @@ export class LosslessAPI {
     }
   }
 
-private shuffleInstances(instances: string[]): string[] {
-    const result = [...instances];
-    for (let i = result.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [result[i], result[j]] = [result[j], result[i]];
+  private buildInstanceUrl(baseUrl: string, relativePath: string): string {
+    return baseUrl.endsWith("/")
+      ? `${baseUrl}${relativePath.substring(1)}`
+      : `${baseUrl}${relativePath}`;
+  }
+
+  private createRequestSignal(
+    timeoutMs: number,
+    signals: (AbortSignal | undefined)[]
+  ): {
+    signal: AbortSignal;
+    cleanup: () => void;
+    isTimedOut: () => boolean;
+  } {
+    const controller = new AbortController();
+    let timedOut = false;
+    const timeoutId = setTimeout(() => {
+      timedOut = true;
+      controller.abort(new Error(`Request timed out after ${timeoutMs}ms`));
+    }, timeoutMs);
+
+    const abortHandlers = signals
+      .filter((signal): signal is AbortSignal => Boolean(signal))
+      .map((signal) => {
+        const abort = () => controller.abort(signal.reason);
+        if (signal.aborted) {
+          abort();
+        } else {
+          signal.addEventListener("abort", abort, { once: true });
+        }
+        return { signal, abort };
+      });
+
+    return {
+      signal: controller.signal,
+      cleanup: () => {
+        clearTimeout(timeoutId);
+        abortHandlers.forEach(({ signal, abort }) => {
+          signal.removeEventListener("abort", abort);
+        });
+      },
+      isTimedOut: () => timedOut,
+    };
+  }
+
+  private async raceInstances<T>(
+    instances: string[],
+    request: (baseUrl: string, signal: AbortSignal) => Promise<T>,
+    options: { signal?: AbortSignal; batchSize?: number } = {}
+  ): Promise<T> {
+    const rankedInstances = rankInstancesByHealth(instances);
+    const batchSize =
+      options.batchSize ?? LosslessAPI.HEDGED_BATCH_SIZE;
+    let lastError: unknown = null;
+
+    for (let index = 0; index < rankedInstances.length; index += batchSize) {
+      if (options.signal?.aborted) {
+        throw options.signal.reason || new Error("Request aborted");
+      }
+
+      const batch = rankedInstances.slice(index, index + batchSize);
+      const controllers = batch.map(() => new AbortController());
+
+      try {
+        return await Promise.any(
+          batch.map((baseUrl, batchIndex) =>
+            request(baseUrl, controllers[batchIndex].signal)
+              .then((result) => {
+                controllers.forEach((controller, controllerIndex) => {
+                  if (controllerIndex !== batchIndex) {
+                    controller.abort("hedged-request-won");
+                  }
+                });
+                return result;
+              })
+              .catch((error) => {
+                lastError = error;
+                throw error;
+              })
+          )
+        );
+      } catch (error) {
+        controllers.forEach((controller) => controller.abort("batch-failed"));
+        if (options.signal?.aborted) {
+          throw options.signal.reason || error;
+        }
+      }
     }
-    return result;
+
+    throw (
+      (lastError instanceof Error ? lastError : null) ||
+      new Error("All API instances failed")
+    );
+  }
+
+  private async fetchFromInstance(
+    baseUrl: string,
+    relativePath: string,
+    options: { signal?: AbortSignal; timeoutMs?: number },
+    hedgeSignal?: AbortSignal
+  ): Promise<Response> {
+    const startedAt = Date.now();
+    const { signal, cleanup, isTimedOut } = this.createRequestSignal(
+      options.timeoutMs ?? LosslessAPI.DEFAULT_TIMEOUT_MS,
+      [options.signal, hedgeSignal]
+    );
+    const url = this.buildInstanceUrl(baseUrl, relativePath);
+
+    try {
+      const response = await fetch(url, {
+        signal,
+        cache: "no-store",
+      });
+
+      if (response.status === 429) {
+        throw new Error(RATE_LIMIT_ERROR_MESSAGE);
+      }
+
+      if (response.ok) {
+        recordInstanceHealth(baseUrl, {
+          ok: true,
+          latencyMs: Date.now() - startedAt,
+        });
+        return response;
+      }
+
+      if (response.status === 401) {
+        let errorData:
+          | { subStatus?: number; userMessage?: string }
+          | undefined;
+        try {
+          errorData = await response.clone().json();
+        } catch {}
+
+        if (errorData?.subStatus === 11002) {
+          throw new Error(errorData?.userMessage || "Authentication failed");
+        }
+      }
+
+      throw new Error(`Request failed with status ${response.status}`);
+    } catch (error) {
+      const wasHedgeAbort =
+        hedgeSignal?.aborted && !options.signal?.aborted && !isTimedOut();
+      const wasExternalAbort = options.signal?.aborted && !isTimedOut();
+
+      if (!wasHedgeAbort && !wasExternalAbort) {
+        recordInstanceHealth(baseUrl, { ok: false });
+      }
+
+      throw error instanceof Error ? error : new Error("Unknown error");
+    } finally {
+      cleanup();
+    }
   }
 
   private async fetchWithRetry(
@@ -88,86 +240,11 @@ private shuffleInstances(instances: string[]): string[] {
       throw new Error("No API instances configured.");
     }
 
-    const shuffledInstances = this.shuffleInstances(instances);
-    const maxRetriesPerInstance = 2;
-    let lastError: Error | null = null;
-
-    for (const baseUrl of shuffledInstances) {
-      const url = baseUrl.endsWith("/")
-        ? `${baseUrl}${relativePath.substring(1)}`
-        : `${baseUrl}${relativePath}`;
-
-      for (let attempt = 1; attempt <= maxRetriesPerInstance; attempt++) {
-        const { signal, cleanup } = createTimeoutSignal(
-          options.timeoutMs ?? LosslessAPI.DEFAULT_TIMEOUT_MS,
-          options.signal
-        );
-        try {
-          const response = await fetch(url, {
-            signal,
-            cache: "no-store",
-          });
-
-          if (response.status === 429) {
-            throw new Error(RATE_LIMIT_ERROR_MESSAGE);
-          }
-
-          if (response.ok) {
-            return response;
-          }
-
-          if (response.status === 401) {
-            let errorData:
-              | { subStatus?: number; userMessage?: string }
-              | undefined;
-            try {
-              errorData = await response.clone().json();
-            } catch {}
-
-            if (errorData?.subStatus === 11002) {
-              lastError = new Error(
-                errorData?.userMessage || "Authentication failed"
-              );
-              if (attempt < maxRetriesPerInstance) {
-                await delay(200 * attempt);
-                continue;
-              }
-            }
-            break;
-          }
-
-          if (response.status >= 500) {
-            lastError = new Error(`Status ${response.status}`);
-            if (attempt < maxRetriesPerInstance) {
-              await delay(200 * attempt);
-              continue;
-            }
-            break;
-          }
-
-          lastError = new Error(
-            `Request failed with status ${response.status}`
-          );
-          break;
-        } catch (error) {
-          if (error instanceof Error && error.name === "AbortError") {
-            throw error;
-          }
-
-          lastError =
-            error instanceof Error ? error : new Error("Unknown error");
-
-          if (attempt < maxRetriesPerInstance) {
-            await delay(200 * attempt);
-          }
-        } finally {
-          cleanup();
-        }
-      }
-    }
-
-    throw (
-      lastError || new Error(`All API instances failed for: ${relativePath}`)
+    return this.raceInstances(
+      instances,
+      (baseUrl, signal) =>
+        this.fetchFromInstance(baseUrl, relativePath, options, signal),
+      { signal: options.signal }
     );
   }
 
@@ -309,6 +386,47 @@ private shuffleInstances(instances: string[]): string[] {
     return { track, info, originalTrackUrl };
   }
 
+  private normalizeTrackMetadataResponse(data: unknown, trackId: number): Track {
+    const responseData =
+      data && typeof data === "object" && "data" in data
+        ? (data as { data?: unknown }).data
+        : data;
+
+    const entries = Array.isArray(responseData) ? responseData : [responseData];
+    const found = entries.find((entry) => {
+      if (!entry || typeof entry !== "object") return false;
+      const obj = entry as { id?: unknown; item?: { id?: unknown } };
+      return obj.id == trackId || obj.item?.id == trackId;
+    });
+
+    const trackCandidate =
+      found && typeof found === "object" && "item" in found
+        ? (found as { item?: Track }).item
+        : found;
+
+    if (!trackCandidate || typeof trackCandidate !== "object") {
+      throw new Error("Track metadata not found");
+    }
+
+    return this.prepareTrack(trackCandidate as Track);
+  }
+
+  async getTrackMetadata(
+    trackId: number,
+    options: { signal?: AbortSignal } = {}
+  ): Promise<Track> {
+    const cacheKey = `meta_${trackId}`;
+    const cached = (await this.cache.get("track", cacheKey)) as Track | null;
+    if (cached) return cached;
+
+    const response = await this.fetchWithRetry(`/info/?id=${trackId}`, options);
+    const data = await response.json();
+    const track = this.normalizeTrackMetadataResponse(data, trackId);
+
+    await this.cache.set("track", cacheKey, track);
+    return track;
+  }
+
   private extractStreamUrlFromManifest(manifest: string): string | null {
     try {
       const decoded = atob(manifest);
@@ -327,6 +445,113 @@ private shuffleInstances(instances: string[]): string[] {
       return null;
     }
     return null;
+  }
+
+  private getQobuzQuality(quality: string): string {
+    switch (normalizeQualityToken(quality) || quality) {
+      case "HI_RES_LOSSLESS":
+        return "27";
+      case "LOSSLESS":
+        return "6";
+      case "HIGH":
+      case "LOW":
+        return "5";
+      default:
+        return "6";
+    }
+  }
+
+  private async getQobuzStreamUrl(
+    isrc: string,
+    quality: string
+  ): Promise<string | null> {
+    const instances = await getQobuzInstances();
+    if (instances.length === 0) return null;
+
+    try {
+      return await this.raceInstances(
+        instances,
+        (baseUrl, signal) =>
+          this.resolveQobuzStreamFromInstance(baseUrl, isrc, quality, signal),
+        { batchSize: LosslessAPI.HEDGED_BATCH_SIZE }
+      );
+    } catch {
+      return null;
+    }
+  }
+
+  private async resolveQobuzStreamFromInstance(
+    rawBaseUrl: string,
+    isrc: string,
+    quality: string,
+    hedgeSignal?: AbortSignal
+  ): Promise<string> {
+    const baseUrl = rawBaseUrl.replace(/\/+$/, "");
+    const startedAt = Date.now();
+    const { signal, cleanup, isTimedOut } = this.createRequestSignal(
+      LosslessAPI.STREAM_TIMEOUT_MS,
+      [hedgeSignal]
+    );
+
+    try {
+      const searchUrl = new URL(`${baseUrl}/api/get-music`);
+      searchUrl.searchParams.set("q", isrc);
+      searchUrl.searchParams.set("offset", "0");
+
+      const trackRes = await fetch(searchUrl, {
+        signal,
+        cache: "no-store",
+      });
+      if (!trackRes.ok) {
+        throw new Error(`Qobuz search failed with status ${trackRes.status}`);
+      }
+
+      const trackJson = await trackRes.json();
+      const tracks = Array.isArray(trackJson?.data?.tracks?.items)
+        ? trackJson.data.tracks.items
+        : [];
+      const match =
+        tracks.find(
+          (track: { isrc?: string }) =>
+            track.isrc?.toLowerCase() === isrc.toLowerCase()
+        ) || tracks[0];
+
+      if (!match?.id) {
+        throw new Error("Qobuz search returned no playable track");
+      }
+
+      const streamUrl = new URL(`${baseUrl}/api/download-music`);
+      streamUrl.searchParams.set("track_id", String(match.id));
+      streamUrl.searchParams.set("quality", this.getQobuzQuality(quality));
+
+      const streamRes = await fetch(streamUrl, {
+        signal,
+        cache: "no-store",
+      });
+      if (!streamRes.ok) {
+        throw new Error(`Qobuz stream failed with status ${streamRes.status}`);
+      }
+
+      const streamJson = await streamRes.json();
+      const url = streamJson?.data?.url;
+      if (streamJson?.success && typeof url === "string") {
+        recordInstanceHealth(rawBaseUrl, {
+          ok: true,
+          latencyMs: Date.now() - startedAt,
+        });
+        return url;
+      }
+
+      throw new Error("Qobuz stream response did not include a URL");
+    } catch (error) {
+      const wasHedgeAbort = hedgeSignal?.aborted && !isTimedOut();
+      if (!wasHedgeAbort) {
+        recordInstanceHealth(rawBaseUrl, { ok: false });
+      }
+      throw error instanceof Error ? error : new Error("Unknown Qobuz error");
+    } finally {
+      cleanup();
+    }
   }
 
   async searchTracks(
@@ -567,6 +792,19 @@ private shuffleInstances(instances: string[]): string[] {
     if (cached) return cached;
 
     try {
+      const track = await this.getTrackMetadata(trackId).catch((error) => {
+        console.warn("Failed to fetch track metadata for Qobuz lookup:", error);
+        return null;
+      });
+
+      if (track?.isrc) {
+        const qobuzStreamUrl = await this.getQobuzStreamUrl(track.isrc, quality);
+        if (qobuzStreamUrl) {
+          this.streamCache.set(cacheKey, qobuzStreamUrl);
+          return qobuzStreamUrl;
+        }
+      }
+
       const response = await this.fetchWithRetry(
         `/track/?id=${trackId}&quality=${quality}`,
         { timeoutMs: LosslessAPI.STREAM_TIMEOUT_MS }
